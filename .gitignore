@@ -10,6 +10,7 @@
 # ===========================================
 node_modules/
 mcp-servers/*/node_modules/
+mcp-servers/*/package-lock.json
 
 # ===========================================
 # Python (Z.ai GLM MCP Server)
@@ -18,6 +19,8 @@ mcp-servers/zai-glm/.venv/
 mcp-servers/zai-glm/__pycache__/
 *.pyc
 *.pyo
+*.egg-info/
+mcp-servers/*/*.egg-info/
 
 # ===========================================
 # Sisyphus State Files (Runtime State)
