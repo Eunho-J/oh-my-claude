@@ -94,31 +94,48 @@ rm -rf /tmp/oh-my-claude
 
 ### 1.2 Prerequisites Installation
 
+**Check existing installations first:**
 ```bash
-# Install Node.js (v18+) - check if already installed
-node --version || echo "Node.js not installed"
+# Check Node.js (v18+ required)
+node --version 2>/dev/null || echo "Node.js: NOT INSTALLED"
 
-# Install Bun runtime (required for Gemini MCP)
-curl -fsSL https://bun.sh/install | bash
+# Check Bun
+bun --version 2>/dev/null || echo "Bun: NOT INSTALLED"
 
-# Verify Bun installation
-bun --version
+# Check uv
+uv --version 2>/dev/null || echo "uv: NOT INSTALLED"
+```
 
-# Install uv (required for Z.ai GLM MCP)
-curl -LsSf https://astral.sh/uv/install.sh | sh
+**Install only if not present or outdated:**
+```bash
+# Install Bun runtime (required for Gemini MCP) - skip if already installed
+command -v bun >/dev/null || curl -fsSL https://bun.sh/install | bash
 
-# Verify uv installation
-uv --version
+# Install uv (required for Z.ai GLM MCP) - skip if already installed
+command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 ### 1.3 Install Global CLI Tools
 
+**Check existing installations first:**
 ```bash
-# Install Codex CLI (for Oracle agent)
-npm install -g codex
+# Check Codex CLI
+codex --version 2>/dev/null || echo "Codex: NOT INSTALLED"
 
-# Install Gemini CLI (for Frontend agent)
-npm install -g @google/gemini-cli
+# Check Gemini CLI
+gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
+
+# Check Playwright
+npx playwright --version 2>/dev/null || echo "Playwright: NOT INSTALLED"
+```
+
+**Install only if not present:**
+```bash
+# Install Codex CLI (for Oracle agent) - skip if already installed
+command -v codex >/dev/null || npm install -g codex
+
+# Install Gemini CLI (for Frontend agent) - skip if already installed
+command -v gemini >/dev/null || npm install -g @google/gemini-cli
 
 # Install Playwright (for browser automation skill)
 npx playwright install
