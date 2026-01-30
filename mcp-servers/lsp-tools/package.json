@@ -1,0 +1,22 @@
+{
+  "name": "lsp-tools-mcp",
+  "version": "1.0.0",
+  "description": "LSP and AST-Grep tools MCP server for Claude Code",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "echo 'No build step required'"
+  },
+  "dependencies": {
+    "@anthropic-ai/mcp": "^0.1.0",
+    "vscode-languageserver-protocol": "^3.17.5",
+    "vscode-languageclient": "^9.0.1"
+  },
+  "optionalDependencies": {
+    "@ast-grep/napi": "^0.22.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

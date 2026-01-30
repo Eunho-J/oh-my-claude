@@ -1,0 +1,44 @@
+{
+  "mcpServers": {
+    "websearch": {
+      "type": "http",
+      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
+      "headers": {
+        "x-api-key": "${EXA_API_KEY}"
+      }
+    },
+    "context7": {
+      "type": "http",
+      "url": "https://mcp.context7.com/mcp",
+      "headers": {
+        "Authorization": "Bearer ${CONTEXT7_API_KEY}"
+      }
+    },
+    "grep-app": {
+      "type": "http",
+      "url": "https://grep.app/api/mcp"
+    },
+    "lsp-tools": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["${CLAUDE_PROJECT_DIR}/mcp-servers/lsp-tools/index.js"]
+    },
+    "codex": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "codex", "mcp-server"]
+    },
+    "gemini": {
+      "type": "stdio",
+      "command": "bunx",
+      "args": ["mcp-gemini-cli"]
+    },
+    "zai-glm": {
+      "type": "http",
+      "url": "https://api.z.ai/mcp",
+      "headers": {
+        "Authorization": "Bearer ${ZAI_API_KEY}"
+      }
+    }
+  }
+}
