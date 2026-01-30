@@ -34,6 +34,11 @@
         "hooks": [
           {
             "type": "command",
+            "command": "./hooks/debate-lock.sh",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
             "command": "./hooks/delegation-guard.sh",
             "timeout": 5000
           }

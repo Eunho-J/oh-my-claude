@@ -139,7 +139,11 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 3. **Comment Checker** (PostToolUse - Edit|Write)
    - Detect and warn about unnecessary comments
 
-4. **Delegation Guard** (PreToolUse - Edit|Write)
+4. **Debate Lock** (PreToolUse - Edit|Write)
+   - Block code modifications while debate is in progress
+   - Ensures decisions are made before implementation
+
+5. **Delegation Guard** (PreToolUse - Edit|Write)
    - Block Atlas from direct code modifications
 
 ## Directory Structure
