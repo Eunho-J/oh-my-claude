@@ -4,7 +4,7 @@
 #
 # 사용법: Stop 이벤트에서 자동 실행
 #
-# Uses Sisyphus MCP Server CLI for state management
+# Uses Chronos MCP Server CLI for state management
 
 set -e
 
@@ -28,14 +28,14 @@ EOF
   exit 0
 fi
 
-# Find the sisyphus CLI
+# Find the chronos CLI
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SISYPHUS_CLI="$SCRIPT_DIR/../mcp-servers/sisyphus/cli.js"
+CHRONOS_CLI="$SCRIPT_DIR/../mcp-servers/chronos/cli.js"
 
 # Check if CLI exists and boulder has incomplete tasks
-if [ -f "$SISYPHUS_CLI" ] && [ -f ".sisyphus/boulder.json" ]; then
-  # Use Node.js CLI for plan progress check
-  RESULT=$(node "$SISYPHUS_CLI" boulder-status 2>/dev/null || echo "{}")
+if [ -f "$CHRONOS_CLI" ] && [ -f ".sisyphus/boulder.json" ]; then
+  # Use Chronos CLI for plan progress check
+  RESULT=$(node "$CHRONOS_CLI" boulder-status 2>/dev/null || echo "{}")
 
   IS_COMPLETE=$(echo "$RESULT" | jq -r '.progress.isComplete // true' 2>/dev/null || echo "true")
   REMAINING=$(echo "$RESULT" | jq -r '(.progress.total // 0) - (.progress.completed // 0)' 2>/dev/null || echo "0")
