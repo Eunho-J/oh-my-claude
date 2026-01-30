@@ -1,0 +1,55 @@
+# ===========================================
+# Environment & Secrets
+# ===========================================
+.env
+.env.local
+.env.*.local
+
+# ===========================================
+# Node.js Dependencies
+# ===========================================
+node_modules/
+mcp-servers/*/node_modules/
+
+# ===========================================
+# Python (Z.ai GLM MCP Server)
+# ===========================================
+mcp-servers/zai-glm/.venv/
+mcp-servers/zai-glm/__pycache__/
+*.pyc
+*.pyo
+
+# ===========================================
+# Sisyphus State Files (Runtime State)
+# ===========================================
+.sisyphus/boulder.json
+.sisyphus/ralph-state.json
+.sisyphus/debates/active-debate.json
+.sisyphus/debates/history/
+
+# ===========================================
+# IDE & Editor
+# ===========================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===========================================
+# OS Generated
+# ===========================================
+.DS_Store
+Thumbs.db
+
+# ===========================================
+# Logs
+# ===========================================
+*.log
+npm-debug.log*
+
+# ===========================================
+# Temporary Files
+# ===========================================
+/tmp/
+*.tmp
