@@ -10,6 +10,7 @@ tools:
   - Task
   - WebFetch
   - WebSearch
+  - mcp__lsp-tools__*
 disallowedTools:
   - Edit
   - Write

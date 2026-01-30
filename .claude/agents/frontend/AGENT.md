@@ -11,6 +11,7 @@ tools:
   - Write
   - Bash
   - mcp__gemini__*
+  - mcp__lsp-tools__*
 skills:
   - frontend-ui-ux
   - playwright

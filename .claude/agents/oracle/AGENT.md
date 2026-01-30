@@ -10,6 +10,7 @@ tools:
   - WebSearch
   - WebFetch
   - mcp__codex__*
+  - mcp__lsp-tools__*
 disallowedTools:
   - Edit
   - Write

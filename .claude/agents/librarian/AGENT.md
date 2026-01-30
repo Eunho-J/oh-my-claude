@@ -12,6 +12,7 @@ tools:
   - mcp__zai-glm__*
   - mcp__context7__*
   - mcp__grep-app__*
+  - mcp__lsp-tools__*
 disallowedTools:
   - Edit
   - Write
