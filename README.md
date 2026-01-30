@@ -76,14 +76,13 @@ npx playwright install
 ### 1.4 Install Local Dependencies
 
 ```bash
-# Initialize package.json if not exists
-[ -f package.json ] || npm init -y
-
-# Install MCP server dependencies
+# Install MCP server dependencies (uses package.json)
 cd mcp-servers/lsp-tools
-npm install @vscode/vscode-languageserver-protocol typescript @ast-grep/napi
+npm install
 cd ../..
 ```
+
+**Note:** The LSP MCP server uses `@modelcontextprotocol/sdk` for MCP protocol support.
 
 ### 1.5 Copy Configuration Files
 
