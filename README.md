@@ -26,15 +26,21 @@ cd oh-my-claude
 
 # Setup Guide
 
+> **Important:** This project is optimized for **Claude Code**. While other CLI agents (Codex, Gemini) can assist with setup, the agents, skills, and hooks are designed specifically for Claude Code's native features.
+>
+> **Follow the steps in order.** Each section depends on the previous one being completed.
+
 This guide separates setup into two categories:
-1. **Automated Setup** - Can be performed by any CLI agent (Claude, Codex, Gemini)
+1. **Automated Setup** - Can be performed by Claude Code (or other CLI agents)
 2. **Manual Setup** - Requires user interaction (OAuth login, API key configuration)
 
 ---
 
 ## Part 1: Automated Setup
 
-These steps can be executed automatically by a CLI agent.
+These steps can be executed automatically by Claude Code.
+
+> **Note:** Execute each step sequentially (1.1 → 1.2 → 1.3 → ...). Do not skip steps.
 
 ### 1.1 Prerequisites Installation
 
@@ -219,6 +225,8 @@ echo "=== Checking Configuration Files ==="
 ---
 
 ## Part 2: Manual Setup (User Required)
+
+> **Prerequisite:** Complete Part 1 (Automated Setup) before proceeding.
 
 These steps require user interaction and cannot be automated.
 
