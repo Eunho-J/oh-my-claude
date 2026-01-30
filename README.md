@@ -10,7 +10,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 
 ## Features
 
-- **Multi-Agent Orchestration**: Atlas (orchestrator), Prometheus (planner), Oracle (architecture advisor), Frontend (UI/UX), Librarian (documentation search), Junior (task executor)
+- **Multi-Agent Orchestration**: Sisyphus (orchestrator), Prometheus (planner), Oracle (architecture advisor), Frontend (UI/UX), Librarian (documentation search), Junior (task executor)
 - **External Model Integration**: GPT-5.2-Codex, Google Gemini, GLM-4.7 via MCP
 - **Ralph Loop**: Auto-continuation until task completion
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
@@ -183,7 +183,7 @@ cp .gitignore.sample .gitignore
 
 **What is preserved:**
 - `.sisyphus/plans/` - Prometheus plan files (user content)
-- `.sisyphus/notepads/` - Atlas learning records (user content)
+- `.sisyphus/notepads/` - Sisyphus learning records (user content)
 
 ### 1.7 Verify Installation
 
@@ -357,7 +357,7 @@ chmod +x hooks/*.sh
 
 | File | Description |
 |------|-------------|
-| `.claude/agents/atlas/AGENT.md` | Master orchestrator |
+| `.claude/agents/sisyphus/AGENT.md` | Master orchestrator |
 | `.claude/agents/prometheus/AGENT.md` | Strategic planner |
 | `.claude/agents/oracle/AGENT.md` | Architecture advisor (uses Codex) |
 | `.claude/agents/frontend/AGENT.md` | UI/UX expert (uses Gemini) |
@@ -380,7 +380,7 @@ chmod +x hooks/*.sh
 | `hooks/ralph-loop.sh` | Stop | Auto-continuation loop |
 | `hooks/todo-enforcer.sh` | Stop | Prevents stopping with incomplete tasks |
 | `hooks/comment-checker.sh` | PostToolUse | Warns about unnecessary comments |
-| `hooks/delegation-guard.sh` | PreToolUse | Prevents Atlas from direct code edits |
+| `hooks/delegation-guard.sh` | PreToolUse | Prevents Sisyphus from direct code edits |
 
 ### State Files
 
@@ -389,7 +389,7 @@ chmod +x hooks/*.sh
 | `.sisyphus/boulder.json` | Current work status |
 | `.sisyphus/ralph-state.json` | Ralph loop state |
 | `.sisyphus/plans/` | Prometheus plan files |
-| `.sisyphus/notepads/` | Atlas learning records |
+| `.sisyphus/notepads/` | Sisyphus learning records |
 
 ---
 
@@ -402,7 +402,7 @@ chmod +x hooks/*.sh
 claude
 
 # Invoke specific agent
-@atlas - Master orchestrator
+@sisyphus - Master orchestrator
 @prometheus - Strategic planner
 @oracle - Architecture advisor
 @frontend - UI/UX expert
@@ -424,7 +424,7 @@ ulw Add complete authentication system with JWT
 
 # This will:
 # 1. Prometheus creates a plan
-# 2. Atlas distributes tasks
+# 2. Sisyphus distributes tasks
 # 3. Junior/Frontend execute in parallel
 # 4. Ralph Loop continues until completion
 ```
@@ -451,7 +451,7 @@ User Request
      │
      ▼
 ┌─────────────────┐
-│     Atlas       │ (Orchestrator)
+│    Sisyphus     │ (Orchestrator)
 │  (Claude Opus)  │
 └────────┬────────┘
          │

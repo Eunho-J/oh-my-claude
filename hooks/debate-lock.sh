@@ -45,8 +45,8 @@ cat << EOF >&2
 ║                                                                            ║
 ║  Options:                                                                  ║
 ║  1. Wait for debate completion                                             ║
-║  2. Check debate status: mcp__sisyphus__debate_get_state                   ║
-║  3. Force conclude: mcp__sisyphus__debate_conclude (if stuck)              ║
+║  2. Check debate status: mcp__chronos__debate_get_state                    ║
+║  3. Force conclude: mcp__chronos__debate_conclude (if stuck)               ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 EOF
 

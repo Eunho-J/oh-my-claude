@@ -13,7 +13,7 @@ tools:
   - mcp__lsp-tools__*
   - mcp__chronos__boulder_*
   - mcp__chronos__ralph_*
-  - mcp__chronos__sisyphus_status
+  - mcp__chronos__chronos_status
 disallowedTools:
   - Edit
   - Write
