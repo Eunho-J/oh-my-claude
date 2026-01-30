@@ -13,6 +13,9 @@ allowed-tools:
   - TaskUpdate
   - TaskList
   - TaskGet
+  - mcp__sisyphus__ralph_*
+  - mcp__sisyphus__boulder_*
+  - mcp__sisyphus__sisyphus_status
 ---
 
 # Ultrawork Skill

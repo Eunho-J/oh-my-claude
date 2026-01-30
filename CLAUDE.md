@@ -221,6 +221,32 @@ Independent Analysis → Share Results → Debate Rounds → Conclusion
    without seeing others             No consensus → Majority vote
 ```
 
+## Agent & Skill MCP Access
+
+### Agent MCP Tool Access
+
+Agents using `tools` (whitelist) can only access specified MCP tools.
+Agents using `disallowedTools` (blacklist) can access all MCP tools except those listed.
+
+| Agent | Config | sisyphus | codex | gemini | zai-glm | context7 | grep-app |
+|-------|--------|----------|-------|--------|---------|----------|----------|
+| Atlas | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Prometheus | whitelist | boulder, ralph, status | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Oracle | whitelist | ralph, status | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Frontend | whitelist | ralph, status | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Librarian | whitelist | ralph, status | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Debate | whitelist | debate, ralph, status | ✅ | ✅ | ❌ | ❌ | ❌ |
+
+### Skill MCP Tool Access
+
+| Skill | Config | sisyphus | Other MCP |
+|-------|--------|----------|-----------|
+| ultrawork | whitelist | boulder, ralph, status | ❌ |
+| git-master | none (all) | ✅ all | ✅ all |
+| frontend-ui-ux | none (all) | ✅ all | ✅ all |
+| playwright | none (all) | ✅ all | ✅ all |
+
 ## Important Notes
 
 ### Atlas Rules
