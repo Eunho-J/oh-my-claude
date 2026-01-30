@@ -16,6 +16,11 @@
       "command": "node",
       "args": ["./mcp-servers/lsp-tools/index.js"]
     },
+    "sisyphus": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./mcp-servers/sisyphus/index.js"]
+    },
     "codex": {
       "type": "stdio",
       "command": "npx",

@@ -11,6 +11,7 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 | Atlas | Master Orchestrator | Opus | - |
 | Prometheus | Strategic Planner | Opus | - |
 | Oracle | Architecture Advisor | Sonnet | GPT-5.2-Codex |
+| Debate | Multi-model decision making | Opus | GPT-5.2, Gemini |
 | Frontend | UI/UX Expert + Visual Verification | Sonnet | Gemini |
 | Librarian | Documentation/Code Search | Haiku | GLM-4.7 |
 | Junior | Task Executor | Sonnet | - |
@@ -21,6 +22,7 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 @atlas      - Activate master orchestrator
 @prometheus - Activate planner (or @plan)
 @oracle     - Architecture consultation
+@debate     - Multi-model debate for critical decisions
 @frontend   - UI/UX work with visual verification loop
 @librarian  - Documentation/code search
 @junior     - Single task execution
@@ -42,6 +44,7 @@ These keywords automatically activate corresponding features:
 - `ultrawork`, `ulw` → Ultrawork skill + Ralph Loop
 - `@plan` → Prometheus planner
 - `@oracle` → Oracle architecture advisor
+- `@debate` → Multi-model debate agent
 
 ## MCP Servers
 
@@ -52,6 +55,7 @@ These keywords automatically activate corresponding features:
 | context7 | Official docs search | HTTP | - |
 | grep-app | GitHub code search | HTTP | - |
 | lsp-tools | LSP/AST-Grep tools | stdio | custom |
+| sisyphus | Ralph Loop, Boulder & Debate management | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
 | gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
 | zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
@@ -93,6 +97,34 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 **Requirements:** `Z_AI_API_KEY` environment variable, `uv` package manager
 
+### Sisyphus MCP Tools (Ralph Loop, Boulder & Debate)
+
+| Tool | Purpose |
+|------|---------|
+| `mcp__sisyphus__ralph_get_state` | Get Ralph Loop state |
+| `mcp__sisyphus__ralph_start` | Start Ralph Loop |
+| `mcp__sisyphus__ralph_increment` | Increment iteration count |
+| `mcp__sisyphus__ralph_stop` | Stop Ralph Loop |
+| `mcp__sisyphus__ralph_check_promise` | Check completion promise |
+| `mcp__sisyphus__boulder_get_state` | Get Boulder (active plan) state |
+| `mcp__sisyphus__boulder_start` | Start new plan work |
+| `mcp__sisyphus__boulder_add_session` | Add session ID |
+| `mcp__sisyphus__boulder_clear` | Clear Boulder state |
+| `mcp__sisyphus__boulder_get_progress` | Get plan progress |
+| `mcp__sisyphus__boulder_list_plans` | List Prometheus plans |
+| `mcp__sisyphus__debate_start` | Start a new multi-model debate |
+| `mcp__sisyphus__debate_get_state` | Get current debate state |
+| `mcp__sisyphus__debate_add_analysis` | Add model analysis to debate |
+| `mcp__sisyphus__debate_add_round` | Add debate round |
+| `mcp__sisyphus__debate_vote` | Record a vote on an item |
+| `mcp__sisyphus__debate_conclude` | Conclude the debate |
+| `mcp__sisyphus__debate_list_history` | List past debates |
+| `mcp__sisyphus__debate_clear` | Clear active debate |
+| `mcp__sisyphus__sisyphus_status` | Get full status |
+| `mcp__sisyphus__sisyphus_should_continue` | Check if should continue |
+
+**CLI Usage:** `node mcp-servers/sisyphus/cli.js <command>`
+
 ## Hook System
 
 ### Active Hooks
@@ -116,6 +148,9 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 .sisyphus/
 ├── plans/           # Prometheus plan files
 ├── notepads/        # Atlas learning records
+├── debates/         # Debate state and history
+│   ├── active-debate.json
+│   └── history/
 ├── boulder.json     # Current work state
 └── ralph-state.json # Ralph Loop state
 ```
@@ -165,6 +200,25 @@ Implement → Screenshot → Gemini Analysis → Fix → Repeat
                 ↓
    Multiple viewports (Desktop/Tablet/Mobile)
    Dark mode / Light mode
+```
+
+### 5. Multi-Model Debate
+
+```
+User: @debate JWT vs Session-based authentication for our microservices
+Claude:
+1. Phase 1: Independent analysis (Opus, GPT-5.2, Gemini)
+2. Phase 2: Share analyses across models
+3. Phase 3: Structured debate rounds (max 20)
+4. Phase 4: Consensus or majority vote conclusion
+```
+
+**Debate Workflow:**
+```
+Independent Analysis → Share Results → Debate Rounds → Conclusion
+         ↓                                    ↓
+   All 3 models analyze              Consensus reached → Done
+   without seeing others             No consensus → Majority vote
 ```
 
 ## Important Notes

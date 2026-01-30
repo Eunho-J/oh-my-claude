@@ -1,0 +1,17 @@
+{
+  "name": "sisyphus-mcp",
+  "version": "1.0.0",
+  "description": "MCP server for Ralph Loop and Boulder state management",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "sisyphus": "./cli.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  }
+}
