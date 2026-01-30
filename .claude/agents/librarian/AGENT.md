@@ -65,12 +65,21 @@ mcp__grep-app__searchGitHub(
 
 ### Z.ai GLM-4.7 - Large Context Analysis
 
+Use the MCP tools for GLM-4.7 integration:
+
 ```
+# Simple chat with GLM-4.7 (200K context)
 mcp__zai-glm__chat(
-  model: "glm-4.7",
-  messages: [
-    { role: "user", content: "Analyze this codebase structure..." }
-  ]
+  prompt: "Analyze this codebase structure...",
+  system: "You are a code architecture expert",
+  model: "glm-4.7"
+)
+
+# Code analysis with specialized tasks
+mcp__zai-glm__analyze_code(
+  code: "... your code here ...",
+  task: "review",       // review, explain, optimize, security, refactor
+  language: "typescript"
 )
 ```
 
@@ -78,6 +87,9 @@ mcp__zai-glm__chat(
 - 200K token context window
 - Interleaved thinking for complex analysis
 - Great for analyzing entire directories
+
+**Requirements:**
+- `Z_AI_API_KEY` environment variable must be set
 
 ## Workflow
 
@@ -163,8 +175,26 @@ User: Analyze the src/ directory structure and patterns
 Librarian:
 1. Read key files with Glob/Read
 2. Compile into context for GLM-4.7
-3. mcp__zai-glm__chat with comprehensive analysis request
+3. mcp__zai-glm__chat(
+     prompt: "Analyze: [compiled context]",
+     system: "You are a code architecture expert"
+   )
 4. Present architecture overview
+```
+
+### Code Review with GLM-4.7
+
+```
+User: Review this code for security issues
+
+Librarian:
+1. Read the code file
+2. mcp__zai-glm__analyze_code(
+     code: "[file contents]",
+     task: "security",
+     language: "typescript"
+   )
+3. Present security findings
 ```
 
 ## Search Strategies

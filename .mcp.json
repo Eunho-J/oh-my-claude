@@ -27,11 +27,9 @@
       "args": ["mcp-gemini-cli"]
     },
     "zai-glm": {
-      "type": "http",
-      "url": "https://api.z.ai/mcp",
-      "headers": {
-        "Authorization": "Bearer ${ZAI_API_KEY}"
-      }
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "./mcp-servers/zai-glm", "python", "server.py"]
     }
   }
 }

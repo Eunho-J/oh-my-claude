@@ -53,6 +53,12 @@ curl -fsSL https://bun.sh/install | bash
 
 # Verify Bun installation
 bun --version
+
+# Install uv (required for Z.ai GLM MCP)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Verify uv installation
+uv --version
 ```
 
 ### 1.2 Project Directory Structure
@@ -86,9 +92,14 @@ npx playwright install
 cd mcp-servers/lsp-tools
 npm install
 cd ../..
+
+# Install Z.ai GLM MCP server dependencies (Python)
+cd mcp-servers/zai-glm
+uv sync
+cd ../..
 ```
 
-**Note:** The LSP MCP server uses `@modelcontextprotocol/sdk` for MCP protocol support.
+**Note:** The LSP MCP server uses `@modelcontextprotocol/sdk` for MCP protocol support. The Z.ai GLM MCP server uses Python with `mcp` and `zai-sdk` packages.
 
 ### 1.5 Copy Configuration Files
 
@@ -125,11 +136,9 @@ The following files should be created/copied to the project root:
       "args": ["mcp-gemini-cli"]
     },
     "zai-glm": {
-      "type": "http",
-      "url": "https://api.z.ai/mcp",
-      "headers": {
-        "Authorization": "Bearer ${ZAI_API_KEY}"
-      }
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "--directory", "./mcp-servers/zai-glm", "python", "server.py"]
     }
   }
 }
@@ -239,12 +248,12 @@ Create a `.env` file or export environment variables:
 export CONTEXT7_API_KEY="your-context7-api-key"
 
 # Required for GLM-4.7 (Z.ai) - Librarian agent
-export ZAI_API_KEY="your-zai-api-key"
+export Z_AI_API_KEY="your-zai-api-key"
 ```
 
 **Where to get API keys:**
 - **CONTEXT7_API_KEY**: https://context7.com/ (Sign up for API access)
-- **ZAI_API_KEY**: https://z.ai/ (Subscribe to Coding Plan - $3/month)
+- **Z_AI_API_KEY**: https://z.ai/ (Subscribe to Coding Plan - $3/month)
 
 ### 2.2 Codex CLI Authentication (OAuth)
 
@@ -349,7 +358,7 @@ curl -I https://mcp.context7.com/mcp
 
 # Verify API keys are set
 echo $CONTEXT7_API_KEY
-echo $ZAI_API_KEY
+echo $Z_AI_API_KEY
 ```
 
 ### Hook Scripts Not Executing
@@ -374,7 +383,7 @@ chmod +x hooks/*.sh
 | `.claude/agents/prometheus/AGENT.md` | Strategic planner |
 | `.claude/agents/oracle/AGENT.md` | Architecture advisor (uses Codex) |
 | `.claude/agents/frontend/AGENT.md` | UI/UX expert (uses Gemini) |
-| `.claude/agents/librarian/AGENT.md` | Documentation search (uses GLM-4.7) |
+| `.claude/agents/librarian/AGENT.md` | Documentation search (uses GLM-4.7 via MCP) |
 | `.claude/agents/junior/AGENT.md` | Task executor |
 
 ### Skills

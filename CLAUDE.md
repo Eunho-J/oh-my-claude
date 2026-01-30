@@ -54,7 +54,7 @@ These keywords automatically activate corresponding features:
 | lsp-tools | LSP/AST-Grep tools | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
 | gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
-| zai-glm | Z.ai GLM-4.7 | HTTP | - |
+| zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
 
 ### Authentication
 
@@ -71,7 +71,7 @@ gemini auth login
 **API Key Authentication:**
 ```bash
 export CONTEXT7_API_KEY="..."   # Context7 docs search
-export ZAI_API_KEY="..."        # Z.ai GLM-4.7
+export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 ```
 
 ### Gemini MCP Tools (choplin/mcp-gemini-cli)
@@ -83,6 +83,15 @@ export ZAI_API_KEY="..."        # Z.ai GLM-4.7
 | `mcp__gemini__analyzeFile` | Image/PDF/text analysis |
 
 **Supported files:** PNG, JPG, GIF, WEBP, SVG, BMP, PDF, text
+
+### Z.ai GLM MCP Tools (Python MCP Server)
+
+| Tool | Purpose |
+|------|---------|
+| `mcp__zai-glm__chat` | Chat with GLM-4.7 (200K context) |
+| `mcp__zai-glm__analyze_code` | Code analysis (review, explain, optimize, security, refactor) |
+
+**Requirements:** `Z_AI_API_KEY` environment variable, `uv` package manager
 
 ## Hook System
 
@@ -172,7 +181,13 @@ Implement → Screenshot → Gemini Analysis → Fix → Repeat
 ### External Models
 - **Codex**: Session management via `threadId`, OAuth auth
 - **Gemini**: 60 req/min limit (free tier), OAuth auth, **requires Bun runtime**
-- **GLM-4.7**: 200K context support, API key auth
+- **GLM-4.7**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`)
+
+### uv Installation (for Z.ai GLM MCP)
+```bash
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
 
 ### Bun Installation (for Gemini MCP)
 ```bash

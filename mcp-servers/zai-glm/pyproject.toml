@@ -1,0 +1,13 @@
+[project]
+name = "zai-glm-mcp"
+version = "1.0.0"
+description = "Z.ai GLM MCP server wrapper"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.2.0",
+    "zai-sdk>=1.0.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
