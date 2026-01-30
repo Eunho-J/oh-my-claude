@@ -486,4 +486,6 @@ User Request
 
 ## License
 
-MIT
+[Sustainable Use License](./LICENSE)
+
+Based on [oh-my-opencode](https://github.com/sisyphus-labs/oh-my-opencode) by Sisyphus Labs.
