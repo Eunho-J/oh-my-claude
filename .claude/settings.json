@@ -47,12 +47,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./hooks/ralph-loop.sh",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/ralph-loop.sh'",
             "timeout": 10000
           },
           {
             "type": "command",
-            "command": "./hooks/todo-enforcer.sh",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/todo-enforcer.sh'",
             "timeout": 10000
           }
         ]
@@ -64,7 +64,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./hooks/comment-checker.sh",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/comment-checker.sh'",
             "timeout": 30000
           }
         ]
@@ -76,12 +76,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "./hooks/debate-lock.sh",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/debate-lock.sh'",
             "timeout": 5000
           },
           {
             "type": "command",
-            "command": "./hooks/delegation-guard.sh",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/delegation-guard.sh'",
             "timeout": 5000
           }
         ]
