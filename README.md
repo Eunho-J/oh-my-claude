@@ -10,11 +10,14 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 
 ## Features
 
-- **Multi-Agent Orchestration**: Sisyphus (orchestrator), Prometheus (planner), Oracle (architecture advisor), Frontend (UI/UX), Librarian (documentation search), Junior (task executor)
-- **External Model Integration**: GPT-5.2-Codex, Google Gemini, GLM-4.7 via MCP
+- **Multi-Agent Orchestration**: 11 specialized agents with clear role separation
+  - Planning: Metis (GPT-5.2 xhigh), Prometheus, Momus (Codex-5.2 xhigh)
+  - Execution: Atlas, Junior, Oracle, Explore, Multimodal-looker, Librarian
+  - User-facing: Sisyphus (Primary AI)
+- **External Model Integration**: GPT-5.2/Codex-5.2 (xhigh reasoning), Google Gemini, GLM-4.7 via MCP
 - **Ralph Loop**: Auto-continuation until task completion
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
-- **Visual Verification Loop**: Frontend agent uses Gemini for UI screenshot analysis
+- **Planning/Execution Separation**: Clean context management
 - **Skill System**: ultrawork, git-master, frontend-ui-ux, playwright
 
 # Setup Guide
@@ -136,7 +139,7 @@ npx playwright --version 2>/dev/null || echo "Playwright: NOT INSTALLED"
 # Install Codex CLI (for Oracle agent) - skip if already installed
 command -v codex >/dev/null || npm install -g codex
 
-# Install Gemini CLI (for Frontend agent) - skip if already installed
+# Install Gemini CLI (for Multimodal-looker agent) - skip if already installed
 command -v gemini >/dev/null || npm install -g @google/gemini-cli
 
 # Install Playwright (for browser automation skill)
@@ -355,14 +358,19 @@ chmod +x hooks/*.sh
 
 ### Agents
 
-| File | Description |
-|------|-------------|
-| `.claude/agents/sisyphus/AGENT.md` | Master orchestrator |
-| `.claude/agents/prometheus/AGENT.md` | Strategic planner |
-| `.claude/agents/oracle/AGENT.md` | Architecture advisor (uses Codex) |
-| `.claude/agents/frontend/AGENT.md` | UI/UX expert (uses Gemini) |
-| `.claude/agents/librarian/AGENT.md` | Documentation search (uses GLM-4.7 via MCP) |
-| `.claude/agents/junior/AGENT.md` | Task executor |
+| File | Description | External Model |
+|------|-------------|----------------|
+| `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | - |
+| `.claude/agents/atlas/AGENT.md` | Master orchestrator | - |
+| `.claude/agents/prometheus/AGENT.md` | Strategic planner | - |
+| `.claude/agents/metis/AGENT.md` | Pre-planning consultant | GPT-5.2 (xhigh) |
+| `.claude/agents/momus/AGENT.md` | Plan reviewer | Codex-5.2 (xhigh) |
+| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Codex |
+| `.claude/agents/explore/AGENT.md` | Fast codebase exploration | - |
+| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Gemini |
+| `.claude/agents/librarian/AGENT.md` | Documentation search | GLM-4.7 |
+| `.claude/agents/junior/AGENT.md` | Task executor | - |
+| `.claude/agents/debate/AGENT.md` | Multi-model debate | GPT-5.2, Gemini |
 
 ### Skills
 
@@ -380,7 +388,7 @@ chmod +x hooks/*.sh
 | `hooks/ralph-loop.sh` | Stop | Auto-continuation loop |
 | `hooks/todo-enforcer.sh` | Stop | Prevents stopping with incomplete tasks |
 | `hooks/comment-checker.sh` | PostToolUse | Warns about unnecessary comments |
-| `hooks/delegation-guard.sh` | PreToolUse | Prevents Sisyphus from direct code edits |
+| `hooks/delegation-guard.sh` | PreToolUse | Prevents Atlas from direct code edits |
 
 ### State Files
 
@@ -402,12 +410,17 @@ chmod +x hooks/*.sh
 claude
 
 # Invoke specific agent
-@sisyphus - Master orchestrator
+@sisyphus   - Primary AI (user-facing)
+@atlas      - Master orchestrator
 @prometheus - Strategic planner
-@oracle - Architecture advisor
-@frontend - UI/UX expert
-@librarian - Documentation search
-@junior - Task executor
+@metis      - Pre-planning consultant
+@momus      - Plan reviewer
+@oracle     - Architecture advisor
+@explore    - Codebase exploration
+@multimodal-looker - Media analysis
+@librarian  - Documentation search
+@junior     - Task executor
+@debate     - Multi-model debate
 
 # Invoke skills
 /ultrawork - Auto-parallel execution
@@ -423,23 +436,24 @@ claude
 ulw Add complete authentication system with JWT
 
 # This will:
-# 1. Prometheus creates a plan
-# 2. Sisyphus distributes tasks
-# 3. Junior/Frontend execute in parallel
-# 4. Ralph Loop continues until completion
+# 1. [Optional] Metis analyzes request
+# 2. Prometheus creates a plan
+# 3. [Optional] Momus reviews plan
+# 4. Atlas distributes tasks
+# 5. Junior executes in parallel
+# 6. Ralph Loop continues until completion
 ```
 
-### Visual Verification (Frontend)
+### Media Analysis
 
 ```bash
-# Frontend agent can verify UI implementation
-@frontend Implement this design mockup and verify it matches
+# Multimodal-looker agent analyzes media files
+@multimodal-looker Analyze this design mockup at /path/to/mockup.png
 
 # Workflow:
-# 1. Implement UI code
-# 2. Screenshot with Playwright
-# 3. Analyze with Gemini (mcp__gemini__analyzeFile)
-# 4. Fix issues and repeat
+# 1. Receive file path
+# 2. Analyze with Gemini (mcp__gemini__analyzeFile)
+# 3. Return structured analysis
 ```
 
 ---
@@ -447,27 +461,65 @@ ulw Add complete authentication system with JWT
 ## Architecture
 
 ```
+Planning Phase:
+User → Sisyphus → [Metis(GPT-5.2)] → Prometheus → [Momus(Codex-5.2)] → Plan File
+
+Execution Phase:
+Plan File → /ultrawork → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
+```
+
+```
 User Request
      │
      ▼
 ┌─────────────────┐
-│    Sisyphus     │ (Orchestrator)
+│    Sisyphus     │ (Primary AI)
 │  (Claude Opus)  │
 └────────┬────────┘
          │
-    ┌────┴────┬────────┬────────┐
-    ▼         ▼        ▼        ▼
-┌───────┐ ┌───────┐ ┌───────┐ ┌───────────┐
-│Junior │ │Oracle │ │Frontend│ │Librarian │
-│(Sonnet)│ │(Sonnet)│ │(Sonnet)│ │(Haiku)   │
-└───────┘ └───┬───┘ └───┬───┘ └─────┬─────┘
-              │         │           │
-              ▼         ▼           ▼
-         ┌────────┐ ┌────────┐ ┌────────┐
-         │ Codex  │ │ Gemini │ │GLM-4.7 │
-         │(GPT)   │ │(Google)│ │ (Z.ai) │
-         └────────┘ └────────┘ └────────┘
+    ┌────┴────────────────────────┐
+    │                             │
+    ▼                             ▼
+┌─────────────┐           ┌─────────────┐
+│   Planning  │           │  Execution  │
+│    Phase    │           │    Phase    │
+└─────┬───────┘           └──────┬──────┘
+      │                          │
+      ▼                          ▼
+┌─────────────────┐       ┌─────────────┐
+│   Prometheus    │       │   Atlas     │ (Orchestrator)
+│   (Opus)        │       │  (Sonnet)   │
+├─────────────────┤       └──────┬──────┘
+│ Metis → GPT-5.2 │              │
+│      (xhigh)    │   ┌──────────┼──────────┐
+├─────────────────┤   ▼          ▼          ▼
+│ Momus → Codex   │ ┌──────┐ ┌───────┐ ┌──────────┐
+│   5.2 (xhigh)   │ │Junior│ │Oracle │ │Librarian │
+└─────────────────┘ │Sonnet│ │Sonnet │ │ Haiku    │
+                    └──────┘ └───┬───┘ └────┬─────┘
+                                 │          │
+                                 ▼          ▼
+                            ┌────────┐ ┌────────┐
+                            │ Codex  │ │GLM-4.7 │
+                            │ (GPT)  │ │ (Z.ai) │
+                            └────────┘ └────────┘
 ```
+
+### Agent Model Summary
+
+| Agent | Base | External | Reasoning |
+|-------|------|----------|-----------|
+| Sisyphus | Opus | - | - |
+| Atlas | Sonnet | - | - |
+| Prometheus | Opus | - | - |
+| **Metis** | Haiku | GPT-5.2 | **xhigh** |
+| **Momus** | Haiku | Codex-5.2 | **xhigh** |
+| Oracle | Sonnet | Codex | default |
+| Debate | Opus | GPT-5.2, Gemini | - |
+| Explore | Haiku | - | - |
+| Multimodal-looker | Sonnet | Gemini | - |
+| Librarian | Haiku | GLM-4.7 | - |
+| Junior | Sonnet | - | - |
 
 ---
 

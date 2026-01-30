@@ -2,7 +2,7 @@
 name: ultrawork
 description: Auto-parallel agent execution, continues until completion
 argument-hint: "[task description]"
-agent: sisyphus
+agent: atlas
 allowed-tools:
   - Task
   - Read
@@ -40,9 +40,10 @@ Auto-parallel agent execution for complex tasks that continues until completion.
    Task(subagent_type="prometheus", prompt="Create plan: {task_description}")
    ```
 
-3. **Plan Review and Approval**
-   - Present plan summary to user
-   - Modify if needed
+3. **Plan Review** (optional)
+   ```
+   Task(subagent_type="momus", prompt="Review plan: .sisyphus/plans/{plan_file}")
+   ```
 
 ### Phase 2: Ralph Loop Activation
 
@@ -76,7 +77,7 @@ Auto-parallel agent execution for complex tasks that continues until completion.
    Execute independent tasks concurrently:
    - Task A → junior (run_in_background: true)
    - Task B → junior (run_in_background: true)
-   - Task C → frontend (run_in_background: true)
+   - Task C → junior (run_in_background: true)
    ```
 
 2. **Progress Monitoring**
@@ -153,9 +154,10 @@ ulw continue
 
 ## Related Agents
 
-- **Sisyphus**: Orchestration
+- **Atlas**: Orchestration (executes this skill)
 - **Prometheus**: Planning
+- **Momus**: Plan review
 - **Junior**: Code implementation
 - **Oracle**: Architecture advice
-- **Frontend**: UI/UX work
 - **Librarian**: Documentation/code search
+- **Explore**: Codebase exploration

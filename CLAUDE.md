@@ -2,28 +2,59 @@
 
 Multi-agent orchestration system built on Claude Code's native features (MCP, Hooks, Skills, Agents).
 
+## Architecture
+
+```
+Planning Phase:
+User → Sisyphus → [Metis(GPT-5.2 xhigh)] → Prometheus → [Momus(Codex-5.2 xhigh)] → Plan File
+
+Execution Phase:
+Plan File → /ultrawork → boulder.json → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
+```
+
+### External Model Integration
+- **Metis**: GPT-5.2 with xhigh reasoning effort (pre-planning analysis)
+- **Momus**: Codex-5.2 with xhigh reasoning effort (plan review)
+- **Oracle**: Codex (architecture consultation)
+- **Multimodal-looker**: Gemini (media analysis)
+- **Librarian**: GLM-4.7 (documentation search)
+- **Debate**: GPT-5.2 + Gemini (multi-model consensus)
+
+### Core Philosophy
+1. **Planning과 Execution의 분리** - 컨텍스트 오염 방지
+2. **Human Intervention = Failure Signal** - 에이전트가 스스로 완료
+3. **Indistinguishable Code** - 시니어 엔지니어와 구분 불가능한 코드
+
 ## Agent System
 
 ### Available Agents
 
-| Agent | Role | Model | External Model |
-|-------|------|-------|----------------|
-| Sisyphus | Master Orchestrator | Opus | - |
-| Prometheus | Strategic Planner | Opus | - |
-| Oracle | Architecture Advisor | Sonnet | GPT-5.2-Codex |
-| Debate | Multi-model decision making | Opus | GPT-5.2, Gemini |
-| Frontend | UI/UX Expert + Visual Verification | Sonnet | Gemini |
-| Librarian | Documentation/Code Search | Haiku | GLM-4.7 |
-| Junior | Task Executor | Sonnet | - |
+| Agent | Role | Model | External Model | Reasoning |
+|-------|------|-------|----------------|-----------|
+| Sisyphus | Primary AI (User-facing) | Opus | - | - |
+| Atlas | Master Orchestrator | Sonnet | - | - |
+| Prometheus | Strategic Planner | Opus | - | - |
+| Metis | Pre-planning Consultant | Haiku | GPT-5.2 | xhigh |
+| Momus | Plan Reviewer | Haiku | Codex-5.2 | xhigh |
+| Oracle | Architecture Advisor | Sonnet | GPT-5.2-Codex | - |
+| Debate | Multi-model decision making | Opus | GPT-5.2, Gemini | - |
+| Explore | Fast Contextual Grep | Haiku | - | - |
+| Multimodal-looker | Media Analyzer | Sonnet | Gemini | - |
+| Librarian | Documentation/Code Search | Haiku | GLM-4.7 | - |
+| Junior | Task Executor | Sonnet | - | - |
 
 ### Invocation
 
 ```
-@sisyphus   - Activate master orchestrator
-@prometheus - Activate planner (or @plan)
+@sisyphus   - Primary AI (user-facing)
+@atlas      - Master orchestrator (todo execution)
+@prometheus - Strategic planner (or @plan)
+@metis      - Pre-planning consultant
+@momus      - Plan reviewer
 @oracle     - Architecture consultation
 @debate     - Multi-model debate for critical decisions
-@frontend   - UI/UX work with visual verification loop
+@explore    - Fast codebase exploration
+@multimodal-looker - PDF/image analysis
 @librarian  - Documentation/code search
 @junior     - Single task execution
 ```
@@ -144,7 +175,7 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
    - Ensures decisions are made before implementation
 
 5. **Delegation Guard** (PreToolUse - Edit|Write)
-   - Block Sisyphus from direct code modifications
+   - Block Atlas from direct code modifications
 
 ## Directory Structure
 
@@ -173,10 +204,12 @@ Claude: [Junior agent implements directly]
 ```
 User: ulw Add complete authentication system with JWT
 Claude:
-1. Prometheus creates plan
-2. Sisyphus distributes tasks
-3. Junior/Frontend execute in parallel
-4. Ralph Loop continues until completion
+1. [Optional] Metis analyzes request
+2. Prometheus creates plan
+3. [Optional] Momus reviews plan
+4. Atlas distributes tasks
+5. Junior executes in parallel
+6. Ralph Loop continues until completion
 ```
 
 ### 3. Architecture Consultation
@@ -186,24 +219,14 @@ User: @oracle Should we use JWT or session-based auth?
 Claude: [Oracle consults GPT-5.2-Codex and responds]
 ```
 
-### 4. Frontend Visual Verification Loop
+### 4. Media Analysis
 
 ```
-User: @frontend Implement login form
+User: @multimodal-looker Analyze this design mockup
 Claude:
-1. Implement component
-2. Capture screenshot with Playwright
-3. Analyze UI with Gemini analyzeFile
-4. Issue found → Fix → Recapture → Reanalyze
-5. Repeat until verification passes
-```
-
-**Visual Verification Workflow:**
-```
-Implement → Screenshot → Gemini Analysis → Fix → Repeat
-                ↓
-   Multiple viewports (Desktop/Tablet/Mobile)
-   Dark mode / Light mode
+1. Multimodal-looker receives image path
+2. Analyze with Gemini analyzeFile
+3. Return structured analysis
 ```
 
 ### 5. Multi-Model Debate
@@ -235,11 +258,15 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 | Agent | Config | chronos | codex | gemini | zai-glm | context7 | grep-app |
 |-------|--------|---------|-------|--------|---------|----------|----------|
 | Sisyphus | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Atlas | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Prometheus | whitelist | boulder, ralph, status | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Metis | whitelist | ralph, status | ✅ (xhigh) | ❌ | ❌ | ❌ | ❌ |
+| Momus | whitelist | ralph, status | ✅ (xhigh) | ❌ | ❌ | ❌ | ❌ |
 | Oracle | whitelist | ralph, status | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Frontend | whitelist | ralph, status | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Explore | whitelist | - | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Multimodal-looker | whitelist | - | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Librarian | whitelist | ralph, status | ❌ | ❌ | ✅ | ✅ | ✅ |
+| Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Debate | whitelist | debate, ralph, status | ✅ | ✅ | ❌ | ❌ | ❌ |
 
 ### Skill MCP Tool Access
@@ -253,9 +280,21 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 ## Important Notes
 
-### Sisyphus Rules
-- Sisyphus cannot modify code directly
-- Must delegate via Task tool to other agents
+### Agent Hierarchy
+- **Sisyphus**: Primary AI - user-facing, routes requests
+- **Atlas**: Orchestrator - executes plans via todo list (cannot write code)
+- **Prometheus/Metis/Momus**: Planning phase agents (Metis/Momus use external models)
+- **Junior/Oracle/etc.**: Execution phase agents
+
+### Reasoning Effort Configuration
+- **Metis**: GPT-5.2 with `xhigh` reasoning (pre-planning analysis)
+- **Momus**: Codex-5.2 with `xhigh` reasoning (plan review)
+- xhigh reasoning provides deeper analysis for critical planning decisions
+- Config: `{"reasoning": {"effort": "xhigh"}}`
+
+### Delegation Guard
+- Atlas cannot modify code directly (Edit/Write blocked)
+- Must delegate via Task tool to Junior or other agents
 - Can only modify `.sisyphus/` folder directly
 
 ### Ralph Loop
@@ -263,7 +302,7 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 - Manual stop: Set `active` to `false` in `.sisyphus/ralph-state.json`
 
 ### External Models
-- **Codex**: Session management via `threadId`, OAuth auth
+- **Codex/GPT-5.2**: Session management via `threadId`, OAuth auth, supports reasoning effort (xhigh/high/medium/low)
 - **Gemini**: 60 req/min limit (free tier), OAuth auth, **requires Bun runtime**
 - **GLM-4.7**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`)
 
