@@ -17,19 +17,6 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 - **Visual Verification Loop**: Frontend agent uses Gemini for UI screenshot analysis
 - **Skill System**: ultrawork, git-master, frontend-ui-ux, playwright
 
-## Quick Start
-
-```bash
-# Clone the repository
-git clone https://github.com/yourname/oh-my-claude.git
-cd oh-my-claude
-
-# Run automated setup (see below)
-# Then complete manual authentication steps
-```
-
----
-
 # Setup Guide
 
 > **Important:** This project is optimized for **Claude Code**. While other CLI agents (Codex, Gemini) can assist with setup, the agents, skills, and hooks are designed specifically for Claude Code's native features.
@@ -79,7 +66,33 @@ These steps can be executed automatically by Claude Code.
 > Only proceed if the user selects "Yes". If "No", stop the setup process.
 > ```
 
-### 1.1 Prerequisites Installation
+### 1.1 Clone Repository and Copy Files
+
+```bash
+# Clone oh-my-claude to /tmp
+git clone https://github.com/Eunho-J/oh-my-claude.git /tmp/oh-my-claude
+
+# Copy all configuration files to current project
+cp -r /tmp/oh-my-claude/.claude .
+cp -r /tmp/oh-my-claude/.sisyphus .
+cp -r /tmp/oh-my-claude/hooks .
+cp -r /tmp/oh-my-claude/mcp-servers .
+cp /tmp/oh-my-claude/.mcp.json .
+cp /tmp/oh-my-claude/CLAUDE.md .
+
+# Clean up
+rm -rf /tmp/oh-my-claude
+```
+
+**Note:** This copies the following to your project:
+- `.claude/` - Agent and skill definitions, settings
+- `.sisyphus/` - State management directory
+- `hooks/` - Hook scripts
+- `mcp-servers/` - Custom MCP server implementations
+- `.mcp.json` - MCP server configuration
+- `CLAUDE.md` - Project instructions for Claude
+
+### 1.2 Prerequisites Installation
 
 ```bash
 # Install Node.js (v18+) - check if already installed
@@ -96,17 +109,6 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Verify uv installation
 uv --version
-```
-
-### 1.2 Project Directory Structure
-
-```bash
-# Create required directories
-mkdir -p .claude/agents/{atlas,prometheus,oracle,frontend,librarian,junior}
-mkdir -p .claude/skills/{ultrawork,git-master,frontend-ui-ux,playwright}
-mkdir -p .sisyphus/{plans,notepads}
-mkdir -p hooks
-mkdir -p mcp-servers/lsp-tools
 ```
 
 ### 1.3 Install Global CLI Tools
@@ -138,113 +140,13 @@ cd ../..
 
 **Note:** The LSP MCP server uses `@modelcontextprotocol/sdk` for MCP protocol support. The Z.ai GLM MCP server uses Python with `mcp` and `zai-sdk` packages.
 
-### 1.5 Copy Configuration Files
-
-The following files should be created/copied to the project root:
-
-#### `.mcp.json`
-```json
-{
-  "mcpServers": {
-    "context7": {
-      "type": "http",
-      "url": "https://mcp.context7.com/mcp",
-      "headers": {
-        "Authorization": "Bearer ${CONTEXT7_API_KEY}"
-      }
-    },
-    "grep-app": {
-      "type": "http",
-      "url": "https://grep.app/api/mcp"
-    },
-    "lsp-tools": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["./mcp-servers/lsp-tools/index.js"]
-    },
-    "codex": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "codex", "mcp-server"]
-    },
-    "gemini": {
-      "type": "stdio",
-      "command": "bunx",
-      "args": ["mcp-gemini-cli"]
-    },
-    "zai-glm": {
-      "type": "stdio",
-      "command": "uv",
-      "args": ["run", "--directory", "./mcp-servers/zai-glm", "python", "server.py"]
-    }
-  }
-}
-```
-
-#### `.claude/settings.json`
-```json
-{
-  "hooks": {
-    "Stop": [
-      {
-        "hooks": [
-          { "type": "command", "command": "./hooks/ralph-loop.sh", "timeout": 10 },
-          { "type": "command", "command": "./hooks/todo-enforcer.sh", "timeout": 10 }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          { "type": "command", "command": "./hooks/comment-checker.sh", "timeout": 30 }
-        ]
-      }
-    ],
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          { "type": "command", "command": "./hooks/delegation-guard.sh", "timeout": 5 }
-        ]
-      }
-    ]
-  }
-}
-```
-
-### 1.6 Make Hook Scripts Executable
+### 1.5 Make Hook Scripts Executable
 
 ```bash
 chmod +x hooks/*.sh
 ```
 
-### 1.7 Initialize State Files
-
-```bash
-# Create initial boulder.json
-cat > .sisyphus/boulder.json << 'EOF'
-{
-  "status": "idle",
-  "task": null,
-  "pending_tasks": 0,
-  "completed_tasks": 0
-}
-EOF
-
-# Create initial ralph-state.json
-cat > .sisyphus/ralph-state.json << 'EOF'
-{
-  "active": false,
-  "iteration": 0,
-  "max_iterations": 50,
-  "completion_promise": null,
-  "started_at": null
-}
-EOF
-```
-
-### 1.8 Verify Installation
+### 1.6 Verify Installation
 
 ```bash
 # Check all required tools
