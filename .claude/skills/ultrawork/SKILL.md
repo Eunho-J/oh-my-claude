@@ -2,8 +2,7 @@
 name: ultrawork
 description: Auto-parallel agent execution, continues until completion
 argument-hint: "[task description]"
-context: fork
-agent: atlas
+agent: sisyphus
 allowed-tools:
   - Task
   - Read
@@ -13,9 +12,9 @@ allowed-tools:
   - TaskUpdate
   - TaskList
   - TaskGet
-  - mcp__sisyphus__ralph_*
-  - mcp__sisyphus__boulder_*
-  - mcp__sisyphus__sisyphus_status
+  - mcp__chronos__ralph_*
+  - mcp__chronos__boulder_*
+  - mcp__chronos__chronos_status
 ---
 
 # Ultrawork Skill
@@ -154,7 +153,7 @@ ulw continue
 
 ## Related Agents
 
-- **Atlas**: Orchestration
+- **Sisyphus**: Orchestration
 - **Prometheus**: Planning
 - **Junior**: Code implementation
 - **Oracle**: Architecture advice

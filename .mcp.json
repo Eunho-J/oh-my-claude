@@ -16,10 +16,10 @@
       "command": "node",
       "args": ["./mcp-servers/lsp-tools/index.js"]
     },
-    "sisyphus": {
+    "chronos": {
       "type": "stdio",
       "command": "node",
-      "args": ["./mcp-servers/sisyphus/index.js"]
+      "args": ["./mcp-servers/chronos/index.js"]
     },
     "codex": {
       "type": "stdio",

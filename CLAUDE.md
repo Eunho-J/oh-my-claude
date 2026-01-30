@@ -8,7 +8,7 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 
 | Agent | Role | Model | External Model |
 |-------|------|-------|----------------|
-| Atlas | Master Orchestrator | Opus | - |
+| Sisyphus | Master Orchestrator | Opus | - |
 | Prometheus | Strategic Planner | Opus | - |
 | Oracle | Architecture Advisor | Sonnet | GPT-5.2-Codex |
 | Debate | Multi-model decision making | Opus | GPT-5.2, Gemini |
@@ -19,7 +19,7 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 ### Invocation
 
 ```
-@atlas      - Activate master orchestrator
+@sisyphus   - Activate master orchestrator
 @prometheus - Activate planner (or @plan)
 @oracle     - Architecture consultation
 @debate     - Multi-model debate for critical decisions
@@ -55,7 +55,7 @@ These keywords automatically activate corresponding features:
 | context7 | Official docs search | HTTP | - |
 | grep-app | GitHub code search | HTTP | - |
 | lsp-tools | LSP/AST-Grep tools | stdio | custom |
-| sisyphus | Ralph Loop, Boulder & Debate management | stdio | custom |
+| chronos | Ralph Loop, Boulder & Debate management | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
 | gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
 | zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
@@ -97,33 +97,33 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 **Requirements:** `Z_AI_API_KEY` environment variable, `uv` package manager
 
-### Sisyphus MCP Tools (Ralph Loop, Boulder & Debate)
+### Chronos MCP Tools (Ralph Loop, Boulder & Debate)
 
 | Tool | Purpose |
 |------|---------|
-| `mcp__sisyphus__ralph_get_state` | Get Ralph Loop state |
-| `mcp__sisyphus__ralph_start` | Start Ralph Loop |
-| `mcp__sisyphus__ralph_increment` | Increment iteration count |
-| `mcp__sisyphus__ralph_stop` | Stop Ralph Loop |
-| `mcp__sisyphus__ralph_check_promise` | Check completion promise |
-| `mcp__sisyphus__boulder_get_state` | Get Boulder (active plan) state |
-| `mcp__sisyphus__boulder_start` | Start new plan work |
-| `mcp__sisyphus__boulder_add_session` | Add session ID |
-| `mcp__sisyphus__boulder_clear` | Clear Boulder state |
-| `mcp__sisyphus__boulder_get_progress` | Get plan progress |
-| `mcp__sisyphus__boulder_list_plans` | List Prometheus plans |
-| `mcp__sisyphus__debate_start` | Start a new multi-model debate |
-| `mcp__sisyphus__debate_get_state` | Get current debate state |
-| `mcp__sisyphus__debate_add_analysis` | Add model analysis to debate |
-| `mcp__sisyphus__debate_add_round` | Add debate round |
-| `mcp__sisyphus__debate_vote` | Record a vote on an item |
-| `mcp__sisyphus__debate_conclude` | Conclude the debate |
-| `mcp__sisyphus__debate_list_history` | List past debates |
-| `mcp__sisyphus__debate_clear` | Clear active debate |
-| `mcp__sisyphus__sisyphus_status` | Get full status |
-| `mcp__sisyphus__sisyphus_should_continue` | Check if should continue |
+| `mcp__chronos__ralph_get_state` | Get Ralph Loop state |
+| `mcp__chronos__ralph_start` | Start Ralph Loop |
+| `mcp__chronos__ralph_increment` | Increment iteration count |
+| `mcp__chronos__ralph_stop` | Stop Ralph Loop |
+| `mcp__chronos__ralph_check_promise` | Check completion promise |
+| `mcp__chronos__boulder_get_state` | Get Boulder (active plan) state |
+| `mcp__chronos__boulder_start` | Start new plan work |
+| `mcp__chronos__boulder_add_session` | Add session ID |
+| `mcp__chronos__boulder_clear` | Clear Boulder state |
+| `mcp__chronos__boulder_get_progress` | Get plan progress |
+| `mcp__chronos__boulder_list_plans` | List Prometheus plans |
+| `mcp__chronos__debate_start` | Start a new multi-model debate |
+| `mcp__chronos__debate_get_state` | Get current debate state |
+| `mcp__chronos__debate_add_analysis` | Add model analysis to debate |
+| `mcp__chronos__debate_add_round` | Add debate round |
+| `mcp__chronos__debate_vote` | Record a vote on an item |
+| `mcp__chronos__debate_conclude` | Conclude the debate |
+| `mcp__chronos__debate_list_history` | List past debates |
+| `mcp__chronos__debate_clear` | Clear active debate |
+| `mcp__chronos__chronos_status` | Get full status |
+| `mcp__chronos__chronos_should_continue` | Check if should continue |
 
-**CLI Usage:** `node mcp-servers/sisyphus/cli.js <command>`
+**CLI Usage:** `node mcp-servers/chronos/cli.js <command>`
 
 ## Hook System
 
@@ -144,14 +144,14 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
    - Ensures decisions are made before implementation
 
 5. **Delegation Guard** (PreToolUse - Edit|Write)
-   - Block Atlas from direct code modifications
+   - Block Sisyphus from direct code modifications
 
 ## Directory Structure
 
 ```
 .sisyphus/
 ├── plans/           # Prometheus plan files
-├── notepads/        # Atlas learning records
+├── notepads/        # Sisyphus learning records
 ├── debates/         # Debate state and history
 │   ├── active-debate.json
 │   └── history/
@@ -174,7 +174,7 @@ Claude: [Junior agent implements directly]
 User: ulw Add complete authentication system with JWT
 Claude:
 1. Prometheus creates plan
-2. Atlas distributes tasks
+2. Sisyphus distributes tasks
 3. Junior/Frontend execute in parallel
 4. Ralph Loop continues until completion
 ```
@@ -232,9 +232,9 @@ Independent Analysis → Share Results → Debate Rounds → Conclusion
 Agents using `tools` (whitelist) can only access specified MCP tools.
 Agents using `disallowedTools` (blacklist) can access all MCP tools except those listed.
 
-| Agent | Config | sisyphus | codex | gemini | zai-glm | context7 | grep-app |
-|-------|--------|----------|-------|--------|---------|----------|----------|
-| Atlas | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Agent | Config | chronos | codex | gemini | zai-glm | context7 | grep-app |
+|-------|--------|---------|-------|--------|---------|----------|----------|
+| Sisyphus | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Prometheus | whitelist | boulder, ralph, status | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Oracle | whitelist | ralph, status | ✅ | ❌ | ❌ | ❌ | ❌ |
@@ -244,8 +244,8 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 ### Skill MCP Tool Access
 
-| Skill | Config | sisyphus | Other MCP |
-|-------|--------|----------|-----------|
+| Skill | Config | chronos | Other MCP |
+|-------|--------|---------|-----------|
 | ultrawork | whitelist | boulder, ralph, status | ❌ |
 | git-master | none (all) | ✅ all | ✅ all |
 | frontend-ui-ux | none (all) | ✅ all | ✅ all |
@@ -253,8 +253,8 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 ## Important Notes
 
-### Atlas Rules
-- Atlas cannot modify code directly
+### Sisyphus Rules
+- Sisyphus cannot modify code directly
 - Must delegate via Task tool to other agents
 - Can only modify `.sisyphus/` folder directly
 

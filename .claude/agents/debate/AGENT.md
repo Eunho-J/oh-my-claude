@@ -9,9 +9,9 @@ tools:
   - Glob
   - mcp__codex__*
   - mcp__gemini__*
-  - mcp__sisyphus__debate_*
-  - mcp__sisyphus__ralph_*
-  - mcp__sisyphus__sisyphus_status
+  - mcp__chronos__debate_*
+  - mcp__chronos__ralph_*
+  - mcp__chronos__sisyphus_status
 disallowedTools:
   - Edit
   - Write
@@ -46,11 +46,11 @@ You are the Debate Agent, orchestrating structured debates between three AI mode
 Each model analyzes the topic independently without seeing others' analyses.
 
 ```
-1. Start debate with mcp__sisyphus__debate_start
+1. Start debate with mcp__chronos__debate_start
 2. Provide your (Opus) analysis first
 3. Query GPT-5.2 for independent analysis
 4. Query Gemini for independent analysis
-5. Record all analyses with mcp__sisyphus__debate_add_analysis
+5. Record all analyses with mcp__chronos__debate_add_analysis
 ```
 
 #### Opus Analysis (Direct)
@@ -114,7 +114,7 @@ Models take turns presenting arguments and responding.
 Round N:
 1. Lead speaker presents argument
 2. Other models respond (agree/disagree/modify)
-3. Record round with mcp__sisyphus__debate_add_round
+3. Record round with mcp__chronos__debate_add_round
 4. Check for consensus
 5. If consensus reached → Phase 4
 6. If max rounds reached → Phase 4 (voting)
@@ -150,7 +150,7 @@ DISAGREE_WITH: [points you contest]`
 
 #### If Consensus Reached
 ```javascript
-mcp__sisyphus__debate_conclude({
+mcp__chronos__debate_conclude({
   summary: "All three models agreed that...",
   decision: "The recommended approach is...",
   method: "consensus",
@@ -163,14 +163,14 @@ For each sub-item, conduct majority voting:
 
 ```javascript
 // Record each model's vote
-mcp__sisyphus__debate_vote({
+mcp__chronos__debate_vote({
   item: "use_jwt_tokens",
   model: "opus",
   vote: true
 })
 
 // After all votes, conclude
-mcp__sisyphus__debate_conclude({
+mcp__chronos__debate_conclude({
   summary: "Models voted on key items...",
   decision: "By majority vote (2-1): ...",
   method: "majority",
@@ -186,7 +186,7 @@ mcp__sisyphus__debate_conclude({
 
 ### Starting a Debate
 ```javascript
-mcp__sisyphus__debate_start({
+mcp__chronos__debate_start({
   topic: "JWT vs Session-based authentication",
   context: "Building a B2B SaaS with microservices architecture",
   max_rounds: 20
@@ -195,12 +195,12 @@ mcp__sisyphus__debate_start({
 
 ### Checking Progress
 ```javascript
-mcp__sisyphus__debate_get_state()
+mcp__chronos__debate_get_state()
 ```
 
 ### Recording Analysis
 ```javascript
-mcp__sisyphus__debate_add_analysis({
+mcp__chronos__debate_add_analysis({
   model: "opus",
   summary: "JWT offers better scalability for microservices...",
   position: "JWT"
@@ -294,7 +294,7 @@ When the debate concludes, provide:
 User: @debate Should we use Redux or React Context for state management?
 
 Debate Agent:
-1. Starts debate via mcp__sisyphus__debate_start
+1. Starts debate via mcp__chronos__debate_start
 2. Analyzes as Opus (native)
 3. Queries GPT-5.2 via mcp__codex__codex
 4. Queries Gemini via mcp__gemini__chat

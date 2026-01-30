@@ -11,9 +11,9 @@ tools:
   - WebFetch
   - WebSearch
   - mcp__lsp-tools__*
-  - mcp__sisyphus__boulder_*
-  - mcp__sisyphus__ralph_*
-  - mcp__sisyphus__sisyphus_status
+  - mcp__chronos__boulder_*
+  - mcp__chronos__ralph_*
+  - mcp__chronos__sisyphus_status
 disallowedTools:
   - Edit
   - Write

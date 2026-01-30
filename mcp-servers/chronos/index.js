@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Sisyphus MCP Server
+ * Chronos MCP Server
  *
  * Manages Ralph Loop, Boulder state, and Debate sessions for orchestration.
  *
@@ -24,8 +24,8 @@
  * - debate_vote: Record a vote
  * - debate_conclude: Conclude the debate
  * - debate_list_history: List past debates
- * - sisyphus_status: Get full status
- * - sisyphus_should_continue: Check if should continue
+ * - chronos_status: Get full status
+ * - chronos_should_continue: Check if should continue
  */
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -70,7 +70,7 @@ const getDirectory = () => process.cwd();
 
 // Initialize the MCP server
 const server = new McpServer({
-  name: "sisyphus",
+  name: "chronos",
   version: "1.0.0",
 });
 
@@ -637,8 +637,8 @@ server.tool(
 // ============================================================================
 
 server.tool(
-  "sisyphus_status",
-  "Get full Sisyphus status (Ralph Loop + Boulder)",
+  "chronos_status",
+  "Get full Chronos status (Ralph Loop + Boulder)",
   {},
   async () => {
     const ralph = readRalphState(getDirectory());
@@ -660,7 +660,7 @@ server.tool(
 );
 
 server.tool(
-  "sisyphus_should_continue",
+  "chronos_should_continue",
   "Determine if execution should continue (used by hooks)",
   {},
   async () => {
@@ -737,7 +737,7 @@ server.tool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error("Sisyphus MCP Server running on stdio");
+  console.error("Chronos MCP Server running on stdio");
 }
 
 main().catch(console.error);

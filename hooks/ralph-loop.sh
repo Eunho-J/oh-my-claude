@@ -5,19 +5,19 @@
 # 사용법: Stop 이벤트에서 자동 실행
 # 상태 파일: .sisyphus/ralph-state.json
 #
-# Uses Sisyphus MCP Server CLI for state management
+# Uses Chronos MCP Server CLI for state management
 
 set -e
 
 # Consume stdin (hook protocol)
 cat > /dev/null
 
-# Find the sisyphus CLI
+# Find the chronos CLI
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SISYPHUS_CLI="$SCRIPT_DIR/../mcp-servers/sisyphus/cli.js"
+CHRONOS_CLI="$SCRIPT_DIR/../mcp-servers/chronos/cli.js"
 
 # Check if CLI exists
-if [ ! -f "$SISYPHUS_CLI" ]; then
+if [ ! -f "$CHRONOS_CLI" ]; then
   exit 0
 fi
 
@@ -28,6 +28,6 @@ if [ ! -f "$STATE_FILE" ]; then
 fi
 
 # Use Node.js CLI for state management
-node "$SISYPHUS_CLI" ralph-continue
+node "$CHRONOS_CLI" ralph-continue
 
 exit 0

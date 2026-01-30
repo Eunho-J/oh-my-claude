@@ -1,18 +1,18 @@
 #!/usr/bin/env node
 
 /**
- * Sisyphus CLI
+ * Chronos CLI
  *
- * Command-line interface for hooks to interact with Sisyphus state.
+ * Command-line interface for hooks to interact with Chronos state.
  *
  * Usage:
- *   sisyphus ralph-status        - Get Ralph Loop status
- *   sisyphus ralph-start [opts]  - Start Ralph Loop
- *   sisyphus ralph-continue      - Continue Ralph Loop (increment + check)
- *   sisyphus ralph-stop [reason] - Stop Ralph Loop
- *   sisyphus boulder-status      - Get Boulder status
- *   sisyphus should-continue     - Check if should continue (for hooks)
- *   sisyphus status              - Get full status
+ *   chronos ralph-status        - Get Ralph Loop status
+ *   chronos ralph-start [opts]  - Start Ralph Loop
+ *   chronos ralph-continue      - Continue Ralph Loop (increment + check)
+ *   chronos ralph-stop [reason] - Stop Ralph Loop
+ *   chronos boulder-status      - Get Boulder status
+ *   chronos should-continue     - Check if should continue (for hooks)
+ *   chronos status              - Get full status
  */
 
 import {
@@ -143,13 +143,13 @@ async function main() {
       console.error(`Unknown command: ${command}`);
       console.error(`
 Usage:
-  sisyphus ralph-status        - Get Ralph Loop status
-  sisyphus ralph-start [opts]  - Start Ralph Loop
-  sisyphus ralph-continue      - Continue Ralph Loop
-  sisyphus ralph-stop [reason] - Stop Ralph Loop
-  sisyphus boulder-status      - Get Boulder status
-  sisyphus should-continue     - Check if should continue (for hooks)
-  sisyphus status              - Get full status
+  chronos ralph-status        - Get Ralph Loop status
+  chronos ralph-start [opts]  - Start Ralph Loop
+  chronos ralph-continue      - Continue Ralph Loop
+  chronos ralph-stop [reason] - Stop Ralph Loop
+  chronos boulder-status      - Get Boulder status
+  chronos should-continue     - Check if should continue (for hooks)
+  chronos status              - Get full status
 `);
       process.exit(1);
   }
