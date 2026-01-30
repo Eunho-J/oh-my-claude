@@ -92,13 +92,6 @@ The following files should be created/copied to the project root:
 ```json
 {
   "mcpServers": {
-    "websearch": {
-      "type": "http",
-      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
-      "headers": {
-        "x-api-key": "${EXA_API_KEY}"
-      }
-    },
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp",
@@ -113,7 +106,7 @@ The following files should be created/copied to the project root:
     "lsp-tools": {
       "type": "stdio",
       "command": "node",
-      "args": ["${CLAUDE_PROJECT_DIR}/mcp-servers/lsp-tools/index.js"]
+      "args": ["./mcp-servers/lsp-tools/index.js"]
     },
     "codex": {
       "type": "stdio",
@@ -234,9 +227,6 @@ These steps require user interaction and cannot be automated.
 Create a `.env` file or export environment variables:
 
 ```bash
-# Required for websearch (Exa)
-export EXA_API_KEY="your-exa-api-key"
-
 # Required for documentation search (Context7)
 export CONTEXT7_API_KEY="your-context7-api-key"
 
@@ -245,7 +235,6 @@ export ZAI_API_KEY="your-zai-api-key"
 ```
 
 **Where to get API keys:**
-- **EXA_API_KEY**: https://exa.ai/ (Sign up for API access)
 - **CONTEXT7_API_KEY**: https://context7.com/ (Sign up for API access)
 - **ZAI_API_KEY**: https://z.ai/ (Subscribe to Coding Plan - $3/month)
 
@@ -348,10 +337,9 @@ export PATH="$BUN_INSTALL/bin:$PATH"
 
 ```bash
 # Check if MCP server is accessible
-curl -I https://mcp.exa.ai/mcp
+curl -I https://mcp.context7.com/mcp
 
 # Verify API keys are set
-echo $EXA_API_KEY
 echo $CONTEXT7_API_KEY
 echo $ZAI_API_KEY
 ```

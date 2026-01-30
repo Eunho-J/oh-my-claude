@@ -49,13 +49,12 @@ These keywords automatically activate corresponding features:
 
 | Server | Purpose | Type | Package |
 |--------|---------|------|---------|
-| websearch | Exa web search | HTTP | - |
 | context7 | Official docs search | HTTP | - |
 | grep-app | GitHub code search | HTTP | - |
-| codex | OpenAI Codex | stdio | `codex mcp-server` |
-| gemini | Google Gemini (image analysis) | stdio | `mcp-gemini-cli` (Bun) |
-| zai-glm | Z.ai GLM-4.7 | HTTP | - |
 | lsp-tools | LSP/AST-Grep tools | stdio | custom |
+| codex | OpenAI Codex | stdio | `codex mcp-server` |
+| gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
+| zai-glm | Z.ai GLM-4.7 | HTTP | - |
 
 ### Authentication
 
@@ -71,7 +70,6 @@ gemini auth login
 
 **API Key Authentication:**
 ```bash
-export EXA_API_KEY="..."        # Exa web search
 export CONTEXT7_API_KEY="..."   # Context7 docs search
 export ZAI_API_KEY="..."        # Z.ai GLM-4.7
 ```
@@ -81,7 +79,7 @@ export ZAI_API_KEY="..."        # Z.ai GLM-4.7
 | Tool | Purpose |
 |------|---------|
 | `mcp__gemini__chat` | Gemini conversation |
-| `mcp__gemini__googleSearch` | Web search |
+| `mcp__gemini__googleSearch` | Web search (replaces Exa) |
 | `mcp__gemini__analyzeFile` | Image/PDF/text analysis |
 
 **Supported files:** PNG, JPG, GIF, WEBP, SVG, BMP, PDF, text

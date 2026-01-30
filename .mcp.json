@@ -1,12 +1,5 @@
 {
   "mcpServers": {
-    "websearch": {
-      "type": "http",
-      "url": "https://mcp.exa.ai/mcp?tools=web_search_exa",
-      "headers": {
-        "x-api-key": "${EXA_API_KEY}"
-      }
-    },
     "context7": {
       "type": "http",
       "url": "https://mcp.context7.com/mcp",
@@ -21,7 +14,7 @@
     "lsp-tools": {
       "type": "stdio",
       "command": "node",
-      "args": ["${CLAUDE_PROJECT_DIR}/mcp-servers/lsp-tools/index.js"]
+      "args": ["./mcp-servers/lsp-tools/index.js"]
     },
     "codex": {
       "type": "stdio",
