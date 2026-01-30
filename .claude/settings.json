@@ -1,4 +1,46 @@
 {
+  "permissions": {
+    "allow": [
+      "mcp__chronos__ralph_get_state",
+      "mcp__chronos__ralph_start",
+      "mcp__chronos__ralph_increment",
+      "mcp__chronos__ralph_stop",
+      "mcp__chronos__ralph_check_promise",
+      "mcp__chronos__boulder_get_state",
+      "mcp__chronos__boulder_start",
+      "mcp__chronos__boulder_add_session",
+      "mcp__chronos__boulder_clear",
+      "mcp__chronos__boulder_get_progress",
+      "mcp__chronos__boulder_list_plans",
+      "mcp__chronos__debate_start",
+      "mcp__chronos__debate_get_state",
+      "mcp__chronos__debate_add_analysis",
+      "mcp__chronos__debate_add_round",
+      "mcp__chronos__debate_vote",
+      "mcp__chronos__debate_conclude",
+      "mcp__chronos__debate_list_history",
+      "mcp__chronos__debate_clear",
+      "mcp__chronos__chronos_status",
+      "mcp__chronos__chronos_should_continue",
+      "mcp__codex__codex",
+      "mcp__codex__codex-reply",
+      "mcp__gemini__chat",
+      "mcp__gemini__googleSearch",
+      "mcp__gemini__analyzeFile",
+      "mcp__zai-glm__chat",
+      "mcp__zai-glm__analyze_code",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__grep-app__searchGitHub",
+      "mcp__lsp-tools__lsp_goto_definition",
+      "mcp__lsp-tools__lsp_find_references",
+      "mcp__lsp-tools__lsp_symbols",
+      "mcp__lsp-tools__lsp_diagnostics",
+      "mcp__lsp-tools__lsp_rename",
+      "mcp__lsp-tools__ast_grep_search",
+      "mcp__lsp-tools__ast_grep_replace"
+    ]
+  },
   "hooks": {
     "Stop": [
       {

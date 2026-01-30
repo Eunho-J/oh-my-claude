@@ -188,7 +188,30 @@ cp .gitignore.sample .gitignore
 - `.sisyphus/plans/` - Prometheus plan files (user content)
 - `.sisyphus/notepads/` - Sisyphus learning records (user content)
 
-### 1.7 Verify Installation
+### 1.7 MCP Permissions (Pre-configured)
+
+The `.claude/settings.json` file already includes all MCP tool permissions. These are pre-allowed so you don't need to approve each tool manually:
+
+**Chronos (State Management):**
+- `mcp__chronos__ralph_*` - Ralph Loop control
+- `mcp__chronos__boulder_*` - Boulder state management
+- `mcp__chronos__debate_*` - Debate session management
+- `mcp__chronos__chronos_status`, `mcp__chronos__chronos_should_continue`
+
+**External Models:**
+- `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI Codex/GPT-5.2
+- `mcp__gemini__chat`, `mcp__gemini__googleSearch`, `mcp__gemini__analyzeFile` - Google Gemini
+- `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-4.7
+
+**Documentation & Code Search:**
+- `mcp__context7__resolve-library-id`, `mcp__context7__query-docs` - Context7
+- `mcp__grep-app__searchGitHub` - GitHub code search
+
+**LSP Tools:**
+- `mcp__lsp-tools__lsp_*` - Language Server Protocol tools
+- `mcp__lsp-tools__ast_grep_*` - AST-Grep search/replace
+
+### 1.8 Verify Installation
 
 ```bash
 # Check all required tools
