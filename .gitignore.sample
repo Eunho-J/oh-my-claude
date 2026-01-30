@@ -3,6 +3,16 @@
 # cp .gitignore.sample .gitignore
 
 # ===========================================
+# oh-my-claude Configuration (copied to your project)
+# ===========================================
+.claude/
+.mcp.json
+.sisyphus/
+CLAUDE.md
+hooks/
+mcp-servers/
+
+# ===========================================
 # Environment & Secrets
 # ===========================================
 .env
