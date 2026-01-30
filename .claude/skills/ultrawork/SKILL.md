@@ -47,27 +47,14 @@ Auto-parallel agent execution for complex tasks that continues until completion.
 
 ### Phase 2: Ralph Loop Activation
 
-1. **Create State File**
-   ```json
-   // .sisyphus/ralph-state.json
-   {
-     "active": true,
-     "iteration": 0,
-     "max_iterations": 50,
-     "completion_promise": "unique-task-id",
-     "started_at": "ISO-timestamp"
-   }
+1. **Start Ralph Loop** (via Chronos MCP)
+   ```
+   mcp__chronos__ralph_start(completion_promise="unique-task-id", max_iterations=50)
    ```
 
-2. **Initialize boulder.json**
-   ```json
-   // .sisyphus/boulder.json
-   {
-     "status": "active",
-     "task": "task description",
-     "pending_tasks": 5,
-     "completed_tasks": 0
-   }
+2. **Start Boulder** (via Chronos MCP)
+   ```
+   mcp__chronos__boulder_start(plan_path=".sisyphus/plans/{plan_file}", session_id="current-session")
    ```
 
 ### Phase 3: Parallel Execution
@@ -108,9 +95,11 @@ Auto-parallel agent execution for complex tasks that continues until completion.
    Task completed successfully.
    ```
 
-3. **State Cleanup**
-   - Deactivate ralph-state.json
-   - Update boulder.json
+3. **State Cleanup** (via Chronos MCP)
+   ```
+   mcp__chronos__ralph_stop(reason="task_completed")
+   mcp__chronos__boulder_clear()
+   ```
 
 ## Usage Examples
 
@@ -135,10 +124,9 @@ ulw Execute plan in .sisyphus/plans/20250130-auth-implementation.md
 
 ## Stopping and Resuming
 
-### Manual Stop
+### Manual Stop (via Chronos MCP)
 ```
-# Edit .sisyphus/ralph-state.json
-{"active": false, "reason": "manual_stop"}
+mcp__chronos__ralph_stop(reason="manual_stop")
 ```
 
 ### Resume

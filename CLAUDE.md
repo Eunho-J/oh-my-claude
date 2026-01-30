@@ -299,7 +299,7 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 ### Ralph Loop
 - Max iterations: 50 (default)
-- Manual stop: Set `active` to `false` in `.sisyphus/ralph-state.json`
+- Manual stop: `mcp__chronos__ralph_stop(reason="manual_stop")`
 
 ### External Models
 - **Codex/GPT-5.2**: Session management via `threadId`, OAuth auth, supports reasoning effort (xhigh/high/medium/low)
