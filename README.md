@@ -79,6 +79,7 @@ cp -r /tmp/oh-my-claude/hooks .
 cp -r /tmp/oh-my-claude/mcp-servers .
 cp /tmp/oh-my-claude/.mcp.json .
 cp /tmp/oh-my-claude/CLAUDE.md .
+cp /tmp/oh-my-claude/.gitignore.sample .
 
 # Clean up
 rm -rf /tmp/oh-my-claude
@@ -91,6 +92,7 @@ rm -rf /tmp/oh-my-claude
 - `mcp-servers/` - Custom MCP server implementations
 - `.mcp.json` - MCP server configuration
 - `CLAUDE.md` - Project instructions for Claude
+- `.gitignore.sample` - Template for .gitignore (copy to .gitignore in step 1.6)
 
 ### 1.2 Prerequisites Installation
 
@@ -163,7 +165,27 @@ cd ../..
 chmod +x hooks/*.sh
 ```
 
-### 1.6 Verify Installation
+### 1.6 Configure .gitignore
+
+Copy the sample `.gitignore` to prevent committing environment-specific files:
+
+```bash
+# Copy .gitignore template
+cp .gitignore.sample .gitignore
+```
+
+**What gets ignored:**
+- `.env` - API keys and secrets
+- `node_modules/` - Dependencies (reinstall with `npm install`)
+- `mcp-servers/zai-glm/.venv/` - Python virtual environment
+- `.sisyphus/boulder.json`, `.sisyphus/ralph-state.json` - Runtime state files
+- `.sisyphus/debates/` - Debate state and history
+
+**What is preserved:**
+- `.sisyphus/plans/` - Prometheus plan files (user content)
+- `.sisyphus/notepads/` - Atlas learning records (user content)
+
+### 1.7 Verify Installation
 
 ```bash
 # Check all required tools

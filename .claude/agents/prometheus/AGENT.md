@@ -11,6 +11,8 @@ tools:
   - WebFetch
   - WebSearch
   - mcp__lsp-tools__*
+  - mcp__sisyphus__boulder_*
+  - mcp__sisyphus__sisyphus_status
 disallowedTools:
   - Edit
   - Write

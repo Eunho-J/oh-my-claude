@@ -12,6 +12,8 @@ tools:
   - Bash
   - mcp__gemini__*
   - mcp__lsp-tools__*
+  - mcp__sisyphus__ralph_*
+  - mcp__sisyphus__sisyphus_status
 skills:
   - frontend-ui-ux
   - playwright

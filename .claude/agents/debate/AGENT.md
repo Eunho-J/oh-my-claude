@@ -10,6 +10,7 @@ tools:
   - mcp__codex__*
   - mcp__gemini__*
   - mcp__sisyphus__debate_*
+  - mcp__sisyphus__ralph_*
   - mcp__sisyphus__sisyphus_status
 disallowedTools:
   - Edit
