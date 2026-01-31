@@ -7,7 +7,6 @@ tools:
   - Read
   - Grep
   - Glob
-  - Task
   - WebFetch
   - WebSearch
   - mcp__codex__codex

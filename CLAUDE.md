@@ -286,6 +286,23 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 - **Prometheus/Metis/Momus**: Planning phase agents (Metis/Momus use external models)
 - **Junior/Oracle/etc.**: Execution phase agents
 
+### Agent Delegation Rules
+
+**Strict delegation paths (no bypassing):**
+
+| Agent | Can Delegate To | Cannot Delegate To |
+|-------|-----------------|-------------------|
+| Sisyphus | metis, prometheus, atlas, debate, explore | junior, oracle, librarian, multimodal-looker, momus |
+| Prometheus | momus, explore, librarian | junior, atlas, oracle, metis, debate |
+| Atlas | junior, oracle, explore, librarian, multimodal-looker | sisyphus, metis, prometheus, momus, debate |
+| Junior | (none - Task disabled) | all |
+| Others | (none - Task disabled) | all |
+
+**Key rules:**
+- Sisyphus CANNOT call Junior directly → must go through Atlas
+- Planning agents (Metis/Prometheus/Momus) do NOT call execution agents
+- Execution agents (Junior/Oracle/etc.) do NOT delegate further
+
 ### Reasoning Effort Configuration
 - **Metis**: GPT-5.2 with `xhigh` reasoning (pre-planning analysis)
 - **Momus**: Codex-5.2 with `xhigh` reasoning (plan review)
