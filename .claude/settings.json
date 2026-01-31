@@ -65,6 +65,18 @@
     ]
   },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/post-compact.sh'",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

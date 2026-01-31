@@ -27,6 +27,10 @@ import {
   getActivePlanProgress,
 } from "./lib/boulder-state.js";
 
+import { readAutopilotState, PHASE_NAMES } from "./lib/autopilot-state.js";
+import { readDebateState } from "./lib/debate-state.js";
+import { readEcomodeState } from "./lib/ecomode-state.js";
+
 const directory = process.cwd();
 const command = process.argv[2];
 const args = process.argv.slice(3);
@@ -139,6 +143,77 @@ async function main() {
       break;
     }
 
+    case "context-reminder": {
+      // Read all states
+      const ralph = readRalphState(directory);
+      const boulder = readBoulderState(directory);
+      const autopilot = readAutopilotState(directory);
+      const ecomode = readEcomodeState(directory);
+      const debate = readDebateState(directory);
+
+      // Check if any active workflow exists
+      const hasActiveWork =
+        ralph?.active ||
+        boulder?.plan_path ||
+        autopilot?.status === "running" ||
+        debate?.status === "analyzing" ||
+        debate?.status === "debating" ||
+        debate?.status === "voting";
+
+      // If no active work, exit silently
+      if (!hasActiveWork) {
+        process.exit(0);
+      }
+
+      // Output reminder
+      console.log("⚠️ COMPACT 후 작업 상태 복구");
+      console.log("");
+      console.log(
+        "이 세션은 compact 후 재개되었습니다. 아래 상태를 확인하세요:"
+      );
+      console.log("");
+
+      if (ralph?.active) {
+        console.log(
+          `📍 Ralph Loop: 활성 (${ralph.iteration}/${ralph.max_iterations})`
+        );
+      }
+
+      if (boulder?.plan_path) {
+        const progress = getActivePlanProgress(directory);
+        console.log(`📍 Boulder: ${progress?.plan_name || "active"}`);
+        if (progress) {
+          console.log(`   진행: ${progress.completed}/${progress.total} tasks`);
+        }
+      }
+
+      if (autopilot?.status === "running") {
+        console.log(
+          `📍 Autopilot: Phase ${autopilot.current_phase} (${PHASE_NAMES[autopilot.current_phase]})`
+        );
+      }
+
+      if (
+        debate?.status === "analyzing" ||
+        debate?.status === "debating" ||
+        debate?.status === "voting"
+      ) {
+        console.log(`📍 Debate: ${debate.topic} [${debate.phase}]`);
+      }
+
+      if (ecomode?.enabled) {
+        console.log(`📍 Ecomode: 활성화`);
+      }
+
+      console.log("");
+      console.log("🚨 작업 지침:");
+      console.log("1. Sisyphus는 직접 코드를 작성하지 마세요");
+      console.log("2. 작업이 진행 중이라면 Atlas에게 위임하세요");
+      console.log("3. Ralph Loop이 활성화되어 있다면 계속 실행하세요");
+
+      break;
+    }
+
     default:
       console.error(`Unknown command: ${command}`);
       console.error(`
@@ -150,6 +225,7 @@ Usage:
   chronos boulder-status      - Get Boulder status
   chronos should-continue     - Check if should continue (for hooks)
   chronos status              - Get full status
+  chronos context-reminder    - Output context reminder after compact
 `);
       process.exit(1);
   }

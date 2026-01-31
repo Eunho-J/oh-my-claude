@@ -454,6 +454,7 @@ chmod +x hooks/*.sh
 | `hooks/debate-lock.sh` | PreToolUse | Blocks code changes during debate |
 | `hooks/delegation-guard.sh` | PreToolUse | Prevents Atlas from direct code edits |
 | `hooks/autopilot-gate.sh` | (info only) | Displays autopilot phase status |
+| `hooks/post-compact.sh` | SessionStart | Restores context after compact |
 
 ### State Files
 

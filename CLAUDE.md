@@ -215,6 +215,11 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 5. **Delegation Guard** (PreToolUse - Edit|Write)
    - Block Atlas from direct code modifications
 
+6. **Post-Compact** (SessionStart - compact)
+   - Restore context after compact
+   - Output active workflow state (Ralph, Boulder, Autopilot, Debate)
+   - Remind agent delegation rules
+
 ## Directory Structure
 
 ```
