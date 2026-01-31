@@ -37,11 +37,15 @@ Plan File → /ultrawork → boulder.json → Atlas → [Oracle, Explore, Multim
 | Metis | Pre-planning Consultant | Haiku | GPT-5.2 | xhigh |
 | Momus | Plan Reviewer | Haiku | Codex-5.2 | xhigh |
 | Oracle | Architecture Advisor | Sonnet | GPT-5.2-Codex | - |
+| Oracle-Low | Quick Architecture Lookup | Haiku | - | - |
 | Debate | Multi-model decision making | Opus | GPT-5.2, Gemini | - |
 | Explore | Fast Contextual Grep | Haiku | - | - |
+| Explore-High | Deep Codebase Analysis | Sonnet | - | - |
 | Multimodal-looker | Media Analyzer | Sonnet | Gemini | - |
 | Librarian | Documentation/Code Search | Haiku | GLM-4.7 | - |
 | Junior | Task Executor | Sonnet | - | - |
+| Junior-Low | Simple Task Executor | Haiku | - | - |
+| Junior-High | Complex Task Executor | Opus | - | - |
 
 ### Invocation
 
@@ -64,6 +68,9 @@ Plan File → /ultrawork → boulder.json → Atlas → [Oracle, Explore, Multim
 ### Available Skills
 
 - `/ultrawork` (or `ulw`) - Auto-parallel execution until completion
+- `/autopilot` - 5-phase workflow (Expansion → Planning → Execution → QA → Validation)
+- `/swarm N:agent` - Parallel agent execution with atomic task claiming
+- `/ecomode` - Resource-efficient operation mode
 - `/git-master` - Git expert (commit, rebase, history)
 - `/frontend-ui-ux` - UI/UX development
 - `/playwright` - Browser automation
@@ -86,7 +93,8 @@ These keywords automatically activate corresponding features:
 | context7 | Official docs search | HTTP | - |
 | grep-app | GitHub code search | HTTP | - |
 | lsp-tools | LSP/AST-Grep tools | stdio | custom |
-| chronos | Ralph Loop, Boulder & Debate management | stdio | custom |
+| chronos | Ralph Loop, Boulder, Debate, Ecomode, Autopilot | stdio | custom |
+| swarm | SQLite atomic task claiming for parallel agents | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
 | gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
 | zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
@@ -128,7 +136,7 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 **Requirements:** `Z_AI_API_KEY` environment variable, `uv` package manager
 
-### Chronos MCP Tools (Ralph Loop, Boulder & Debate)
+### Chronos MCP Tools (Ralph Loop, Boulder, Debate, Ecomode, Autopilot)
 
 | Tool | Purpose |
 |------|---------|
@@ -151,10 +159,40 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 | `mcp__chronos__debate_conclude` | Conclude the debate |
 | `mcp__chronos__debate_list_history` | List past debates |
 | `mcp__chronos__debate_clear` | Clear active debate |
+| `mcp__chronos__ecomode_enable` | Enable ecomode |
+| `mcp__chronos__ecomode_disable` | Disable ecomode |
+| `mcp__chronos__ecomode_status` | Get ecomode status |
+| `mcp__chronos__ecomode_get_tier` | Get recommended tier for task type |
+| `mcp__chronos__ecomode_should_skip` | Check if phase should be skipped |
+| `mcp__chronos__autopilot_start` | Start 5-phase autopilot workflow |
+| `mcp__chronos__autopilot_get_phase` | Get current autopilot phase |
+| `mcp__chronos__autopilot_check_gate` | Check phase gate criteria |
+| `mcp__chronos__autopilot_advance` | Advance to next phase |
+| `mcp__chronos__autopilot_update_progress` | Update phase progress |
+| `mcp__chronos__autopilot_set_output` | Set phase output file |
+| `mcp__chronos__autopilot_fail` | Mark autopilot as failed |
+| `mcp__chronos__autopilot_status` | Get full autopilot status |
+| `mcp__chronos__autopilot_clear` | Clear autopilot state |
 | `mcp__chronos__chronos_status` | Get full status |
 | `mcp__chronos__chronos_should_continue` | Check if should continue |
 
 **CLI Usage:** `node mcp-servers/chronos/cli.js <command>`
+
+### Swarm MCP Tools (Parallel Agent Execution)
+
+| Tool | Purpose |
+|------|---------|
+| `mcp__swarm__swarm_init` | Initialize task pool |
+| `mcp__swarm__swarm_claim` | Atomically claim next task |
+| `mcp__swarm__swarm_complete` | Mark task as completed |
+| `mcp__swarm__swarm_fail` | Mark task as failed |
+| `mcp__swarm__swarm_heartbeat` | Update agent heartbeat |
+| `mcp__swarm__swarm_recover` | Recover stale tasks |
+| `mcp__swarm__swarm_stats` | Get task statistics |
+| `mcp__swarm__swarm_list` | List all tasks |
+| `mcp__swarm__swarm_add` | Add a single task |
+
+**CLI Usage:** `node mcp-servers/swarm/cli.js <command>`
 
 ## Hook System
 
@@ -181,13 +219,18 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 ```
 .sisyphus/
-├── plans/           # Prometheus plan files
-├── notepads/        # Sisyphus learning records
-├── debates/         # Debate state and history
+├── plans/              # Prometheus plan files
+├── specs/              # Autopilot spec files
+├── notepads/           # Sisyphus learning records
+├── debates/            # Debate state and history
 │   ├── active-debate.json
 │   └── history/
-├── boulder.json     # Current work state
-└── ralph-state.json # Ralph Loop state
+├── autopilot-history/  # Archived autopilot sessions
+├── boulder.json        # Current work state
+├── ralph-state.json    # Ralph Loop state
+├── ecomode.json        # Ecomode settings
+├── autopilot.json      # Active autopilot state
+└── swarm.db            # SQLite database for swarm
 ```
 
 ## Workflow Examples
@@ -248,6 +291,45 @@ Independent Analysis → Share Results → Debate Rounds → Conclusion
    without seeing others             No consensus → Majority vote
 ```
 
+### 6. Autopilot (5-Phase Workflow)
+
+```
+User: /autopilot Add user authentication with JWT
+Claude:
+Phase 0 (Expansion): Metis creates spec
+Phase 1 (Planning): Prometheus + Momus create plan
+Phase 2 (Execution): Atlas/Swarm execute tasks
+Phase 3 (QA): Build, lint, tests pass
+Phase 4 (Validation): Oracle reviews code
+```
+
+### 7. Swarm (Parallel Execution)
+
+```
+User: /swarm 5:junior "Implement all API endpoints"
+Claude:
+1. Parse plan into individual tasks
+2. Initialize swarm pool with tasks
+3. Launch 5 junior agents in parallel
+4. Each agent claims, executes, reports
+5. Monitor until all tasks complete
+```
+
+### 8. Ecomode (Resource Efficiency)
+
+```
+User: /ecomode on
+Claude:
+- junior → junior-low (Haiku)
+- oracle → oracle-low (Haiku)
+- Skip Metis/Momus phases
+- Shorter responses
+
+User: /ecomode off
+Claude:
+- Returns to normal operation
+```
+
 ## Agent & Skill MCP Access
 
 ### Agent MCP Tool Access
@@ -271,12 +353,15 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 ### Skill MCP Tool Access
 
-| Skill | Config | chronos | Other MCP |
-|-------|--------|---------|-----------|
-| ultrawork | whitelist | boulder, ralph, status | ❌ |
-| git-master | none (all) | ✅ all | ✅ all |
-| frontend-ui-ux | none (all) | ✅ all | ✅ all |
-| playwright | none (all) | ✅ all | ✅ all |
+| Skill | Config | chronos | swarm | Other MCP |
+|-------|--------|---------|-------|-----------|
+| ultrawork | whitelist | boulder, ralph, status | ❌ | ❌ |
+| autopilot | whitelist | autopilot, ralph, boulder, ecomode | ✅ | ❌ |
+| swarm | whitelist | ralph, status | ✅ | ❌ |
+| ecomode | whitelist | ecomode, status | ❌ | ❌ |
+| git-master | none (all) | ✅ all | ✅ | ✅ all |
+| frontend-ui-ux | none (all) | ✅ all | ✅ | ✅ all |
+| playwright | none (all) | ✅ all | ✅ | ✅ all |
 
 ## Important Notes
 
@@ -313,6 +398,44 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 - Atlas cannot modify code directly (Edit/Write blocked)
 - Must delegate via Task tool to Junior or other agents
 - Can only modify `.sisyphus/` folder directly
+
+### Tier-Based Model Routing
+
+Agents have tier variants for different complexity levels:
+
+| Tier | Model | Use For |
+|------|-------|---------|
+| Low (-low) | Haiku | Single file, <10 lines, typos, config |
+| Medium | Sonnet | Multi-file, 10-100 lines, features |
+| High (-high) | Opus | Architecture, complex logic, 100+ lines |
+
+Variants: `junior-low`, `junior-high`, `oracle-low`, `explore-high`
+
+### Ecomode
+- Enable: `mcp__chronos__ecomode_enable()`
+- Disable: `mcp__chronos__ecomode_disable()`
+- Status: `mcp__chronos__ecomode_status()`
+- Effects:
+  - Downgrades agent tiers (Sonnet → Haiku)
+  - Skips Metis/Momus phases
+  - Requests shorter responses
+
+### Autopilot (5-Phase Workflow)
+- Start: `mcp__chronos__autopilot_start(name, request)`
+- Status: `mcp__chronos__autopilot_status()`
+- Phases:
+  1. **Expansion** - Metis creates spec
+  2. **Planning** - Prometheus + Momus create plan
+  3. **Execution** - Atlas/Swarm execute tasks
+  4. **QA** - Build, lint, tests must pass
+  5. **Validation** - Oracle security review
+- Gate criteria must pass to advance phases
+
+### Swarm (Parallel Agents)
+- Database: `.sisyphus/swarm.db` (SQLite)
+- Atomic claiming prevents duplicate work
+- Heartbeat timeout: 5 minutes
+- Recovery: `mcp__swarm__swarm_recover()`
 
 ### Ralph Loop
 - Max iterations: 50 (default)

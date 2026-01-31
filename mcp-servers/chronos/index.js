@@ -65,6 +65,30 @@ import {
   checkConsensus,
 } from "./lib/debate-state.js";
 
+import {
+  readEcomodeState,
+  enableEcomode,
+  disableEcomode,
+  getRecommendedTier,
+  shouldSkipPhase,
+  updateSettings as updateEcomodeSettings,
+} from "./lib/ecomode-state.js";
+
+import {
+  readAutopilotState,
+  startAutopilot,
+  getCurrentPhase,
+  checkPhaseGate,
+  advancePhase,
+  updatePhaseProgress,
+  setPhaseOutput,
+  failAutopilot,
+  getAutopilotStatus,
+  clearAutopilot,
+  PHASE_NAMES,
+  PHASE_DESCRIPTIONS,
+} from "./lib/autopilot-state.js";
+
 // Default to current working directory
 const getDirectory = () => process.cwd();
 
@@ -633,24 +657,327 @@ server.tool(
 );
 
 // ============================================================================
+// Ecomode Tools
+// ============================================================================
+
+server.tool(
+  "ecomode_enable",
+  "Enable ecomode for resource-efficient operation",
+  {
+    prefer_haiku: z
+      .boolean()
+      .optional()
+      .describe("Use Haiku variants for agents (default: true)"),
+    skip_metis: z
+      .boolean()
+      .optional()
+      .describe("Skip Metis pre-planning phase (default: true)"),
+    skip_momus: z
+      .boolean()
+      .optional()
+      .describe("Skip Momus plan review phase (default: true)"),
+    shorter_responses: z
+      .boolean()
+      .optional()
+      .describe("Request shorter responses from agents (default: true)"),
+  },
+  async ({ prefer_haiku, skip_metis, skip_momus, shorter_responses }) => {
+    const customSettings = {};
+    if (prefer_haiku !== undefined) customSettings.prefer_haiku = prefer_haiku;
+    if (skip_metis !== undefined) customSettings.skip_metis = skip_metis;
+    if (skip_momus !== undefined) customSettings.skip_momus = skip_momus;
+    if (shorter_responses !== undefined) customSettings.shorter_responses = shorter_responses;
+
+    const state = enableEcomode(getDirectory(), customSettings);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { success: true, message: "Ecomode enabled", state },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+server.tool("ecomode_disable", "Disable ecomode", {}, async () => {
+  const state = disableEcomode(getDirectory());
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(
+          { success: true, message: "Ecomode disabled", state },
+          null,
+          2
+        ),
+      },
+    ],
+  };
+});
+
+server.tool("ecomode_status", "Get current ecomode status", {}, async () => {
+  const state = readEcomodeState(getDirectory());
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(state, null, 2),
+      },
+    ],
+  };
+});
+
+server.tool(
+  "ecomode_get_tier",
+  "Get recommended tier for a task type based on ecomode settings",
+  {
+    task_type: z
+      .enum(["junior", "oracle", "explore", "librarian"])
+      .describe("Type of task/agent"),
+  },
+  async ({ task_type }) => {
+    const recommendation = getRecommendedTier(getDirectory(), task_type);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(recommendation, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "ecomode_should_skip",
+  "Check if a planning phase should be skipped in ecomode",
+  {
+    phase: z.enum(["metis", "momus"]).describe("Planning phase to check"),
+  },
+  async ({ phase }) => {
+    const skip = shouldSkipPhase(getDirectory(), phase);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ phase, skip }, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+// ============================================================================
+// Autopilot Tools
+// ============================================================================
+
+server.tool(
+  "autopilot_start",
+  "Start a new 5-phase autopilot workflow",
+  {
+    name: z.string().describe("Name of the autopilot session"),
+    request: z.string().describe("The original user request"),
+    skip_metis: z.boolean().optional().describe("Skip Metis expansion phase"),
+    skip_momus: z.boolean().optional().describe("Skip Momus review in planning"),
+    use_swarm: z.boolean().optional().describe("Use swarm for parallel execution"),
+    swarm_agents: z.number().optional().describe("Number of swarm agents (default: 3)"),
+  },
+  async ({ name, request, skip_metis, skip_momus, use_swarm, swarm_agents }) => {
+    const options = { skip_metis, skip_momus, use_swarm, swarm_agents };
+    const state = startAutopilot(getDirectory(), name, request, options);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            {
+              success: true,
+              message: "Autopilot started",
+              id: state.id,
+              current_phase: state.current_phase,
+              phase_name: PHASE_NAMES[state.current_phase],
+            },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+server.tool("autopilot_get_phase", "Get current autopilot phase", {}, async () => {
+  const phase = getCurrentPhase(getDirectory());
+  if (!phase) {
+    return {
+      content: [{ type: "text", text: "No active autopilot" }],
+    };
+  }
+  return {
+    content: [{ type: "text", text: JSON.stringify(phase, null, 2) }],
+  };
+});
+
+server.tool(
+  "autopilot_check_gate",
+  "Check if current phase gate criteria are met",
+  {},
+  async () => {
+    const result = checkPhaseGate(getDirectory());
+    return {
+      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+    };
+  }
+);
+
+server.tool(
+  "autopilot_advance",
+  "Advance to the next phase (checks gate first)",
+  {
+    output: z.string().optional().describe("Output file path for current phase"),
+  },
+  async ({ output }) => {
+    const result = advancePhase(getDirectory(), output);
+    return {
+      content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
+    };
+  }
+);
+
+server.tool(
+  "autopilot_update_progress",
+  "Update phase progress data",
+  {
+    phase: z.number().min(0).max(4).describe("Phase number (0-4)"),
+    progress: z.object({}).passthrough().describe("Progress data object"),
+  },
+  async ({ phase, progress }) => {
+    const state = updatePhaseProgress(getDirectory(), phase, progress);
+    if (!state) {
+      return {
+        content: [{ type: "text", text: "No active autopilot" }],
+      };
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { success: true, phase, progress: state.phases[phase] },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "autopilot_set_output",
+  "Set output file for a phase",
+  {
+    phase: z.number().min(0).max(4).describe("Phase number (0-4)"),
+    output: z.string().describe("Output file path"),
+  },
+  async ({ phase, output }) => {
+    const state = setPhaseOutput(getDirectory(), phase, output);
+    if (!state) {
+      return {
+        content: [{ type: "text", text: "No active autopilot" }],
+      };
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ success: true, phase, output }, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "autopilot_fail",
+  "Mark autopilot as failed",
+  {
+    error: z.string().describe("Error message"),
+  },
+  async ({ error }) => {
+    const state = failAutopilot(getDirectory(), error);
+    if (!state) {
+      return {
+        content: [{ type: "text", text: "No active autopilot" }],
+      };
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ success: true, status: "failed", error }, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool("autopilot_status", "Get full autopilot status", {}, async () => {
+  const status = getAutopilotStatus(getDirectory());
+  if (!status) {
+    return {
+      content: [{ type: "text", text: "No active autopilot" }],
+    };
+  }
+  return {
+    content: [{ type: "text", text: JSON.stringify(status, null, 2) }],
+  };
+});
+
+server.tool("autopilot_clear", "Clear the autopilot state (archives it first)", {}, async () => {
+  const success = clearAutopilot(getDirectory());
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify({
+          success,
+          message: success ? "Autopilot cleared and archived" : "No autopilot to clear",
+        }),
+      },
+    ],
+  };
+});
+
+// ============================================================================
 // Integrated Tools
 // ============================================================================
 
 server.tool(
   "chronos_status",
-  "Get full Chronos status (Ralph Loop + Boulder)",
+  "Get full Chronos status (Ralph Loop + Boulder + Ecomode)",
   {},
   async () => {
     const ralph = readRalphState(getDirectory());
     const boulder = readBoulderState(getDirectory());
     const progress = boulder ? getActivePlanProgress(getDirectory()) : null;
     const plans = findPrometheusPlans(getDirectory());
+    const ecomode = readEcomodeState(getDirectory());
 
     const status = {
       ralph_loop: ralph || { active: false },
       boulder: boulder || null,
       plan_progress: progress,
       available_plans: plans.length,
+      ecomode: {
+        enabled: ecomode.enabled,
+        settings: ecomode.settings,
+      },
     };
 
     return {

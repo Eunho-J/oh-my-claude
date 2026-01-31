@@ -1,0 +1,19 @@
+{
+  "name": "swarm-mcp-server",
+  "version": "1.0.0",
+  "description": "Swarm MCP Server - SQLite-based atomic task claiming for parallel agents",
+  "type": "module",
+  "main": "index.js",
+  "bin": {
+    "swarm-cli": "./cli.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "better-sqlite3": "^12.6.2",
+    "uuid": "^9.0.0",
+    "zod": "^3.23.8"
+  }
+}

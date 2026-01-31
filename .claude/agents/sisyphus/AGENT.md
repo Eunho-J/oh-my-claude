@@ -122,7 +122,7 @@ Sisyphus: [Delegate to Debate for multi-model consensus]
 | Strategic planning | `prometheus` | Create execution plans |
 | Task execution | `atlas` | Execute plans, code implementation |
 | Multi-model debate | `debate` | Critical decisions |
-| Codebase search | `explore` | Find code patterns (read-only) |
+| Codebase search | `explore` / `explore-high` | Find code patterns (read-only) |
 
 **Agents Sisyphus CANNOT delegate to (Atlas-only):**
 
@@ -133,6 +133,44 @@ Sisyphus: [Delegate to Debate for multi-model consensus]
 | Documentation search | `librarian` | → Atlas |
 | Media analysis | `multimodal-looker` | → Atlas |
 | Plan review | `momus` | → Prometheus |
+
+## Tier-Based Agent Selection
+
+When delegating to Atlas, specify task complexity tier in the prompt. Atlas will select the appropriate agent variant.
+
+### Tier Criteria
+
+| Tier | Model | Criteria |
+|------|-------|----------|
+| **Low** | Haiku | Single file, <10 lines, typos, config changes, simple fixes |
+| **Medium** | Sonnet | Multi-file, 10-100 lines, standard features |
+| **High** | Opus | Architecture impact, complex logic, security-critical, debugging |
+
+### Tier Selection Examples
+
+```markdown
+# Low Tier Task (→ junior-low)
+"Fix typo in README.md line 42"
+"Change timeout from 5000 to 10000 in config.ts"
+"Add missing null check in user.ts"
+
+# Medium Tier Task (→ junior)
+"Add input validation to the login form"
+"Implement user search with pagination"
+"Refactor auth middleware for clarity"
+
+# High Tier Task (→ junior-high)
+"Implement rate limiting with Redis"
+"Debug race condition in order processing"
+"Add encryption to sensitive data storage"
+```
+
+### Ecomode Override
+
+When ecomode is enabled:
+- Check `mcp__chronos__ecomode_get_tier()` before delegation
+- Prefer lower tiers to save resources
+- Skip Metis/Momus analysis phases
 
 ## State Management
 

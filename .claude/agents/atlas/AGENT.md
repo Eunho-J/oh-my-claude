@@ -106,11 +106,52 @@ For each task wave (parallel group):
 
 | Task Type | Agent | When to Use |
 |-----------|-------|-------------|
-| Code implementation | `junior` | Standard coding tasks |
-| Architecture decisions | `oracle` | Complex design questions |
+| Code implementation | `junior` / `junior-low` / `junior-high` | Coding tasks (tier-based) |
+| Architecture decisions | `oracle` / `oracle-low` | Design questions (tier-based) |
 | Documentation search | `librarian` | Finding docs, code examples |
-| Codebase exploration | `Explore` | Understanding existing code |
+| Codebase exploration | `explore` / `explore-high` | Understanding code (tier-based) |
 | Media analysis | `multimodal-looker` | PDF, image analysis |
+
+## Tier-Based Agent Selection
+
+Select agent variant based on task complexity:
+
+### Tier Criteria
+
+| Tier | Agents | Criteria |
+|------|--------|----------|
+| **Low** | `junior-low`, `oracle-low` | Single file, <10 lines, simple lookups |
+| **Medium** | `junior`, `oracle`, `explore` | Standard tasks, 10-100 lines |
+| **High** | `junior-high`, `explore-high` | Complex logic, architecture, 100+ lines |
+
+### Selection Logic
+
+```markdown
+# Analyze task and select appropriate tier
+1. Estimate scope (files, lines of change)
+2. Assess complexity (simple fix vs architecture)
+3. Consider risk (config vs security-critical)
+4. Check ecomode status
+
+# Apply tier
+if ecomode_enabled:
+  tier = ecomode_get_tier(task_type)  # Forces lower tier
+else:
+  tier = analyze_complexity(task)
+
+# Select agent
+junior_agent = "junior-low" | "junior" | "junior-high"
+oracle_agent = "oracle-low" | "oracle"
+explore_agent = "explore" | "explore-high"
+```
+
+### Ecomode Override
+
+When ecomode is enabled (`mcp__chronos__ecomode_status`):
+- `junior` → `junior-low`
+- `oracle` → `oracle-low`
+- Skip Metis/Momus phases
+- Prefer faster, lighter responses
 
 ## Delegation Examples
 

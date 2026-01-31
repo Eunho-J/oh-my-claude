@@ -27,8 +27,14 @@ mcp-servers/*/*.egg-info/
 # ===========================================
 .sisyphus/boulder.json
 .sisyphus/ralph-state.json
+.sisyphus/ecomode.json
+.sisyphus/autopilot.json
+.sisyphus/swarm.db
+.sisyphus/swarm.db-wal
+.sisyphus/swarm.db-shm
 .sisyphus/debates/active-debate.json
 .sisyphus/debates/history/
+.sisyphus/autopilot-history/
 
 # ===========================================
 # IDE & Editor

@@ -39,11 +39,18 @@ mcp-servers/zai-glm/__pycache__/
 # These files are created/modified during execution
 .sisyphus/boulder.json
 .sisyphus/ralph-state.json
+.sisyphus/ecomode.json
+.sisyphus/autopilot.json
+.sisyphus/swarm.db
+.sisyphus/swarm.db-wal
+.sisyphus/swarm.db-shm
 .sisyphus/debates/active-debate.json
 .sisyphus/debates/history/
+.sisyphus/autopilot-history/
 
-# Keep plan files and notepads (user content)
+# Keep plan files, specs, and notepads (user content)
 # !.sisyphus/plans/
+# !.sisyphus/specs/
 # !.sisyphus/notepads/
 
 # ===========================================
