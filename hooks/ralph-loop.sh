@@ -1,9 +1,9 @@
 #!/bin/bash
 # Ralph Loop - Stop Hook
-# 완료 프로미스 감지 또는 max iteration까지 계속 실행
+# Continue execution until completion promise detected or max iterations reached
 #
-# 사용법: Stop 이벤트에서 자동 실행
-# 상태 파일: .sisyphus/ralph-state.json
+# Usage: Auto-executed on Stop event
+# State file: .sisyphus/ralph-state.json
 #
 # Uses Chronos MCP Server CLI for state management
 

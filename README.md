@@ -2,11 +2,9 @@
 
 Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https://github.com/anthropics/claude-code) features to Claude Code's native capabilities (MCP, Hooks, Skills, Agents).
 
-> **⚠️ WARNING / 경고**
+> **⚠️ WARNING**
 >
 > This repository has **NOT been fully tested or verified**. Use at your own risk. The authors are not responsible for any damages, data loss, or issues that may arise from using this software.
->
-> 이 저장소는 **충분히 테스트되거나 검증되지 않았습니다**. 사용에 따른 모든 책임은 사용자 본인에게 있습니다. 저자는 이 소프트웨어 사용으로 인해 발생할 수 있는 손해, 데이터 손실 또는 문제에 대해 책임지지 않습니다.
 
 ## Features
 
@@ -51,12 +49,6 @@ These steps can be executed automatically by Claude Code.
 > 1. You understand the risks of using unverified software
 > 2. You accept full responsibility for any issues that may arise
 > 3. The authors are not liable for any damages or data loss
->
-> **경고:** 이 저장소(oh-my-claude)는 충분히 테스트되거나 검증되지 않았습니다. 설정을 진행함으로써 다음 사항에 동의하는 것입니다:
->
-> 1. 검증되지 않은 소프트웨어 사용의 위험을 이해합니다
-> 2. 발생할 수 있는 모든 문제에 대한 책임을 본인이 집니다
-> 3. 저자는 손해나 데이터 손실에 대해 책임지지 않습니다
 >
 > ---
 >

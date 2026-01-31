@@ -1,30 +1,30 @@
 # LSP Tools MCP Server
 
-Claude Code를 위한 LSP (Language Server Protocol) 및 AST-Grep 도구 MCP 서버입니다.
+LSP (Language Server Protocol) and AST-Grep tools MCP server for Claude Code.
 
-## 설치
+## Installation
 
 ```bash
 cd mcp-servers/lsp-tools
 npm install
 ```
 
-### 선택적 의존성
+### Optional Dependencies
 
-AST-Grep 기능을 사용하려면:
+To use AST-Grep features:
 ```bash
-# npm에서 설치 (Node.js 바인딩)
+# Install from npm (Node.js bindings)
 npm install @ast-grep/napi
 
-# 또는 CLI 설치
+# Or install CLI
 cargo install ast-grep
-# 또는
+# Or
 brew install ast-grep
 ```
 
-### 언어 서버 설치
+### Language Server Installation
 
-각 언어에 대한 언어 서버가 필요합니다:
+You need a language server for each language:
 
 **TypeScript/JavaScript:**
 ```bash
@@ -46,18 +46,18 @@ rustup component add rust-analyzer
 go install golang.org/x/tools/gopls@latest
 ```
 
-## 사용법
+## Usage
 
-MCP 서버로 실행:
+Run as MCP server:
 ```bash
 node index.js
 ```
 
-## 도구
+## Tools
 
 ### lsp_goto_definition
 
-심볼의 정의로 이동합니다.
+Go to the definition of a symbol.
 
 ```json
 {
@@ -69,7 +69,7 @@ node index.js
 
 ### lsp_find_references
 
-심볼의 모든 참조를 찾습니다.
+Find all references to a symbol.
 
 ```json
 {
@@ -82,7 +82,7 @@ node index.js
 
 ### lsp_symbols
 
-파일 또는 워크스페이스의 심볼 목록을 반환합니다.
+Return a list of symbols in a file or workspace.
 
 ```json
 {
@@ -93,7 +93,7 @@ node index.js
 
 ### lsp_diagnostics
 
-파일의 진단 정보 (에러, 경고)를 반환합니다.
+Return diagnostics (errors, warnings) for a file.
 
 ```json
 {
@@ -103,7 +103,7 @@ node index.js
 
 ### lsp_rename
 
-심볼을 안전하게 리네임합니다.
+Safely rename a symbol.
 
 ```json
 {
@@ -116,7 +116,7 @@ node index.js
 
 ### ast_grep_search
 
-AST 패턴으로 코드를 검색합니다.
+Search code using AST patterns.
 
 ```json
 {
@@ -128,7 +128,7 @@ AST 패턴으로 코드를 검색합니다.
 
 ### ast_grep_replace
 
-AST 패턴으로 코드를 교체합니다.
+Replace code using AST patterns.
 
 ```json
 {
@@ -140,49 +140,49 @@ AST 패턴으로 코드를 교체합니다.
 }
 ```
 
-## AST-Grep 패턴 예시
+## AST-Grep Pattern Examples
 
-### 기본 패턴
+### Basic Patterns
 
 ```
-// 함수 호출 매칭
+// Match function call
 console.log($ARG)
 
-// 여러 인수 매칭
+// Match multiple arguments
 console.log($$$)
 
-// 메서드 체인
+// Method chain
 $OBJ.then($CALLBACK).catch($HANDLER)
 ```
 
-### 고급 패턴
+### Advanced Patterns
 
 ```
-// 특정 타입 매칭
+// Match specific type
 function $NAME($$$PARAMS): $RETURN_TYPE { $$$ }
 
-// 조건문 매칭
+// Match conditional
 if ($CONDITION) { $$$BODY }
 
-// 클래스 메서드 매칭
+// Match class method
 class $NAME {
   $METHOD($$$PARAMS) { $$$BODY }
 }
 ```
 
-## 문제 해결
+## Troubleshooting
 
-### 언어 서버가 시작되지 않음
+### Language server won't start
 
-1. 해당 언어 서버가 설치되어 있는지 확인
-2. PATH에 언어 서버 실행 파일이 있는지 확인
-3. 로그 확인: `stderr` 출력
+1. Verify the language server is installed
+2. Verify the language server executable is in PATH
+3. Check logs: `stderr` output
 
-### AST-Grep 오류
+### AST-Grep errors
 
-1. `ast-grep` CLI가 설치되어 있는지 확인
-2. 지원되는 언어인지 확인
+1. Verify `ast-grep` CLI is installed
+2. Verify the language is supported
 
-## 라이선스
+## License
 
 MIT

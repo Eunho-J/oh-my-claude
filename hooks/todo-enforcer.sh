@@ -1,8 +1,8 @@
 #!/bin/bash
 # Todo Enforcer - Stop Hook
-# 미완료 todo가 있으면 계속 실행하도록 요청
+# Request continuation if incomplete todos exist
 #
-# 사용법: Stop 이벤트에서 자동 실행
+# Usage: Auto-executed on Stop event
 #
 # Uses Chronos MCP Server CLI for state management
 
@@ -10,8 +10,8 @@ set -e
 
 INPUT=$(cat)
 
-# TaskList에서 미완료 작업 확인
-# stdin의 JSON에서 tasks 배열 파싱
+# Check for incomplete tasks from TaskList
+# Parse tasks array from stdin JSON
 INCOMPLETE=$(echo "$INPUT" | jq -r '
   if .tasks then
     [.tasks[] | select(.status != "completed" and .status != "deleted")] | length
@@ -20,7 +20,7 @@ INCOMPLETE=$(echo "$INPUT" | jq -r '
   end
 ' 2>/dev/null || echo "0")
 
-# 미완료 작업이 있으면 계속 실행 요청
+# Request continuation if incomplete tasks exist
 if [ "$INCOMPLETE" -gt 0 ]; then
   cat << EOF
 {"continue": true, "reason": "$INCOMPLETE task(s) remaining. Continue working on incomplete todos before stopping."}
@@ -49,5 +49,5 @@ EOF
   fi
 fi
 
-# 모든 작업 완료
+# All tasks completed
 exit 0

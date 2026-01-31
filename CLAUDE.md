@@ -21,9 +21,9 @@ Plan File → /ultrawork → boulder.json → Atlas → [Oracle, Explore, Multim
 - **Debate**: GPT-5.2 + Gemini (multi-model consensus)
 
 ### Core Philosophy
-1. **Planning과 Execution의 분리** - 컨텍스트 오염 방지
-2. **Human Intervention = Failure Signal** - 에이전트가 스스로 완료
-3. **Indistinguishable Code** - 시니어 엔지니어와 구분 불가능한 코드
+1. **Separation of Planning and Execution** - Prevent context pollution
+2. **Human Intervention = Failure Signal** - Agent completes autonomously
+3. **Indistinguishable Code** - Code indistinguishable from senior engineer
 
 ## Agent System
 
