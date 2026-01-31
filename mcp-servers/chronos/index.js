@@ -89,6 +89,33 @@ import {
   PHASE_DESCRIPTIONS,
 } from "./lib/autopilot-state.js";
 
+import {
+  readWorkmodeState,
+  enableWorkmode,
+  disableWorkmode,
+  updateWorkmodeOptions,
+  shouldBlockModification,
+  getWorkmodeStatus,
+} from "./lib/workmode-state.js";
+
+import {
+  createVerificationConfig,
+  recordVerificationResult,
+  generatePlaywrightCommand,
+  generateAnalysisPrompt,
+  getVerificationStatus,
+  verificationPassed,
+} from "./lib/ui-verification.js";
+
+import {
+  getRecommendedModel,
+  getJuniorTier,
+  getAgentModel,
+  generateToolCall,
+  TASK_TYPES,
+  MODELS,
+} from "./lib/model-router.js";
+
 // Default to current working directory
 const getDirectory = () => process.cwd();
 
@@ -786,10 +813,32 @@ server.tool(
     skip_momus: z.boolean().optional().describe("Skip Momus review in planning"),
     use_swarm: z.boolean().optional().describe("Use swarm for parallel execution"),
     swarm_agents: z.number().optional().describe("Number of swarm agents (default: 3)"),
+    fast: z.boolean().optional().describe("Fast mode: skip Metis/Momus phases (alias for --fast)"),
+    ui: z.boolean().optional().describe("Enable UI verification in QA phase"),
+    skip_qa: z.boolean().optional().describe("Skip QA phase"),
+    skip_validation: z.boolean().optional().describe("Skip validation phase"),
   },
-  async ({ name, request, skip_metis, skip_momus, use_swarm, swarm_agents }) => {
-    const options = { skip_metis, skip_momus, use_swarm, swarm_agents };
+  async ({ name, request, skip_metis, skip_momus, use_swarm, swarm_agents, fast, ui, skip_qa, skip_validation }) => {
+    // Fast mode shortcuts
+    const effectiveSkipMetis = fast || skip_metis;
+    const effectiveSkipMomus = fast || skip_momus;
+
+    const options = {
+      skip_metis: effectiveSkipMetis,
+      skip_momus: effectiveSkipMomus,
+      use_swarm,
+      swarm_agents,
+      fast: fast || false,
+      ui: ui || false,
+      skip_qa: skip_qa || false,
+      skip_validation: skip_validation || false,
+    };
+
+    // Enable workmode when autopilot starts
+    enableWorkmode(getDirectory(), "autopilot", options);
+
     const state = startAutopilot(getDirectory(), name, request, options);
+
     return {
       content: [
         {
@@ -801,6 +850,12 @@ server.tool(
               id: state.id,
               current_phase: state.current_phase,
               phase_name: PHASE_NAMES[state.current_phase],
+              workmode: "enabled",
+              options: {
+                fast: options.fast,
+                ui: options.ui,
+                swarm: options.use_swarm ? options.swarm_agents : null,
+              },
             },
             null,
             2
@@ -941,13 +996,18 @@ server.tool("autopilot_status", "Get full autopilot status", {}, async () => {
 
 server.tool("autopilot_clear", "Clear the autopilot state (archives it first)", {}, async () => {
   const success = clearAutopilot(getDirectory());
+
+  // Also disable workmode when autopilot clears
+  disableWorkmode(getDirectory());
+
   return {
     content: [
       {
         type: "text",
         text: JSON.stringify({
           success,
-          message: success ? "Autopilot cleared and archived" : "No autopilot to clear",
+          message: success ? "Autopilot cleared and archived, workmode disabled" : "No autopilot to clear",
+          workmode: "disabled",
         }),
       },
     ],
@@ -955,12 +1015,297 @@ server.tool("autopilot_clear", "Clear the autopilot state (archives it first)", 
 });
 
 // ============================================================================
+// Workmode Tools
+// ============================================================================
+
+server.tool(
+  "workmode_enable",
+  "Enable workmode to block direct code modification from main agent",
+  {
+    mode: z.enum(["autopilot", "swarm"]).describe("Workmode type"),
+    fast: z.boolean().optional().describe("Fast mode option"),
+    swarm: z.number().optional().describe("Number of swarm agents"),
+    ui: z.boolean().optional().describe("Enable UI verification"),
+  },
+  async ({ mode, fast, swarm, ui }) => {
+    const state = enableWorkmode(getDirectory(), mode, { fast, swarm, ui });
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { success: true, message: "Workmode enabled", state },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+server.tool("workmode_disable", "Disable workmode", {}, async () => {
+  const result = disableWorkmode(getDirectory());
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(result, null, 2),
+      },
+    ],
+  };
+});
+
+server.tool("workmode_status", "Get workmode status", {}, async () => {
+  const status = getWorkmodeStatus(getDirectory());
+  return {
+    content: [
+      {
+        type: "text",
+        text: JSON.stringify(status, null, 2),
+      },
+    ],
+  };
+});
+
+server.tool(
+  "workmode_check",
+  "Check if code modification should be blocked",
+  {
+    agent: z.string().describe("Agent name (main, atlas, junior, etc.)"),
+    file_path: z.string().optional().describe("File being modified"),
+  },
+  async ({ agent, file_path }) => {
+    const result = shouldBlockModification(getDirectory(), agent, file_path);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+// ============================================================================
+// UI Verification Tools
+// ============================================================================
+
+server.tool(
+  "ui_verification_config",
+  "Create UI verification configuration",
+  {
+    url: z.string().describe("URL to verify"),
+    expectations: z.array(z.string()).optional().describe("List of expected UI elements/behaviors"),
+    screenshot_path: z.string().optional().describe("Path to save screenshot"),
+    session_id: z.string().optional().describe("Autopilot session ID"),
+  },
+  async ({ url, expectations, screenshot_path, session_id }) => {
+    const config = createVerificationConfig(getDirectory(), {
+      url,
+      expectations: expectations || [],
+      screenshotPath: screenshot_path,
+      sessionId: session_id,
+    });
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { success: true, config },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "ui_verification_record",
+  "Record UI verification result",
+  {
+    session_id: z.string().optional().describe("Session ID"),
+    overall_status: z.enum(["pass", "fail", "warn", "error"]).describe("Overall status"),
+    checks: z.array(z.object({
+      expectation: z.string(),
+      status: z.enum(["pass", "fail", "warn"]),
+      details: z.string().optional(),
+    })).optional().describe("Individual check results"),
+    issues: z.array(z.object({
+      type: z.string(),
+      severity: z.enum(["error", "warning"]),
+      description: z.string(),
+    })).optional().describe("Found issues"),
+    summary: z.string().optional().describe("Summary"),
+  },
+  async ({ session_id, overall_status, checks, issues, summary }) => {
+    const result = recordVerificationResult(getDirectory(), session_id, {
+      overall_status,
+      checks: checks || [],
+      issues: issues || [],
+      summary: summary || "",
+    });
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(
+            { success: true, result },
+            null,
+            2
+          ),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "ui_verification_status",
+  "Get UI verification status",
+  {
+    session_id: z.string().optional().describe("Session ID"),
+  },
+  async ({ session_id }) => {
+    const status = getVerificationStatus(getDirectory(), session_id);
+    return {
+      content: [
+        {
+          type: "text",
+          text: status
+            ? JSON.stringify(status, null, 2)
+            : "No verification result found",
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "ui_verification_command",
+  "Generate Playwright screenshot command",
+  {
+    url: z.string().describe("URL to capture"),
+    output_path: z.string().describe("Screenshot output path"),
+  },
+  async ({ url, output_path }) => {
+    const command = generatePlaywrightCommand(url, output_path);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ command }, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "ui_verification_prompt",
+  "Generate Gemini analysis prompt for UI verification",
+  {
+    expectations: z.array(z.string()).optional().describe("List of expected UI elements/behaviors"),
+  },
+  async ({ expectations }) => {
+    const prompt = generateAnalysisPrompt(expectations || []);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify({ prompt }, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+// ============================================================================
+// Model Router Tools
+// ============================================================================
+
+server.tool(
+  "model_router_recommend",
+  "Get recommended model for a task type",
+  {
+    task_type: z.enum([
+      "code_analysis",
+      "code_review",
+      "architecture",
+      "image_analysis",
+      "ui_verification",
+      "doc_search",
+      "code_search",
+      "complex_implementation",
+      "simple_implementation",
+      "refactoring",
+      "bug_fix",
+    ]).describe("Type of task"),
+  },
+  async ({ task_type }) => {
+    const recommendation = getRecommendedModel(task_type);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(recommendation, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "model_router_junior_tier",
+  "Get Junior tier based on task complexity",
+  {
+    files: z.number().optional().describe("Number of files affected"),
+    lines: z.number().optional().describe("Estimated lines of code"),
+    type: z.enum(["feature", "bugfix", "refactor"]).optional().describe("Type of change"),
+  },
+  async ({ files, lines, type }) => {
+    const tier = getJuniorTier({ files, lines, type });
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(tier, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "model_router_agent",
+  "Get model configuration for an agent",
+  {
+    agent: z.string().describe("Agent name"),
+    ecomode: z.boolean().optional().describe("Whether ecomode is enabled"),
+  },
+  async ({ agent, ecomode }) => {
+    const config = getAgentModel(agent, ecomode || false);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(config, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+// ============================================================================
 // Integrated Tools
 // ============================================================================
 
 server.tool(
   "chronos_status",
-  "Get full Chronos status (Ralph Loop + Boulder + Ecomode)",
+  "Get full Chronos status (Ralph Loop + Boulder + Ecomode + Workmode + Autopilot)",
   {},
   async () => {
     const ralph = readRalphState(getDirectory());
@@ -968,6 +1313,8 @@ server.tool(
     const progress = boulder ? getActivePlanProgress(getDirectory()) : null;
     const plans = findPrometheusPlans(getDirectory());
     const ecomode = readEcomodeState(getDirectory());
+    const workmode = readWorkmodeState(getDirectory());
+    const autopilot = readAutopilotState(getDirectory());
 
     const status = {
       ralph_loop: ralph || { active: false },
@@ -978,6 +1325,18 @@ server.tool(
         enabled: ecomode.enabled,
         settings: ecomode.settings,
       },
+      workmode: {
+        active: workmode.active,
+        mode: workmode.mode,
+        options: workmode.options,
+      },
+      autopilot: autopilot ? {
+        id: autopilot.id,
+        status: autopilot.status,
+        current_phase: autopilot.current_phase,
+        phase_name: PHASE_NAMES[autopilot.current_phase],
+        options: autopilot.options,
+      } : null,
     };
 
     return {

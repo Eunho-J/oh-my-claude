@@ -34,6 +34,18 @@
       "mcp__chronos__autopilot_fail",
       "mcp__chronos__autopilot_status",
       "mcp__chronos__autopilot_clear",
+      "mcp__chronos__workmode_enable",
+      "mcp__chronos__workmode_disable",
+      "mcp__chronos__workmode_status",
+      "mcp__chronos__workmode_check",
+      "mcp__chronos__ui_verification_config",
+      "mcp__chronos__ui_verification_record",
+      "mcp__chronos__ui_verification_status",
+      "mcp__chronos__ui_verification_command",
+      "mcp__chronos__ui_verification_prompt",
+      "mcp__chronos__model_router_recommend",
+      "mcp__chronos__model_router_junior_tier",
+      "mcp__chronos__model_router_agent",
       "mcp__chronos__chronos_status",
       "mcp__chronos__chronos_should_continue",
       "mcp__swarm__swarm_init",
@@ -117,6 +129,11 @@
           {
             "type": "command",
             "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/delegation-guard.sh'",
+            "timeout": 5000
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/autopilot-gate.sh'",
             "timeout": 5000
           }
         ]

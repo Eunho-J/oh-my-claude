@@ -16,12 +16,15 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 - **Tier-based Model Routing**: Automatic agent selection based on task complexity (Haiku/Sonnet/Opus)
 - **External Model Integration**: GPT-5.2/Codex-5.2 (xhigh reasoning), Google Gemini, GLM-4.7 via MCP
 - **Ralph Loop**: Auto-continuation until task completion
-- **Autopilot**: 5-phase workflow (Expansion → Planning → Execution → QA → Validation)
+- **Unified Autopilot**: 5-phase workflow with options (`--fast`, `--swarm`, `--ui`, `--no-qa`, `--no-validation`)
+- **Workmode**: Blocks direct code modification when autopilot is active
+- **UI Verification**: Playwright + Gemini for visual QA (with `--ui` flag)
+- **Smart Model Routing**: Automatic external model selection to reduce Claude API costs
 - **Swarm**: SQLite-based atomic task claiming for parallel agent execution
-- **Ecomode**: Resource-efficient mode (prefer Haiku, skip analysis phases)
+- **Ecomode**: Resource-efficient mode (skip analysis phases)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
 - **Planning/Execution Separation**: Clean context management
-- **Skill System**: ultrawork, autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
+- **Skill System**: autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
 
 # Setup Guide
 
@@ -428,7 +431,7 @@ chmod +x hooks/*.sh
 | `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Sonnet | Gemini |
 | `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-4.7 |
 | `.claude/agents/junior/AGENT.md` | Task executor (medium) | Sonnet | - |
-| `.claude/agents/junior-low/AGENT.md` | Simple task executor | Haiku | - |
+| `.claude/agents/junior-low/AGENT.md` | Simple task executor | **Sonnet** | - |
 | `.claude/agents/junior-high/AGENT.md` | Complex task executor | Opus | - |
 | `.claude/agents/debate/AGENT.md` | Multi-model debate | Opus | GPT-5.2, Gemini |
 
@@ -436,8 +439,7 @@ chmod +x hooks/*.sh
 
 | File | Description |
 |------|-------------|
-| `.claude/skills/ultrawork/SKILL.md` | Auto-parallel execution |
-| `.claude/skills/autopilot/SKILL.md` | 5-phase workflow (Expansion → Planning → Execution → QA → Validation) |
+| `.claude/skills/autopilot/SKILL.md` | **Unified 5-phase workflow** (replaces ultrawork) - `--fast`, `--swarm`, `--ui` options |
 | `.claude/skills/swarm/SKILL.md` | Parallel agent execution with atomic task claiming |
 | `.claude/skills/ecomode/SKILL.md` | Resource-efficient operation mode |
 | `.claude/skills/git-master/SKILL.md` | Git expert |
@@ -464,11 +466,13 @@ chmod +x hooks/*.sh
 | `.sisyphus/ralph-state.json` | Ralph loop state |
 | `.sisyphus/ecomode.json` | Ecomode settings |
 | `.sisyphus/autopilot.json` | Autopilot workflow state |
+| `.sisyphus/workmode.json` | Workmode state (blocks direct modification) |
 | `.sisyphus/swarm.db` | Swarm SQLite database |
 | `.sisyphus/plans/` | Prometheus plan files |
 | `.sisyphus/specs/` | Autopilot spec files |
 | `.sisyphus/notepads/` | Sisyphus learning records |
 | `.sisyphus/autopilot-history/` | Archived autopilot sessions |
+| `.sisyphus/ui-verification/` | UI verification screenshots and results |
 
 ---
 
@@ -494,8 +498,10 @@ claude
 @debate     - Multi-model debate
 
 # Invoke skills
-/ultrawork - Auto-parallel execution
-/autopilot - 5-phase workflow (Expansion → Validation)
+/autopilot - Unified 5-phase workflow (replaces ultrawork)
+/autopilot --fast - Fast mode (skip Metis/Momus) - alias: ulw
+/autopilot --swarm 5 - Parallel execution with 5 agents
+/autopilot --ui - UI verification with Playwright + Gemini
 /swarm 3:junior - Parallel execution with 3 agents
 /ecomode on|off - Resource-efficient mode
 /git-master - Git operations
@@ -503,19 +509,32 @@ claude
 /playwright - Browser automation
 ```
 
-### Ultrawork Mode
+### Autopilot Mode (Unified Workflow)
 
 ```bash
-# Trigger ultrawork for complex tasks
-ulw Add complete authentication system with JWT
+# Full 5-phase workflow
+/autopilot "Add complete authentication system with JWT"
+
+# Fast mode (skip Metis/Momus) - alias: ulw
+ulw "Fix login button styling"
+
+# Parallel execution with 5 agents
+/autopilot --swarm 5 "Implement all API endpoints"
+
+# UI verification with Playwright + Gemini
+/autopilot --ui "Build dashboard page"
+
+# Combined options
+/autopilot --fast --swarm 3 "Quick parallel fix"
 
 # This will:
-# 1. [Optional] Metis analyzes request
-# 2. Prometheus creates a plan
-# 3. [Optional] Momus reviews plan
-# 4. Atlas distributes tasks
-# 5. Junior executes in parallel
-# 6. Ralph Loop continues until completion
+# 1. Enable workmode (blocks Sisyphus from direct code modification)
+# 2. Phase 0: Metis analyzes request (skip if --fast)
+# 3. Phase 1: Prometheus creates plan, Momus reviews (skip review if --fast)
+# 4. Phase 2: Atlas distributes tasks (or Swarm for parallel)
+# 5. Phase 3: QA - build, lint, tests (+ UI if --ui)
+# 6. Phase 4: Oracle validation
+# 7. Disable workmode on completion
 ```
 
 ### Media Analysis
@@ -530,18 +549,22 @@ ulw Add complete authentication system with JWT
 # 3. Return structured analysis
 ```
 
-### Autopilot (5-Phase Workflow)
+### UI Verification
 
 ```bash
-# Run complete workflow from request to validated code
-/autopilot Add user authentication with JWT
+# Enable UI verification in autopilot
+/autopilot --ui "Build dashboard page"
 
-# Phases:
-# 0. Expansion - Metis creates spec (.sisyphus/specs/)
-# 1. Planning - Prometheus + Momus create plan
-# 2. Execution - Atlas/Swarm execute tasks
-# 3. QA - Build, lint, tests must pass
-# 4. Validation - Oracle security review
+# What happens in QA phase:
+# 1. Build, lint, tests pass
+# 2. Playwright captures screenshot
+# 3. Gemini analyzes UI against expectations
+# 4. Reports visual issues or passes
+
+# Manual UI verification tools
+mcp__chronos__ui_verification_config(url, expectations, session_id)
+mcp__chronos__ui_verification_command(url, output_path)
+mcp__chronos__ui_verification_prompt(expectations)
 ```
 
 ### Swarm (Parallel Agents)
@@ -582,7 +605,7 @@ Planning Phase:
 User → Sisyphus → [Metis(GPT-5.2)] → Prometheus → [Momus(Codex-5.2)] → Plan File
 
 Execution Phase:
-Plan File → /ultrawork → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
+Plan File → /autopilot → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
 ```
 
 ```

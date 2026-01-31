@@ -7,7 +7,7 @@ disallowedTools:
   - Edit
   - Write
 skills:
-  - ultrawork
+  - autopilot
 ---
 
 # Atlas - Master Orchestrator

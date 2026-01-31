@@ -130,6 +130,10 @@ export function startAutopilot(directory, name, request, options = {}) {
       skip_momus: options.skip_momus || false,
       use_swarm: options.use_swarm || false,
       swarm_agents: options.swarm_agents || 3,
+      fast: options.fast || false,
+      ui: options.ui || false,
+      skip_qa: options.skip_qa || false,
+      skip_validation: options.skip_validation || false,
     },
   };
 
@@ -137,8 +141,8 @@ export function startAutopilot(directory, name, request, options = {}) {
   state.phases[0].status = "in_progress";
   state.phases[0].started_at = now;
 
-  // If skipping Metis, start at planning phase
-  if (options.skip_metis) {
+  // If skipping Metis (or fast mode), start at planning phase
+  if (options.skip_metis || options.fast) {
     state.phases[0].status = "skipped";
     state.phases[0].completed_at = now;
     state.current_phase = 1;
@@ -193,12 +197,16 @@ const GATE_CRITERIA = {
     return { passed: true };
   },
   3: (state) => {
-    // QA complete when build, lint, tests pass
+    // QA complete when build, lint, tests pass (and UI if enabled)
     const results = state.phases[3].results;
     if (!results) return { passed: false, reason: "No QA results recorded" };
     if (!results.build) return { passed: false, reason: "Build failed" };
     if (!results.lint) return { passed: false, reason: "Lint failed" };
     if (!results.tests) return { passed: false, reason: "Tests failed" };
+    // Check UI verification if enabled
+    if (state.options.ui && results.ui === false) {
+      return { passed: false, reason: "UI verification failed" };
+    }
     return { passed: true };
   },
   4: (state) => {
@@ -247,7 +255,7 @@ export function advancePhase(directory, output = null, metadata = {}) {
   const currentPhase = state.current_phase;
   const now = new Date().toISOString();
 
-  // Check gate criteria
+  // Check gate criteria (unless phase is being skipped)
   const gateResult = checkPhaseGate(directory);
   if (!gateResult.passed && currentPhase < 4) {
     return {
@@ -272,15 +280,39 @@ export function advancePhase(directory, output = null, metadata = {}) {
     state.status = "completed";
     state.completed_at = now;
   } else {
-    state.current_phase = currentPhase + 1;
+    let nextPhase = currentPhase + 1;
 
-    // Handle skips
-    if (state.current_phase === 1 && state.options.skip_momus) {
-      // Note: skip_momus means Prometheus handles it alone
+    // Handle phase skips based on options
+    while (nextPhase <= 4) {
+      // Skip QA phase (3) if skip_qa option is set
+      if (nextPhase === 3 && state.options.skip_qa) {
+        state.phases[3].status = "skipped";
+        state.phases[3].completed_at = now;
+        nextPhase++;
+        continue;
+      }
+
+      // Skip Validation phase (4) if skip_validation option is set
+      if (nextPhase === 4 && state.options.skip_validation) {
+        state.phases[4].status = "skipped";
+        state.phases[4].completed_at = now;
+        state.status = "completed";
+        state.completed_at = now;
+        break;
+      }
+
+      // Found a non-skipped phase
+      break;
     }
 
-    state.phases[state.current_phase].status = "in_progress";
-    state.phases[state.current_phase].started_at = now;
+    if (nextPhase > 4) {
+      state.status = "completed";
+      state.completed_at = now;
+    } else {
+      state.current_phase = nextPhase;
+      state.phases[nextPhase].status = "in_progress";
+      state.phases[nextPhase].started_at = now;
+    }
   }
 
   state.updated_at = now;

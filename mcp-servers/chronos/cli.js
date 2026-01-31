@@ -30,6 +30,12 @@ import {
 import { readAutopilotState, PHASE_NAMES } from "./lib/autopilot-state.js";
 import { readDebateState } from "./lib/debate-state.js";
 import { readEcomodeState } from "./lib/ecomode-state.js";
+import {
+  readWorkmodeState,
+  enableWorkmode,
+  disableWorkmode,
+  shouldBlockModification,
+} from "./lib/workmode-state.js";
 
 const directory = process.cwd();
 const command = process.argv[2];
@@ -143,6 +149,41 @@ async function main() {
       break;
     }
 
+    case "workmode-status": {
+      const state = readWorkmodeState(directory);
+      output(state);
+      break;
+    }
+
+    case "workmode-enable": {
+      const mode = args[0] || "autopilot";
+      const opts = {};
+      for (let i = 1; i < args.length; i += 2) {
+        const key = args[i]?.replace(/^--/, "");
+        const value = args[i + 1];
+        if (key === "fast") opts.fast = true;
+        if (key === "swarm") opts.swarm = parseInt(value, 10);
+        if (key === "ui") opts.ui = true;
+      }
+      const state = enableWorkmode(directory, mode, opts);
+      output({ success: true, state });
+      break;
+    }
+
+    case "workmode-disable": {
+      const result = disableWorkmode(directory);
+      output(result);
+      break;
+    }
+
+    case "workmode-check": {
+      const agent = args[0] || "main";
+      const filePath = args[1] || "";
+      const result = shouldBlockModification(directory, agent, filePath);
+      output(result);
+      break;
+    }
+
     case "context-reminder": {
       // Read all states
       const ralph = readRalphState(directory);
@@ -150,6 +191,7 @@ async function main() {
       const autopilot = readAutopilotState(directory);
       const ecomode = readEcomodeState(directory);
       const debate = readDebateState(directory);
+      const workmode = readWorkmodeState(directory);
 
       // Check if any active workflow exists
       const hasActiveWork =
@@ -158,7 +200,8 @@ async function main() {
         autopilot?.status === "running" ||
         debate?.status === "analyzing" ||
         debate?.status === "debating" ||
-        debate?.status === "voting";
+        debate?.status === "voting" ||
+        workmode?.active;
 
       // If no active work, exit silently
       if (!hasActiveWork) {
@@ -172,6 +215,13 @@ async function main() {
         "이 세션은 compact 후 재개되었습니다. 아래 상태를 확인하세요:"
       );
       console.log("");
+
+      if (workmode?.active) {
+        console.log(`📍 Workmode: ${workmode.mode} (활성)`);
+        if (workmode.options?.fast) console.log("   - Fast 모드");
+        if (workmode.options?.swarm) console.log(`   - Swarm: ${workmode.options.swarm} agents`);
+        if (workmode.options?.ui) console.log("   - UI 검증 포함");
+      }
 
       if (ralph?.active) {
         console.log(
@@ -191,6 +241,9 @@ async function main() {
         console.log(
           `📍 Autopilot: Phase ${autopilot.current_phase} (${PHASE_NAMES[autopilot.current_phase]})`
         );
+        if (autopilot.options?.fast) console.log("   - Fast 모드");
+        if (autopilot.options?.use_swarm) console.log(`   - Swarm: ${autopilot.options.swarm_agents} agents`);
+        if (autopilot.options?.ui) console.log("   - UI 검증 포함");
       }
 
       if (
@@ -207,8 +260,13 @@ async function main() {
 
       console.log("");
       console.log("🚨 작업 지침:");
-      console.log("1. Sisyphus는 직접 코드를 작성하지 마세요");
-      console.log("2. 작업이 진행 중이라면 Atlas에게 위임하세요");
+      if (workmode?.active) {
+        console.log("1. ⛔ Workmode 활성: Sisyphus 직접 코드 수정 금지");
+        console.log("2. Atlas에게 위임하여 작업 진행");
+      } else {
+        console.log("1. Sisyphus는 직접 코드를 작성하지 마세요");
+        console.log("2. 작업이 진행 중이라면 Atlas에게 위임하세요");
+      }
       console.log("3. Ralph Loop이 활성화되어 있다면 계속 실행하세요");
 
       break;
@@ -226,6 +284,14 @@ Usage:
   chronos should-continue     - Check if should continue (for hooks)
   chronos status              - Get full status
   chronos context-reminder    - Output context reminder after compact
+
+Workmode:
+  chronos workmode-status     - Get workmode status
+  chronos workmode-enable <mode> [--fast] [--swarm N] [--ui]
+                              - Enable workmode (autopilot|swarm)
+  chronos workmode-disable    - Disable workmode
+  chronos workmode-check <agent> [file_path]
+                              - Check if modification should be blocked
 `);
       process.exit(1);
   }

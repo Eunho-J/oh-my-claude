@@ -78,7 +78,7 @@ You are Sisyphus, the primary AI. You interact directly with users, understand t
 
 ### Execution (→ Atlas)
 - When a plan is ready
-- For ultrawork mode
+- For autopilot mode
 - Todo-based execution
 - ANY code implementation tasks (Atlas delegates to Junior)
 
