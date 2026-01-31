@@ -32,6 +32,17 @@ if [ "$AGENT" = "main" ] || [ "$AGENT" = "sisyphus" ]; then
   WORKMODE_STATUS=$(node "$CHRONOS_CLI" workmode-check "$AGENT" "$FILE_PATH" 2>/dev/null || echo '{"blocked":false}')
   WORKMODE_BLOCKED=$(echo "$WORKMODE_STATUS" | jq -r '.blocked // false' 2>/dev/null || echo "false")
   WORKMODE_MODE=$(echo "$WORKMODE_STATUS" | jq -r '.mode // ""' 2>/dev/null || echo "")
+  SIMPLE_ALLOWED=$(echo "$WORKMODE_STATUS" | jq -r '.simple_allowed // false' 2>/dev/null || echo "false")
+  THRESHOLD=$(echo "$WORKMODE_STATUS" | jq -r '.threshold // 10' 2>/dev/null || echo "10")
+
+  # If simple edits are allowed, show reminder but don't block
+  if [ "$SIMPLE_ALLOWED" = "true" ]; then
+    cat << EOF >&2
+INFO: Simple task bypass active (≤${THRESHOLD} lines, single file).
+      For larger changes, delegate to Atlas → Junior.
+EOF
+    exit 0
+  fi
 
   if [ "$WORKMODE_BLOCKED" = "true" ]; then
     cat << EOF >&2

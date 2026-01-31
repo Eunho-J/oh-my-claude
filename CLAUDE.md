@@ -481,11 +481,20 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 - Planning agents (Metis/Prometheus/Momus) do NOT call execution agents
 - Execution agents (Junior/Oracle/etc.) do NOT delegate further
 
-### Workmode (NEW)
+### Workmode
 - Enabled automatically when autopilot starts
-- Blocks Sisyphus from direct code modification
-- Ensures all changes go through Atlas → Junior
+- Blocks Sisyphus from direct code modification for complex tasks
+- Ensures large changes go through Atlas → Junior
 - Disabled when autopilot completes or `/autopilot off`
+
+**Simple Task Bypass (OOM Prevention):**
+- Tasks meeting ALL criteria bypass the agent chain:
+  - Single file modification
+  - ≤10 lines changed
+  - No new dependencies
+  - No architecture impact
+- This prevents memory explosion from unnecessary agent spawning
+- Threshold configurable: `simple_task_threshold` in workmode options
 
 ### External Model Routing Strategy
 
