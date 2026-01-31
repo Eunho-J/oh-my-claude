@@ -21,6 +21,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 - **UI Verification**: Playwright + Gemini for visual QA (with `--ui` flag)
 - **Smart Model Routing**: Automatic external model selection to reduce Claude API costs
 - **Swarm**: SQLite-based atomic task claiming for parallel agent execution
+- **Agent Limiter**: OOM prevention by limiting concurrent background agents (default: 5)
 - **Ecomode**: Resource-efficient mode (skip analysis phases)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
 - **Planning/Execution Separation**: Clean context management
@@ -207,6 +208,7 @@ cp .gitignore.sample .gitignore
 - `.sisyphus/boulder.json`, `.sisyphus/ralph-state.json` - Runtime state files
 - `.sisyphus/ecomode.json`, `.sisyphus/autopilot.json` - Runtime state files
 - `.sisyphus/swarm.db`, `.sisyphus/swarm.db-*` - Swarm SQLite database
+- `.sisyphus/active-agents.json` - Agent limiter state
 - `.sisyphus/debates/` - Debate state and history
 - `.sisyphus/autopilot-history/` - Archived autopilot sessions
 
@@ -467,6 +469,7 @@ chmod +x hooks/*.sh
 | `.sisyphus/ecomode.json` | Ecomode settings |
 | `.sisyphus/autopilot.json` | Autopilot workflow state |
 | `.sisyphus/workmode.json` | Workmode state (blocks direct modification) |
+| `.sisyphus/active-agents.json` | Agent limiter state (OOM prevention) |
 | `.sisyphus/swarm.db` | Swarm SQLite database |
 | `.sisyphus/plans/` | Prometheus plan files |
 | `.sisyphus/specs/` | Autopilot spec files |

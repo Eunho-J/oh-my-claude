@@ -37,6 +37,14 @@ import {
   shouldBlockModification,
 } from "./lib/workmode-state.js";
 
+import {
+  canSpawnAgent,
+  getAgentLimiterStatus,
+  setAgentLimit,
+  cleanupStaleAgents,
+  clearAllAgents,
+} from "./lib/agent-limiter.js";
+
 const directory = process.cwd();
 const command = process.argv[2];
 const args = process.argv.slice(3);
@@ -272,6 +280,42 @@ async function main() {
       break;
     }
 
+    // Agent Limiter commands
+    case "agent-limiter-status": {
+      const status = getAgentLimiterStatus(directory);
+      output(status);
+      break;
+    }
+
+    case "agent-limiter-can-spawn": {
+      const result = canSpawnAgent(directory);
+      output(result);
+      break;
+    }
+
+    case "agent-limiter-set-limit": {
+      const limit = parseInt(args[0], 10);
+      if (isNaN(limit) || limit < 1 || limit > 20) {
+        console.error("Error: Limit must be between 1 and 20");
+        process.exit(1);
+      }
+      const result = setAgentLimit(directory, limit);
+      output(result);
+      break;
+    }
+
+    case "agent-limiter-cleanup": {
+      const result = cleanupStaleAgents(directory);
+      output(result);
+      break;
+    }
+
+    case "agent-limiter-clear": {
+      const result = clearAllAgents(directory);
+      output(result);
+      break;
+    }
+
     default:
       console.error(`Unknown command: ${command}`);
       console.error(`
@@ -292,6 +336,14 @@ Workmode:
   chronos workmode-disable    - Disable workmode
   chronos workmode-check <agent> [file_path]
                               - Check if modification should be blocked
+
+Agent Limiter (OOM Prevention):
+  chronos agent-limiter-status    - Get current agent status
+  chronos agent-limiter-can-spawn - Check if new agent can spawn
+  chronos agent-limiter-set-limit <N>
+                                  - Set max concurrent agents (1-20)
+  chronos agent-limiter-cleanup   - Remove stale agents
+  chronos agent-limiter-clear     - Clear all agents (recovery)
 `);
       process.exit(1);
   }

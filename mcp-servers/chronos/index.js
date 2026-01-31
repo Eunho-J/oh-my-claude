@@ -116,6 +116,18 @@ import {
   MODELS,
 } from "./lib/model-router.js";
 
+import {
+  readAgentLimiterState,
+  canSpawnAgent,
+  registerAgent,
+  heartbeatAgent,
+  unregisterAgent,
+  setAgentLimit,
+  getAgentLimiterStatus,
+  cleanupStaleAgents,
+  clearAllAgents,
+} from "./lib/agent-limiter.js";
+
 // Default to current working directory
 const getDirectory = () => process.cwd();
 
@@ -1305,7 +1317,7 @@ server.tool(
 
 server.tool(
   "chronos_status",
-  "Get full Chronos status (Ralph Loop + Boulder + Ecomode + Workmode + Autopilot)",
+  "Get full Chronos status (Ralph Loop + Boulder + Ecomode + Workmode + Autopilot + Agent Limiter)",
   {},
   async () => {
     const ralph = readRalphState(getDirectory());
@@ -1315,6 +1327,7 @@ server.tool(
     const ecomode = readEcomodeState(getDirectory());
     const workmode = readWorkmodeState(getDirectory());
     const autopilot = readAutopilotState(getDirectory());
+    const agentLimiter = getAgentLimiterStatus(getDirectory());
 
     const status = {
       ralph_loop: ralph || { active: false },
@@ -1337,6 +1350,11 @@ server.tool(
         phase_name: PHASE_NAMES[autopilot.current_phase],
         options: autopilot.options,
       } : null,
+      agent_limiter: {
+        active: agentLimiter.active,
+        limit: agentLimiter.limit,
+        available: agentLimiter.available,
+      },
     };
 
     return {
@@ -1413,6 +1431,156 @@ server.tool(
             null,
             2
           ),
+        },
+      ],
+    };
+  }
+);
+
+// ============================================================================
+// Agent Limiter Tools (OOM Prevention)
+// ============================================================================
+
+server.tool(
+  "agent_limiter_status",
+  "Get current agent limiter status (active agents, limit, available slots)",
+  {},
+  async () => {
+    const status = getAgentLimiterStatus(getDirectory());
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(status, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "agent_limiter_can_spawn",
+  "Check if a new agent can be spawned",
+  {},
+  async () => {
+    const result = canSpawnAgent(getDirectory());
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "agent_limiter_register",
+  "Register a new agent (call when spawning background agent)",
+  {
+    agent_id: z.string().describe("Unique agent ID"),
+    agent_type: z.string().describe("Agent type (e.g., junior, explore)"),
+  },
+  async ({ agent_id, agent_type }) => {
+    const result = registerAgent(getDirectory(), agent_id, agent_type);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "agent_limiter_heartbeat",
+  "Update agent heartbeat (keeps agent from being marked stale)",
+  {
+    agent_id: z.string().describe("Agent ID to update"),
+  },
+  async ({ agent_id }) => {
+    const result = heartbeatAgent(getDirectory(), agent_id);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "agent_limiter_unregister",
+  "Unregister an agent (call when agent completes or fails)",
+  {
+    agent_id: z.string().describe("Agent ID to unregister"),
+    reason: z.string().optional().describe("Reason for unregistering (completed/failed)"),
+  },
+  async ({ agent_id, reason }) => {
+    const result = unregisterAgent(getDirectory(), agent_id, reason || "completed");
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "agent_limiter_set_limit",
+  "Set maximum concurrent agents (1-20)",
+  {
+    limit: z.number().min(1).max(20).describe("New agent limit"),
+  },
+  async ({ limit }) => {
+    const result = setAgentLimit(getDirectory(), limit);
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "agent_limiter_cleanup",
+  "Clean up stale agents (no heartbeat for 5+ minutes)",
+  {},
+  async () => {
+    const result = cleanupStaleAgents(getDirectory());
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
+
+server.tool(
+  "agent_limiter_clear",
+  "Clear all agents (for recovery from stuck state)",
+  {},
+  async () => {
+    const result = clearAllAgents(getDirectory());
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
         },
       ],
     };

@@ -232,6 +232,18 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 | `mcp__chronos__model_router_junior_tier` | Get Junior tier based on complexity |
 | `mcp__chronos__model_router_agent` | Get model configuration for agent |
 
+#### Agent Limiter (OOM Prevention)
+| Tool | Purpose |
+|------|---------|
+| `mcp__chronos__agent_limiter_status` | Get active agent count and limits |
+| `mcp__chronos__agent_limiter_can_spawn` | Check if new agent can spawn |
+| `mcp__chronos__agent_limiter_register` | Register agent when spawning |
+| `mcp__chronos__agent_limiter_heartbeat` | Update agent heartbeat |
+| `mcp__chronos__agent_limiter_unregister` | Unregister agent on completion |
+| `mcp__chronos__agent_limiter_set_limit` | Set max concurrent agents (1-20) |
+| `mcp__chronos__agent_limiter_cleanup` | Remove stale agents |
+| `mcp__chronos__agent_limiter_clear` | Clear all agents (recovery) |
+
 #### Integrated
 | Tool | Purpose |
 |------|---------|
@@ -283,6 +295,16 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
    - Output active workflow state (Ralph, Boulder, Autopilot, Debate, Workmode)
    - Remind agent delegation rules
 
+7. **Autopilot Gate** (PreToolUse - Edit|Write)
+   - Display current autopilot phase status
+   - Informational only (does not block)
+
+8. **Agent Limiter** (PreToolUse - Task)
+   - Prevents OOM by limiting concurrent background agents
+   - Default limit: 5 agents
+   - Blocks Task tool when limit reached
+   - State: `.sisyphus/active-agents.json`
+
 ## Directory Structure
 
 ```
@@ -299,7 +321,8 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 ├── ralph-state.json    # Ralph Loop state
 ├── ecomode.json        # Ecomode settings
 ├── autopilot.json      # Active autopilot state
-├── workmode.json       # Workmode state (NEW)
+├── workmode.json       # Workmode state
+├── active-agents.json  # Agent limiter state (OOM prevention)
 └── swarm.db            # SQLite database for swarm
 ```
 
@@ -491,6 +514,17 @@ Based on task complexity:
 - Uses Playwright for screenshots
 - Uses Gemini for visual analysis
 - Added to QA phase gate criteria
+
+### Agent Limiter (OOM Prevention)
+- Prevents OOM by limiting concurrent background agents
+- Default limit: 5 agents (configurable 1-20)
+- Automatically cleans up stale agents (no heartbeat for 5+ min)
+- Hook blocks Task tool when limit reached
+- Commands:
+  - `mcp__chronos__agent_limiter_status()` - Check current state
+  - `mcp__chronos__agent_limiter_set_limit(N)` - Change limit
+  - `mcp__chronos__agent_limiter_cleanup()` - Remove stale agents
+  - `mcp__chronos__agent_limiter_clear()` - Clear all (recovery)
 
 ### Reasoning Effort Configuration
 - **Metis**: GPT-5.2 with `xhigh` reasoning (pre-planning analysis)
