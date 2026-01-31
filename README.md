@@ -538,8 +538,11 @@ User Request
 
 ---
 
+## Credits
+
+- **[oh-my-opencode](https://github.com/sisyphus-labs/oh-my-opencode)** by Sisyphus Labs - Base architecture
+- **[oh-my-claudecode](https://github.com/Yeachan-Heo/oh-my-claudecode)** by Yeachan Heo (MIT License) - Tier-based Model Routing, Swarm, Ecomode, Autopilot features
+
 ## License
 
 [Sustainable Use License](./LICENSE)
-
-Based on [oh-my-opencode](https://github.com/sisyphus-labs/oh-my-opencode) by Sisyphus Labs.

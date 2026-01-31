@@ -3,6 +3,10 @@ Copyright (c) 2025 Eunho Jung
 Portions of this software are derived from oh-my-opencode, which is licensed
 under the Sustainable Use License. See below for the full license text.
 
+Portions of this software (Tier-based Model Routing, Swarm, Ecomode, Autopilot)
+are inspired by oh-my-claudecode (https://github.com/Yeachan-Heo/oh-my-claudecode),
+which is licensed under the MIT License. Copyright (c) 2025 Yeachan Heo.
+
 ---
 
 # License
