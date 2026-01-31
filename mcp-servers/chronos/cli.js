@@ -217,23 +217,23 @@ async function main() {
       }
 
       // Output reminder
-      console.log("⚠️ COMPACT 후 작업 상태 복구");
+      console.log("⚠️ POST-COMPACT STATE RECOVERY");
       console.log("");
       console.log(
-        "이 세션은 compact 후 재개되었습니다. 아래 상태를 확인하세요:"
+        "This session resumed after compact. Review the following state:"
       );
       console.log("");
 
       if (workmode?.active) {
-        console.log(`📍 Workmode: ${workmode.mode} (활성)`);
-        if (workmode.options?.fast) console.log("   - Fast 모드");
+        console.log(`📍 Workmode: ${workmode.mode} (active)`);
+        if (workmode.options?.fast) console.log("   - Fast mode");
         if (workmode.options?.swarm) console.log(`   - Swarm: ${workmode.options.swarm} agents`);
-        if (workmode.options?.ui) console.log("   - UI 검증 포함");
+        if (workmode.options?.ui) console.log("   - UI verification enabled");
       }
 
       if (ralph?.active) {
         console.log(
-          `📍 Ralph Loop: 활성 (${ralph.iteration}/${ralph.max_iterations})`
+          `📍 Ralph Loop: active (${ralph.iteration}/${ralph.max_iterations})`
         );
       }
 
@@ -241,7 +241,7 @@ async function main() {
         const progress = getActivePlanProgress(directory);
         console.log(`📍 Boulder: ${progress?.plan_name || "active"}`);
         if (progress) {
-          console.log(`   진행: ${progress.completed}/${progress.total} tasks`);
+          console.log(`   Progress: ${progress.completed}/${progress.total} tasks`);
         }
       }
 
@@ -249,9 +249,9 @@ async function main() {
         console.log(
           `📍 Autopilot: Phase ${autopilot.current_phase} (${PHASE_NAMES[autopilot.current_phase]})`
         );
-        if (autopilot.options?.fast) console.log("   - Fast 모드");
+        if (autopilot.options?.fast) console.log("   - Fast mode");
         if (autopilot.options?.use_swarm) console.log(`   - Swarm: ${autopilot.options.swarm_agents} agents`);
-        if (autopilot.options?.ui) console.log("   - UI 검증 포함");
+        if (autopilot.options?.ui) console.log("   - UI verification enabled");
       }
 
       if (
@@ -263,19 +263,19 @@ async function main() {
       }
 
       if (ecomode?.enabled) {
-        console.log(`📍 Ecomode: 활성화`);
+        console.log(`📍 Ecomode: enabled`);
       }
 
       console.log("");
-      console.log("🚨 작업 지침:");
+      console.log("🚨 WORK INSTRUCTIONS:");
       if (workmode?.active) {
-        console.log("1. ⛔ Workmode 활성: Sisyphus 직접 코드 수정 금지");
-        console.log("2. Atlas에게 위임하여 작업 진행");
+        console.log("1. ⛔ Workmode active: Sisyphus CANNOT modify code directly");
+        console.log("2. Delegate all work through Atlas");
       } else {
-        console.log("1. Sisyphus는 직접 코드를 작성하지 마세요");
-        console.log("2. 작업이 진행 중이라면 Atlas에게 위임하세요");
+        console.log("1. Sisyphus should NOT write code directly");
+        console.log("2. If work is in progress, delegate to Atlas");
       }
-      console.log("3. Ralph Loop이 활성화되어 있다면 계속 실행하세요");
+      console.log("3. If Ralph Loop is active, continue execution");
 
       break;
     }

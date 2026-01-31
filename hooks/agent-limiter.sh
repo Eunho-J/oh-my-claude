@@ -34,14 +34,14 @@ if [ "$ALLOWED" = "false" ]; then
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║  ⚠️ AGENT LIMIT REACHED - OOM PREVENTION                                   ║
 ╠═══════════════════════════════════════════════════════════════════════════╣
-║  현재 실행 중인 에이전트: $CURRENT / $LIMIT                                   ║
+║  Currently running agents: $CURRENT / $LIMIT                               ║
 ║                                                                            ║
-║  새 에이전트를 생성하려면:                                                   ║
-║  1. 기존 에이전트가 완료될 때까지 대기                                        ║
-║  2. mcp__chronos__agent_limiter_cleanup() 으로 stale 에이전트 정리          ║
-║  3. mcp__chronos__agent_limiter_set_limit(N) 으로 제한 증가 (주의)          ║
+║  To spawn a new agent:                                                     ║
+║  1. Wait for existing agents to complete                                   ║
+║  2. Run mcp__chronos__agent_limiter_cleanup() to remove stale agents       ║
+║  3. Run mcp__chronos__agent_limiter_set_limit(N) to increase limit (risky) ║
 ║                                                                            ║
-║  현재 에이전트 확인: mcp__chronos__agent_limiter_status()                   ║
+║  Check status: mcp__chronos__agent_limiter_status()                        ║
 ╚═══════════════════════════════════════════════════════════════════════════╝
 EOF
     exit 2
