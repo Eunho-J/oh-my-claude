@@ -483,18 +483,15 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 ### Workmode
 - Enabled automatically when autopilot starts
-- Blocks Sisyphus from direct code modification for complex tasks
-- Ensures large changes go through Atlas → Junior
+- **Advisory mode**: Sisyphus decides whether to execute directly or delegate
+- System trusts Sisyphus judgment for efficiency
 - Disabled when autopilot completes or `/autopilot off`
 
-**Simple Task Bypass (OOM Prevention):**
-- Tasks meeting ALL criteria bypass the agent chain:
-  - Single file modification
-  - ≤10 lines changed
-  - No new dependencies
-  - No architecture impact
-- This prevents memory explosion from unnecessary agent spawning
-- Threshold configurable: `simple_task_threshold` in workmode options
+**Judgment-Based Execution:**
+- Simple tasks (typos, config changes) → Sisyphus executes directly
+- Complex tasks (multi-file, new features) → Delegate to Atlas → Junior
+- This prevents OOM from unnecessary agent spawning for trivial changes
+- Sisyphus uses its judgment based on task complexity
 
 ### External Model Routing Strategy
 

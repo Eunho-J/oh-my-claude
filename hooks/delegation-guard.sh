@@ -26,45 +26,17 @@ if [[ "$FILE_PATH" == .sisyphus/* ]] || [[ "$FILE_PATH" == */.sisyphus/* ]]; the
   exit 0
 fi
 
-# Check workmode status (block main agent when workmode is active)
+# Check workmode status (advisory mode for main agent)
 if [ "$AGENT" = "main" ] || [ "$AGENT" = "sisyphus" ]; then
   # Check workmode via chronos CLI
   WORKMODE_STATUS=$(node "$CHRONOS_CLI" workmode-check "$AGENT" "$FILE_PATH" 2>/dev/null || echo '{"blocked":false}')
-  WORKMODE_BLOCKED=$(echo "$WORKMODE_STATUS" | jq -r '.blocked // false' 2>/dev/null || echo "false")
+  ADVISORY=$(echo "$WORKMODE_STATUS" | jq -r '.advisory // false' 2>/dev/null || echo "false")
   WORKMODE_MODE=$(echo "$WORKMODE_STATUS" | jq -r '.mode // ""' 2>/dev/null || echo "")
-  SIMPLE_ALLOWED=$(echo "$WORKMODE_STATUS" | jq -r '.simple_allowed // false' 2>/dev/null || echo "false")
-  THRESHOLD=$(echo "$WORKMODE_STATUS" | jq -r '.threshold // 10' 2>/dev/null || echo "10")
 
-  # If simple edits are allowed, show reminder but don't block
-  if [ "$SIMPLE_ALLOWED" = "true" ]; then
-    cat << EOF >&2
-INFO: Simple task bypass active (≤${THRESHOLD} lines, single file).
-      For larger changes, delegate to Atlas → Junior.
-EOF
+  # Advisory mode - remind but don't block, let Sisyphus decide
+  if [ "$ADVISORY" = "true" ]; then
+    echo "INFO: Workmode ($WORKMODE_MODE) active. Simple → direct, Complex → Atlas." >&2
     exit 0
-  fi
-
-  if [ "$WORKMODE_BLOCKED" = "true" ]; then
-    cat << EOF >&2
-╔═══════════════════════════════════════════════════════════════════════════╗
-║  ⚠️ WORKMODE ACTIVE - DELEGATION REQUIRED                                  ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║  Workmode ($WORKMODE_MODE) is currently active.                            ║
-║  Direct code modification by Sisyphus is blocked.                          ║
-║                                                                            ║
-║  Instead, delegate to Atlas for orchestrated execution:                    ║
-║  Task(subagent_type="atlas", prompt="Execute task...")                     ║
-║                                                                            ║
-║  To stop workmode: /autopilot off or mcp__chronos__workmode_disable()      ║
-╚═══════════════════════════════════════════════════════════════════════════╝
-EOF
-
-    # JSON response
-    cat << EOF
-{"blocked": true, "reason": "Workmode ($WORKMODE_MODE) active. Delegate to Atlas instead of direct modification."}
-EOF
-
-    exit 2
   fi
 fi
 

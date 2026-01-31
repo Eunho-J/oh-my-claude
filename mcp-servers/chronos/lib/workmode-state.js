@@ -64,9 +64,6 @@ function writeWorkmodeState(directory, state) {
   return state;
 }
 
-// Default threshold for simple task bypass
-const DEFAULT_SIMPLE_TASK_THRESHOLD = 10;
-
 /**
  * Enable workmode
  *
@@ -86,9 +83,6 @@ export function enableWorkmode(directory, mode, options = {}) {
       fast: options.fast || false,
       swarm: options.swarm || null,
       ui: options.ui || false,
-      // Simple task bypass settings
-      allow_simple_edits: true,
-      simple_task_threshold: options.simple_task_threshold || DEFAULT_SIMPLE_TASK_THRESHOLD,
       ...options,
     },
   };
@@ -132,7 +126,7 @@ export function updateWorkmodeOptions(directory, options) {
  * @param {string} directory - Working directory
  * @param {string} agent - Agent name (main, atlas, junior, etc.)
  * @param {string} filePath - File being modified
- * @returns {object} { blocked: boolean, reason: string, simple_allowed: boolean }
+ * @returns {object} { blocked: boolean, reason: string, advisory: boolean }
  */
 export function shouldBlockModification(directory, agent, filePath) {
   const state = readWorkmodeState(directory);
@@ -147,28 +141,13 @@ export function shouldBlockModification(directory, agent, filePath) {
     return { blocked: false };
   }
 
-  // Check for simple task bypass for main agent (Sisyphus)
+  // Advisory mode for main agent (Sisyphus) - let Sisyphus decide
   if (agent === "main" || agent === "sisyphus") {
-    const allowSimple = state.options?.allow_simple_edits !== false;
-    const threshold = state.options?.simple_task_threshold || DEFAULT_SIMPLE_TASK_THRESHOLD;
-
-    if (allowSimple) {
-      // Allow with reminder about threshold
-      return {
-        blocked: false,
-        simple_allowed: true,
-        threshold: threshold,
-        reminder: `Simple task bypass active (≤${threshold} lines, single file). For larger changes, delegate to Atlas.`,
-        mode: state.mode,
-      };
-    }
-
-    // Strict mode - block all Sisyphus edits
     return {
-      blocked: true,
-      reason: `Workmode (${state.mode}) is active. Delegate to Atlas instead of directly modifying code.`,
+      blocked: false,
+      advisory: true,
       mode: state.mode,
-      options: state.options,
+      reminder: "Workmode active. Use your judgment: simple tasks → direct, complex tasks → delegate to Atlas.",
     };
   }
 
