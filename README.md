@@ -8,15 +8,20 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 
 ## Features
 
-- **Multi-Agent Orchestration**: 11 specialized agents with clear role separation
+- **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
   - Planning: Metis (GPT-5.2 xhigh), Prometheus, Momus (Codex-5.2 xhigh)
   - Execution: Atlas, Junior, Oracle, Explore, Multimodal-looker, Librarian
-  - User-facing: Sisyphus (Primary AI)
+  - Tier Variants: Junior-low/high, Oracle-low, Explore-high
+  - User-facing: Sisyphus (Primary AI), Debate
+- **Tier-based Model Routing**: Automatic agent selection based on task complexity (Haiku/Sonnet/Opus)
 - **External Model Integration**: GPT-5.2/Codex-5.2 (xhigh reasoning), Google Gemini, GLM-4.7 via MCP
 - **Ralph Loop**: Auto-continuation until task completion
+- **Autopilot**: 5-phase workflow (Expansion → Planning → Execution → QA → Validation)
+- **Swarm**: SQLite-based atomic task claiming for parallel agent execution
+- **Ecomode**: Resource-efficient mode (prefer Haiku, skip analysis phases)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
 - **Planning/Execution Separation**: Clean context management
-- **Skill System**: ultrawork, git-master, frontend-ui-ux, playwright
+- **Skill System**: ultrawork, autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
 
 # Setup Guide
 
@@ -96,6 +101,9 @@ rm -rf /tmp/oh-my-claude
 # Check Node.js (v18+ required)
 node --version 2>/dev/null || echo "Node.js: NOT INSTALLED"
 
+# Check build tools (required for native modules like better-sqlite3)
+g++ --version 2>/dev/null | head -1 || echo "g++: NOT INSTALLED"
+
 # Check Bun
 bun --version 2>/dev/null || echo "Bun: NOT INSTALLED"
 
@@ -105,6 +113,11 @@ uv --version 2>/dev/null || echo "uv: NOT INSTALLED"
 
 **Install only if not present or outdated:**
 ```bash
+# Install build-essential (Linux only - required for better-sqlite3 in Swarm MCP)
+# This is needed if your Node.js version doesn't have prebuilt binaries
+sudo apt install build-essential  # Debian/Ubuntu
+# or: sudo dnf groupinstall "Development Tools"  # Fedora/RHEL
+
 # Install Bun runtime (required for Gemini MCP) - skip if already installed
 command -v bun >/dev/null || curl -fsSL https://bun.sh/install | bash
 
@@ -141,7 +154,18 @@ npx playwright install
 ### 1.4 Install Local Dependencies
 
 ```bash
-# Install MCP server dependencies (uses package.json)
+# Install Chronos MCP server (Ralph Loop, Boulder, Debate, Ecomode, Autopilot)
+cd mcp-servers/chronos
+npm install
+cd ../..
+
+# Install Swarm MCP server (SQLite atomic task claiming)
+# Note: Requires build-essential for better-sqlite3 compilation
+cd mcp-servers/swarm
+npm install
+cd ../..
+
+# Install LSP Tools MCP server
 cd mcp-servers/lsp-tools
 npm install
 cd ../..
@@ -152,7 +176,11 @@ uv sync
 cd ../..
 ```
 
-**Note:** The LSP MCP server uses `@modelcontextprotocol/sdk` for MCP protocol support. The Z.ai GLM MCP server uses Python with `mcp` and `zai-sdk` packages.
+**Note:**
+- Chronos MCP provides state management (Ralph Loop, Boulder, Debate, Ecomode, Autopilot)
+- Swarm MCP uses `better-sqlite3` for atomic task claiming - requires build tools on Linux
+- LSP Tools MCP provides Language Server Protocol and AST-Grep integration
+- Z.ai GLM MCP uses Python with `mcp` and `zai-sdk` packages
 
 ### 1.5 Make Hook Scripts Executable
 
@@ -174,10 +202,14 @@ cp .gitignore.sample .gitignore
 - `node_modules/` - Dependencies (reinstall with `npm install`)
 - `mcp-servers/zai-glm/.venv/` - Python virtual environment
 - `.sisyphus/boulder.json`, `.sisyphus/ralph-state.json` - Runtime state files
+- `.sisyphus/ecomode.json`, `.sisyphus/autopilot.json` - Runtime state files
+- `.sisyphus/swarm.db`, `.sisyphus/swarm.db-*` - Swarm SQLite database
 - `.sisyphus/debates/` - Debate state and history
+- `.sisyphus/autopilot-history/` - Archived autopilot sessions
 
 **What is preserved:**
 - `.sisyphus/plans/` - Prometheus plan files (user content)
+- `.sisyphus/specs/` - Autopilot spec files (user content)
 - `.sisyphus/notepads/` - Sisyphus learning records (user content)
 
 ### 1.7 MCP Permissions (Pre-configured)
@@ -188,7 +220,16 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 - `mcp__chronos__ralph_*` - Ralph Loop control
 - `mcp__chronos__boulder_*` - Boulder state management
 - `mcp__chronos__debate_*` - Debate session management
+- `mcp__chronos__ecomode_*` - Ecomode settings
+- `mcp__chronos__autopilot_*` - Autopilot 5-phase workflow
 - `mcp__chronos__chronos_status`, `mcp__chronos__chronos_should_continue`
+
+**Swarm (Parallel Execution):**
+- `mcp__swarm__swarm_init` - Initialize task pool
+- `mcp__swarm__swarm_claim` - Atomic task claiming
+- `mcp__swarm__swarm_complete`, `mcp__swarm__swarm_fail` - Task completion
+- `mcp__swarm__swarm_heartbeat`, `mcp__swarm__swarm_recover` - Agent liveness
+- `mcp__swarm__swarm_stats`, `mcp__swarm__swarm_list`, `mcp__swarm__swarm_add`
 
 **External Models:**
 - `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI Codex/GPT-5.2
@@ -373,25 +414,32 @@ chmod +x hooks/*.sh
 
 ### Agents
 
-| File | Description | External Model |
-|------|-------------|----------------|
-| `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | - |
-| `.claude/agents/atlas/AGENT.md` | Master orchestrator | - |
-| `.claude/agents/prometheus/AGENT.md` | Strategic planner | - |
-| `.claude/agents/metis/AGENT.md` | Pre-planning consultant | GPT-5.2 (xhigh) |
-| `.claude/agents/momus/AGENT.md` | Plan reviewer | Codex-5.2 (xhigh) |
-| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Codex |
-| `.claude/agents/explore/AGENT.md` | Fast codebase exploration | - |
-| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Gemini |
-| `.claude/agents/librarian/AGENT.md` | Documentation search | GLM-4.7 |
-| `.claude/agents/junior/AGENT.md` | Task executor | - |
-| `.claude/agents/debate/AGENT.md` | Multi-model debate | GPT-5.2, Gemini |
+| File | Description | Model | External Model |
+|------|-------------|-------|----------------|
+| `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | Opus | - |
+| `.claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
+| `.claude/agents/prometheus/AGENT.md` | Strategic planner | Opus | - |
+| `.claude/agents/metis/AGENT.md` | Pre-planning consultant | Haiku | GPT-5.2 (xhigh) |
+| `.claude/agents/momus/AGENT.md` | Plan reviewer | Haiku | Codex-5.2 (xhigh) |
+| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Sonnet | Codex |
+| `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
+| `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
+| `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | Sonnet | - |
+| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Sonnet | Gemini |
+| `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-4.7 |
+| `.claude/agents/junior/AGENT.md` | Task executor (medium) | Sonnet | - |
+| `.claude/agents/junior-low/AGENT.md` | Simple task executor | Haiku | - |
+| `.claude/agents/junior-high/AGENT.md` | Complex task executor | Opus | - |
+| `.claude/agents/debate/AGENT.md` | Multi-model debate | Opus | GPT-5.2, Gemini |
 
 ### Skills
 
 | File | Description |
 |------|-------------|
 | `.claude/skills/ultrawork/SKILL.md` | Auto-parallel execution |
+| `.claude/skills/autopilot/SKILL.md` | 5-phase workflow (Expansion → Planning → Execution → QA → Validation) |
+| `.claude/skills/swarm/SKILL.md` | Parallel agent execution with atomic task claiming |
+| `.claude/skills/ecomode/SKILL.md` | Resource-efficient operation mode |
 | `.claude/skills/git-master/SKILL.md` | Git expert |
 | `.claude/skills/frontend-ui-ux/SKILL.md` | UI/UX design patterns |
 | `.claude/skills/playwright/SKILL.md` | Browser automation |
@@ -403,7 +451,9 @@ chmod +x hooks/*.sh
 | `hooks/ralph-loop.sh` | Stop | Auto-continuation loop |
 | `hooks/todo-enforcer.sh` | Stop | Prevents stopping with incomplete tasks |
 | `hooks/comment-checker.sh` | PostToolUse | Warns about unnecessary comments |
+| `hooks/debate-lock.sh` | PreToolUse | Blocks code changes during debate |
 | `hooks/delegation-guard.sh` | PreToolUse | Prevents Atlas from direct code edits |
+| `hooks/autopilot-gate.sh` | (info only) | Displays autopilot phase status |
 
 ### State Files
 
@@ -411,8 +461,13 @@ chmod +x hooks/*.sh
 |------|-------------|
 | `.sisyphus/boulder.json` | Current work status |
 | `.sisyphus/ralph-state.json` | Ralph loop state |
+| `.sisyphus/ecomode.json` | Ecomode settings |
+| `.sisyphus/autopilot.json` | Autopilot workflow state |
+| `.sisyphus/swarm.db` | Swarm SQLite database |
 | `.sisyphus/plans/` | Prometheus plan files |
+| `.sisyphus/specs/` | Autopilot spec files |
 | `.sisyphus/notepads/` | Sisyphus learning records |
+| `.sisyphus/autopilot-history/` | Archived autopilot sessions |
 
 ---
 
@@ -439,6 +494,9 @@ claude
 
 # Invoke skills
 /ultrawork - Auto-parallel execution
+/autopilot - 5-phase workflow (Expansion → Validation)
+/swarm 3:junior - Parallel execution with 3 agents
+/ecomode on|off - Resource-efficient mode
 /git-master - Git operations
 /frontend-ui-ux - UI/UX guidance
 /playwright - Browser automation
@@ -469,6 +527,49 @@ ulw Add complete authentication system with JWT
 # 1. Receive file path
 # 2. Analyze with Gemini (mcp__gemini__analyzeFile)
 # 3. Return structured analysis
+```
+
+### Autopilot (5-Phase Workflow)
+
+```bash
+# Run complete workflow from request to validated code
+/autopilot Add user authentication with JWT
+
+# Phases:
+# 0. Expansion - Metis creates spec (.sisyphus/specs/)
+# 1. Planning - Prometheus + Momus create plan
+# 2. Execution - Atlas/Swarm execute tasks
+# 3. QA - Build, lint, tests must pass
+# 4. Validation - Oracle security review
+```
+
+### Swarm (Parallel Agents)
+
+```bash
+# Launch multiple agents with atomic task claiming
+/swarm 5:junior "Implement all API endpoints"
+
+# Workflow:
+# 1. Tasks are stored in SQLite database
+# 2. Agents atomically claim tasks (no duplicates)
+# 3. Heartbeat mechanism detects stale agents
+# 4. Stale tasks are recovered and re-assigned
+```
+
+### Ecomode (Resource Efficiency)
+
+```bash
+# Enable ecomode for cost-effective execution
+/ecomode on
+
+# Effects:
+# - junior → junior-low (Haiku instead of Sonnet)
+# - oracle → oracle-low (Haiku instead of Sonnet)
+# - Skip Metis/Momus analysis phases
+# - Shorter responses
+
+# Disable ecomode
+/ecomode off
 ```
 
 ---
