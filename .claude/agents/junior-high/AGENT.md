@@ -3,9 +3,6 @@ name: junior-high
 description: High-tier task executor for complex tasks (Opus)
 model: opus
 permissionMode: acceptEdits
-tools:
-  - mcp__chronos__agent_limiter_register
-  - mcp__chronos__agent_limiter_unregister
 disallowedTools:
   - Task
 ---

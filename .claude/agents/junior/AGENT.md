@@ -3,9 +3,6 @@ name: junior
 description: Focused task executor. Todo-based work
 model: sonnet
 permissionMode: acceptEdits
-tools:
-  - mcp__chronos__agent_limiter_register
-  - mcp__chronos__agent_limiter_unregister
 disallowedTools:
   - Task
 ---

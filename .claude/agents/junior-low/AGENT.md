@@ -3,9 +3,6 @@ name: junior-low
 description: Low-tier task executor for simple tasks (Sonnet - upgraded for quality)
 model: sonnet
 permissionMode: acceptEdits
-tools:
-  - mcp__chronos__agent_limiter_register
-  - mcp__chronos__agent_limiter_unregister
 disallowedTools:
   - Task
 ---
