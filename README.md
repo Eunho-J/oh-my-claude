@@ -9,12 +9,12 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 ## Features
 
 - **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
-  - Planning: Metis (GPT-5.2 xhigh), Prometheus, Momus (Codex-5.2 xhigh)
+  - Planning: Metis (GPT-5.3-Codex xhigh), Prometheus, Momus (GPT-5.3-Codex xhigh)
   - Execution: Atlas, Junior, Oracle, Explore, Multimodal-looker, Librarian
   - Tier Variants: Junior-low/high, Oracle-low, Explore-high
   - User-facing: Sisyphus (Primary AI), Debate
 - **Tier-based Model Routing**: Automatic agent selection based on task complexity (Haiku/Sonnet/Opus)
-- **External Model Integration**: GPT-5.2/Codex-5.2 (xhigh reasoning), Google Gemini, GLM-4.7 via MCP
+- **External Model Integration**: GPT-5.3-Codex (xhigh reasoning), Google Gemini, GLM-5 via MCP
 - **Ralph Loop**: Auto-continuation until task completion
 - **Unified Autopilot**: 5-phase workflow with options (`--fast`, `--swarm`, `--ui`, `--no-qa`, `--no-validation`)
 - **Workmode**: Blocks direct code modification when autopilot is active
@@ -113,6 +113,9 @@ bun --version 2>/dev/null || echo "Bun: NOT INSTALLED"
 
 # Check uv
 uv --version 2>/dev/null || echo "uv: NOT INSTALLED"
+
+# Check jq (required for hook scripts)
+jq --version 2>/dev/null || echo "jq: NOT INSTALLED"
 ```
 
 **Install only if not present or outdated:**
@@ -127,6 +130,14 @@ command -v bun >/dev/null || curl -fsSL https://bun.sh/install | bash
 
 # Install uv (required for Z.ai GLM MCP) - skip if already installed
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install jq (required for hook scripts JSON processing)
+# macOS
+command -v jq >/dev/null || brew install jq
+# Linux (Debian/Ubuntu)
+# command -v jq >/dev/null || sudo apt install jq
+# Linux (Fedora/RHEL)
+# command -v jq >/dev/null || sudo dnf install jq
 ```
 
 ### 1.3 Install Global CLI Tools
@@ -148,12 +159,36 @@ npx playwright --version 2>/dev/null || echo "Playwright: NOT INSTALLED"
 # Install Codex CLI (for Oracle agent) - skip if already installed
 command -v codex >/dev/null || npm install -g codex
 
-# Install Gemini CLI (for Multimodal-looker agent) - skip if already installed
+# Install mcp-gemini-cli (https://github.com/choplin/mcp-gemini-cli) - skip if already installed
 command -v gemini >/dev/null || npm install -g @google/gemini-cli
 
 # Install Playwright (for browser automation skill)
 npx playwright install
 ```
+
+### 1.3.1 Local vs Global MCP Installation
+
+oh-my-claude provides MCP server configuration in two ways:
+
+**Local Installation (Default - Recommended for per-project setup):**
+- The `.mcp.json` file in the project root is already configured
+- MCP servers are available only within this project
+- No additional configuration needed
+
+**Global Installation (For cross-project availability):**
+- Use `claude mcp add` to register MCP servers globally
+- MCP servers become available in all Claude Code projects
+
+```bash
+# Register MCP servers globally (optional)
+claude mcp add codex -s user -- npx -y codex mcp-server
+claude mcp add gemini -s user -- bunx mcp-gemini-cli
+claude mcp add chronos -s user -- node /path/to/mcp-servers/chronos/index.js
+claude mcp add swarm -s user -- node /path/to/mcp-servers/swarm/index.js
+claude mcp add lsp-tools -s user -- node /path/to/mcp-servers/lsp-tools/index.js
+```
+
+> **Note:** Local `.mcp.json` is included in the repository and works out of the box. Global installation is useful when you want MCP servers available across all your projects.
 
 ### 1.4 Install Local Dependencies
 
@@ -237,9 +272,9 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 - `mcp__swarm__swarm_stats`, `mcp__swarm__swarm_list`, `mcp__swarm__swarm_add`
 
 **External Models:**
-- `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI Codex/GPT-5.2
+- `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI GPT-5.3-Codex
 - `mcp__gemini__chat`, `mcp__gemini__googleSearch`, `mcp__gemini__analyzeFile` - Google Gemini
-- `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-4.7
+- `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-5
 
 **Documentation & Code Search:**
 - `mcp__context7__resolve-library-id`, `mcp__context7__query-docs` - Context7
@@ -258,6 +293,7 @@ echo "Node.js: $(node --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Bun: $(bun --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Codex: $(npx codex --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 
 # Check directory structure
 echo "=== Checking Directory Structure ==="
@@ -289,7 +325,7 @@ Create a `.env` file or export environment variables:
 # Required for documentation search (Context7)
 export CONTEXT7_API_KEY="your-context7-api-key"
 
-# Required for GLM-4.7 (Z.ai) - Librarian agent
+# Required for GLM-5 (Z.ai) - Librarian agent
 export Z_AI_API_KEY="your-zai-api-key"
 ```
 
@@ -424,18 +460,18 @@ chmod +x hooks/*.sh
 | `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | Opus | - |
 | `.claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
 | `.claude/agents/prometheus/AGENT.md` | Strategic planner | Opus | - |
-| `.claude/agents/metis/AGENT.md` | Pre-planning consultant | Haiku | GPT-5.2 (xhigh) |
-| `.claude/agents/momus/AGENT.md` | Plan reviewer | Haiku | Codex-5.2 (xhigh) |
-| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Sonnet | Codex |
+| `.claude/agents/metis/AGENT.md` | Pre-planning consultant | Haiku | GPT-5.3-Codex (xhigh) |
+| `.claude/agents/momus/AGENT.md` | Plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
+| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Sonnet | GPT-5.3-Codex |
 | `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
 | `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
 | `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | Sonnet | - |
 | `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Sonnet | Gemini |
-| `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-4.7 |
+| `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-5 |
 | `.claude/agents/junior/AGENT.md` | Task executor (medium) | Sonnet | - |
 | `.claude/agents/junior-low/AGENT.md` | Simple task executor | **Sonnet** | - |
 | `.claude/agents/junior-high/AGENT.md` | Complex task executor | Opus | - |
-| `.claude/agents/debate/AGENT.md` | Multi-model debate | Opus | GPT-5.2, Gemini |
+| `.claude/agents/debate/AGENT.md` | Multi-model debate | Opus | GPT-5.3-Codex, Gemini |
 
 ### Skills
 
@@ -605,7 +641,7 @@ mcp__chronos__ui_verification_prompt(expectations)
 
 ```
 Planning Phase:
-User → Sisyphus → [Metis(GPT-5.2)] → Prometheus → [Momus(Codex-5.2)] → Plan File
+User → Sisyphus → [Metis(GPT-5.3-Codex)] → Prometheus → [Momus(GPT-5.3-Codex)] → Plan File
 
 Execution Phase:
 Plan File → /autopilot → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
@@ -633,19 +669,19 @@ User Request
 │   Prometheus    │       │   Atlas     │ (Orchestrator)
 │   (Opus)        │       │  (Sonnet)   │
 ├─────────────────┤       └──────┬──────┘
-│ Metis → GPT-5.2 │              │
-│      (xhigh)    │   ┌──────────┼──────────┐
+│ Metis → GPT-5.3 │              │
+│   -Codex (xhigh)│   ┌──────────┼──────────┐
 ├─────────────────┤   ▼          ▼          ▼
-│ Momus → Codex   │ ┌──────┐ ┌───────┐ ┌──────────┐
-│   5.2 (xhigh)   │ │Junior│ │Oracle │ │Librarian │
+│ Momus → GPT-5.3 │ ┌──────┐ ┌───────┐ ┌──────────┐
+│   -Codex (xhigh)│ │Junior│ │Oracle │ │Librarian │
 └─────────────────┘ │Sonnet│ │Sonnet │ │ Haiku    │
                     └──────┘ └───┬───┘ └────┬─────┘
                                  │          │
                                  ▼          ▼
-                            ┌────────┐ ┌────────┐
-                            │ Codex  │ │GLM-4.7 │
-                            │ (GPT)  │ │ (Z.ai) │
-                            └────────┘ └────────┘
+                            ┌────────┐ ┌───────┐
+                            │GPT-5.3 │ │ GLM-5 │
+                            │ -Codex │ │(Z.ai) │
+                            └────────┘ └───────┘
 ```
 
 ### Agent Model Summary
@@ -655,13 +691,13 @@ User Request
 | Sisyphus | Opus | - | - |
 | Atlas | Sonnet | - | - |
 | Prometheus | Opus | - | - |
-| **Metis** | Haiku | GPT-5.2 | **xhigh** |
-| **Momus** | Haiku | Codex-5.2 | **xhigh** |
-| Oracle | Sonnet | Codex | default |
-| Debate | Opus | GPT-5.2, Gemini | - |
+| **Metis** | Haiku | GPT-5.3-Codex | **xhigh** |
+| **Momus** | Haiku | GPT-5.3-Codex | **xhigh** |
+| Oracle | Sonnet | GPT-5.3-Codex | default |
+| Debate | Opus | GPT-5.3-Codex, Gemini | - |
 | Explore | Haiku | - | - |
 | Multimodal-looker | Sonnet | Gemini | - |
-| Librarian | Haiku | GLM-4.7 | - |
+| Librarian | Haiku | GLM-5 | - |
 | Junior | Sonnet | - | - |
 
 ---

@@ -24,7 +24,7 @@ You are Sisyphus, the primary AI. You interact directly with users, understand t
 
 | Agent | Purpose |
 |-------|---------|
-| `metis` | Pre-planning analysis (GPT-5.2 xhigh) |
+| `metis` | Pre-planning analysis (GPT-5.3-Codex xhigh) |
 | `prometheus` | Strategic planning |
 | `atlas` | Plan execution via todo list |
 | `debate` | Multi-model critical decisions |

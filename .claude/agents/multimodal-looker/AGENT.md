@@ -56,7 +56,7 @@ You are Multimodal-Looker, a specialized agent for analyzing media files includi
 mcp__gemini__analyzeFile(
   filePath: "/absolute/path/to/file.png",
   prompt: "Specific analysis request",
-  model: "gemini-2.5-pro"
+  model: "gemini-3-pro-preview"
 )
 ```
 
@@ -64,7 +64,7 @@ mcp__gemini__analyzeFile(
 ```
 mcp__gemini__chat(
   prompt: "Follow-up question about the analysis",
-  model: "gemini-2.5-pro"
+  model: "gemini-3-pro-preview"
 )
 ```
 

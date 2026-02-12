@@ -54,11 +54,11 @@ Execute a complete workflow from initial request to validated code. This skill r
 
 | Phase | Name | Agent | Gate Criteria |
 |-------|------|-------|---------------|
-| 0 | Expansion | Metis (GPT) | spec.md created |
+| 0 | Expansion | Metis (GPT-5.3-Codex) | spec.md created |
 | 1 | Planning | Prometheus → Momus | plan approved |
 | 2 | Execution | Atlas → Junior | all tasks done |
 | 3 | QA | Junior | build + lint + tests (+ ui) pass |
-| 4 | Validation | Oracle (Codex) | security + code review |
+| 4 | Validation | Oracle (GPT-5.3-Codex) | security + code review |
 
 ## Options
 
@@ -97,7 +97,7 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 ```markdown
 Skip if: --fast
 
-1. Delegate to Metis agent (GPT-5.2 xhigh reasoning)
+1. Delegate to Metis agent (GPT-5.3-Codex xhigh reasoning)
 2. Metis creates: .sisyphus/specs/{name}.md
 3. Set output: mcp__chronos__autopilot_set_output(0, spec_path)
 4. Advance: mcp__chronos__autopilot_advance()
@@ -108,7 +108,7 @@ Skip if: --fast
 ```markdown
 1. Delegate to Prometheus agent with spec
 2. Prometheus creates plan: .sisyphus/plans/{name}.md
-3. Momus reviews (Codex-5.2 xhigh) unless --fast
+3. Momus reviews (GPT-5.3-Codex xhigh) unless --fast
 4. Set output and advance
 ```
 
@@ -208,11 +208,11 @@ External models are used to reduce Claude API costs:
 
 | Agent | Primary Model | Fallback |
 |-------|---------------|----------|
-| Metis | GPT-5.2 (xhigh) | Claude Sonnet |
-| Momus | Codex-5.2 (xhigh) | Claude Sonnet |
-| Oracle | Codex | Claude Sonnet |
+| Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet |
+| Momus | GPT-5.3-Codex (xhigh) | Claude Sonnet |
+| Oracle | GPT-5.3-Codex | Claude Sonnet |
 | Multimodal-looker | Gemini | Claude Sonnet |
-| Librarian | GLM-4.7 | Claude Haiku |
+| Librarian | GLM-5 | Claude Haiku |
 
 Junior agent tiers based on task complexity:
 

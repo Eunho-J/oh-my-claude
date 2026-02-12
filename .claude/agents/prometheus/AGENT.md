@@ -29,7 +29,7 @@ You are Prometheus, the strategic planner. You gather requirements through inter
 
 | Agent | Purpose |
 |-------|---------|
-| `momus` | Plan review (Codex-5.2 xhigh) |
+| `momus` | Plan review (GPT-5.3-Codex xhigh) |
 | `explore` | Codebase exploration for context |
 | `librarian` | Documentation search for context |
 

@@ -6,19 +6,19 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 
 ```
 Planning Phase:
-User → Sisyphus → [Metis(GPT-5.2 xhigh)] → Prometheus → [Momus(Codex-5.2 xhigh)] → Plan File
+User → Sisyphus → [Metis(GPT-5.3-Codex xhigh)] → Prometheus → [Momus(GPT-5.3-Codex xhigh)] → Plan File
 
 Execution Phase:
 Plan File → /autopilot → boulder.json → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
 ```
 
 ### External Model Integration
-- **Metis**: GPT-5.2 with xhigh reasoning effort (pre-planning analysis)
-- **Momus**: Codex-5.2 with xhigh reasoning effort (plan review)
-- **Oracle**: Codex (architecture consultation)
+- **Metis**: GPT-5.3-Codex with xhigh reasoning effort (pre-planning analysis)
+- **Momus**: GPT-5.3-Codex with xhigh reasoning effort (plan review)
+- **Oracle**: GPT-5.3-Codex (architecture consultation)
 - **Multimodal-looker**: Gemini (media analysis)
-- **Librarian**: GLM-4.7 (documentation search)
-- **Debate**: GPT-5.2 + Gemini (multi-model consensus)
+- **Librarian**: GLM-5 (documentation search)
+- **Debate**: GPT-5.3-Codex + Gemini (multi-model consensus)
 
 ### Core Philosophy
 1. **Separation of Planning and Execution** - Prevent context pollution
@@ -34,15 +34,15 @@ Plan File → /autopilot → boulder.json → Atlas → [Oracle, Explore, Multim
 | Sisyphus | Primary AI (User-facing) | Opus | - | - |
 | Atlas | Master Orchestrator | Sonnet | - | - |
 | Prometheus | Strategic Planner | Opus | - | - |
-| Metis | Pre-planning Consultant | Haiku | GPT-5.2 | xhigh |
-| Momus | Plan Reviewer | Haiku | Codex-5.2 | xhigh |
-| Oracle | Architecture Advisor | Sonnet | GPT-5.2-Codex | - |
+| Metis | Pre-planning Consultant | Haiku | GPT-5.3-Codex | xhigh |
+| Momus | Plan Reviewer | Haiku | GPT-5.3-Codex | xhigh |
+| Oracle | Architecture Advisor | Sonnet | GPT-5.3-Codex | - |
 | Oracle-Low | Quick Architecture Lookup | Haiku | - | - |
-| Debate | Multi-model decision making | Opus | GPT-5.2, Gemini | - |
+| Debate | Multi-model decision making | Opus | GPT-5.3-Codex, Gemini | - |
 | Explore | Fast Contextual Grep | Haiku | - | - |
 | Explore-High | Deep Codebase Analysis | Sonnet | - | - |
 | Multimodal-looker | Media Analyzer | Sonnet | Gemini | - |
-| Librarian | Documentation/Code Search | Haiku | GLM-4.7 | - |
+| Librarian | Documentation/Code Search | Haiku | GLM-5 | - |
 | Junior | Task Executor | Sonnet | - | - |
 | Junior-Low | Simple Task Executor | **Sonnet** | - | - |
 | Junior-High | Complex Task Executor | Opus | - | - |
@@ -114,7 +114,7 @@ When autopilot or similar workflows are active, **workmode** is enabled:
 | swarm | SQLite atomic task claiming for parallel agents | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
 | gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
-| zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
+| zai-glm | Z.ai GLM-5 (200K context) | stdio | Python MCP (uv) |
 
 ### Authentication
 
@@ -131,7 +131,7 @@ gemini auth login
 **API Key Authentication:**
 ```bash
 export CONTEXT7_API_KEY="..."   # Context7 docs search
-export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
+export Z_AI_API_KEY="..."       # Z.ai GLM-5 MCP server
 ```
 
 ### Gemini MCP Tools (choplin/mcp-gemini-cli)
@@ -148,7 +148,7 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 | Tool | Purpose |
 |------|---------|
-| `mcp__zai-glm__chat` | Chat with GLM-4.7 (200K context) |
+| `mcp__zai-glm__chat` | Chat with GLM-5 (200K context) |
 | `mcp__zai-glm__analyze_code` | Code analysis (review, explain, optimize, security, refactor) |
 
 **Requirements:** `Z_AI_API_KEY` environment variable, `uv` package manager
@@ -385,7 +385,7 @@ Phase 3 (QA):
 
 ```
 User: @oracle Should we use JWT or session-based auth?
-Claude: [Oracle consults GPT-5.2-Codex and responds]
+Claude: [Oracle consults GPT-5.3-Codex and responds]
 ```
 
 ### 7. Media Analysis
@@ -403,7 +403,7 @@ Claude:
 ```
 User: @debate JWT vs Session-based authentication for our microservices
 Claude:
-1. Phase 1: Independent analysis (Opus, GPT-5.2, Gemini)
+1. Phase 1: Independent analysis (Opus, GPT-5.3-Codex, Gemini)
 2. Phase 2: Share analyses across models
 3. Phase 3: Structured debate rounds (max 20)
 4. Phase 4: Consensus or majority vote conclusion
@@ -499,11 +499,11 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 | Agent | Primary Model | Fallback | Purpose |
 |-------|---------------|----------|---------|
-| Metis | GPT-5.2 (xhigh) | Claude Sonnet | Pre-planning analysis |
-| Momus | Codex-5.2 (xhigh) | Claude Sonnet | Plan review |
-| Oracle | Codex | Claude Sonnet | Architecture advice |
+| Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet | Pre-planning analysis |
+| Momus | GPT-5.3-Codex (xhigh) | Claude Sonnet | Plan review |
+| Oracle | GPT-5.3-Codex | Claude Sonnet | Architecture advice |
 | Multimodal-looker | Gemini | Claude Sonnet | Image/PDF analysis |
-| Librarian | GLM-4.7 | Claude Haiku | Documentation search |
+| Librarian | GLM-5 | Claude Haiku | Documentation search |
 
 ### Junior Tier Routing
 
@@ -533,8 +533,8 @@ Based on task complexity:
   - `mcp__chronos__agent_limiter_clear()` - Clear all (recovery)
 
 ### Reasoning Effort Configuration
-- **Metis**: GPT-5.2 with `xhigh` reasoning (pre-planning analysis)
-- **Momus**: Codex-5.2 with `xhigh` reasoning (plan review)
+- **Metis**: GPT-5.3-Codex with `xhigh` reasoning (pre-planning analysis)
+- **Momus**: GPT-5.3-Codex with `xhigh` reasoning (plan review)
 - xhigh reasoning provides deeper analysis for critical planning decisions
 - Config: `{"reasoning": {"effort": "xhigh"}}`
 
@@ -575,9 +575,9 @@ Based on task complexity:
 - Manual stop: `mcp__chronos__ralph_stop(reason="manual_stop")`
 
 ### External Models
-- **Codex/GPT-5.2**: Session management via `threadId`, OAuth auth, supports reasoning effort (xhigh/high/medium/low)
+- **GPT-5.3-Codex**: Session management via `threadId`, OAuth auth, supports reasoning effort (xhigh/high/medium/low)
 - **Gemini**: 60 req/min limit (free tier), OAuth auth, **requires Bun runtime**
-- **GLM-4.7**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`)
+- **GLM-5**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`)
 
 ### uv Installation (for Z.ai GLM MCP)
 ```bash

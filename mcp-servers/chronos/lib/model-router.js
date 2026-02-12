@@ -8,7 +8,7 @@
  * - Code analysis/review → Codex (GPT)
  * - Architecture decisions → Codex (xhigh reasoning)
  * - Image/UI analysis → Gemini
- * - Documentation search → GLM-4.7
+ * - Documentation search → GLM-5
  * - Complex implementation → Claude Opus
  * - Simple implementation → Claude Sonnet/Haiku
  */
@@ -38,7 +38,7 @@ export const MODELS = {
   CODEX: "codex",
   CODEX_XHIGH: "codex_xhigh",
   GEMINI: "gemini",
-  GLM: "glm-4.7",
+  GLM: "glm-5",
 
   // Claude models
   CLAUDE_OPUS: "claude_opus",
@@ -210,13 +210,13 @@ export function getAgentModel(agentName, ecomode = false) {
       model: MODELS.CODEX_XHIGH,
       external: true,
       tier: null,
-      description: "GPT-5.2 with xhigh reasoning for pre-planning analysis",
+      description: "GPT-5.3-Codex with xhigh reasoning for pre-planning analysis",
     },
     momus: {
       model: MODELS.CODEX_XHIGH,
       external: true,
       tier: null,
-      description: "Codex-5.2 with xhigh reasoning for plan review",
+      description: "GPT-5.3-Codex with xhigh reasoning for plan review",
     },
 
     // Advisory agents - prefer external models
@@ -224,7 +224,7 @@ export function getAgentModel(agentName, ecomode = false) {
       model: ecomode ? MODELS.CLAUDE_HAIKU : MODELS.CODEX,
       external: !ecomode,
       tier: ecomode ? "low" : null,
-      description: "Codex for architecture advice (Haiku in ecomode)",
+      description: "GPT-5.3-Codex for architecture advice (Haiku in ecomode)",
     },
     "oracle-low": {
       model: MODELS.CLAUDE_HAIKU,
@@ -238,7 +238,7 @@ export function getAgentModel(agentName, ecomode = false) {
       model: MODELS.GLM,
       external: true,
       tier: null,
-      description: "GLM-4.7 for documentation and code search",
+      description: "GLM-5 for documentation and code search",
     },
 
     // Analysis agents
@@ -353,7 +353,7 @@ export function generateToolCall(model, prompt, options = {}) {
         tool: "mcp__codex__codex",
         params: {
           prompt,
-          model: model === MODELS.CODEX_XHIGH ? "gpt-5.2-codex" : undefined,
+          model: model === MODELS.CODEX_XHIGH ? "gpt-5.3-codex" : undefined,
           config: model === MODELS.CODEX_XHIGH
             ? { reasoning: { effort: "xhigh" } }
             : undefined,
@@ -381,7 +381,7 @@ export function generateToolCall(model, prompt, options = {}) {
         tool: "mcp__zai-glm__chat",
         params: {
           prompt,
-          model: "glm-4.7",
+          model: "glm-5",
         },
       };
 

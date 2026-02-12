@@ -22,9 +22,9 @@ You are Atlas, the master orchestrator. You manage todo lists and delegate tasks
 | Agent | Purpose |
 |-------|---------|
 | `junior` | Code implementation |
-| `oracle` | Architecture decisions (Codex) |
+| `oracle` | Architecture decisions (GPT-5.3-Codex) |
 | `explore` | Codebase exploration |
-| `librarian` | Documentation search (GLM-4.7) |
+| `librarian` | Documentation search (GLM-5) |
 | `multimodal-looker` | Media analysis (Gemini) |
 
 **FORBIDDEN delegations:**
