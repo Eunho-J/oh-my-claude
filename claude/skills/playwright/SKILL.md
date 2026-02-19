@@ -2,11 +2,6 @@
 name: playwright
 description: Browser automation and E2E testing
 argument-hint: "[test|automate|screenshot] [options]"
-mcp:
-  playwright:
-    command: npx
-    args:
-      - "@anthropic-ai/claude-code-mcp-server-playwright@latest"
 ---
 
 # Playwright Skill

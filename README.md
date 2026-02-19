@@ -106,19 +106,19 @@ rm -rf /tmp/oh-my-claude
 # Check Node.js (v18+ required)
 node --version 2>/dev/null || echo "Node.js: NOT INSTALLED"
 
-# Check build tools (required for native modules like better-sqlite3)
-g++ --version 2>/dev/null | head -1 || echo "g++: NOT INSTALLED"
-
 # Check uv
 uv --version 2>/dev/null || echo "uv: NOT INSTALLED"
 
 # Check jq (required for hook scripts)
 jq --version 2>/dev/null || echo "jq: NOT INSTALLED"
+
+# Check Gemini CLI
+gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
 ```
 
-**Install only if not present or outdated:**
+**Install only if not present:**
 ```bash
-# Install uv (required for Z.ai GLM MCP) - skip if already installed
+# Install uv (required for Z.ai GLM MCP)
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install jq (required for hook scripts JSON processing)
@@ -128,50 +128,51 @@ command -v jq >/dev/null || brew install jq
 # command -v jq >/dev/null || sudo apt install jq
 # Linux (Fedora/RHEL)
 # command -v jq >/dev/null || sudo dnf install jq
-```
 
-### 1.3 Install Global CLI Tools
-
-**Check existing installations first:**
-```bash
-# Check Gemini CLI
-gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
-
-# Check Playwright
-npx playwright --version 2>/dev/null || echo "Playwright: NOT INSTALLED"
-```
-
-**Install only if not present:**
-```bash
-# Install Gemini CLI (for OAuth auth) - skip if already installed
+# Install Gemini CLI (for OAuth auth)
 command -v gemini >/dev/null || npm install -g @google/gemini-cli
-
-# Install Playwright (for browser automation skill)
-npx playwright install
 ```
 
-### 1.3.1 Register MCP Servers
+### 1.3 Register MCP Servers
 
-Register all MCP servers for this project using `claude mcp add`:
+> **Agent instruction:** Before running the commands below, ask the user:
+>
+> ```
+> AskUserQuestion:
+>   "How would you like to install the MCP servers?"
+>   Options:
+>     - "This project only (local)" — available only in this repository
+>     - "All Claude Code sessions (global)" — available across all projects
+> ```
+>
+> Then follow the corresponding section below.
 
-**Project-level installation (recommended):**
+**Step 1 — Always project-local** (these reference project-relative paths and must be local):
+
 ```bash
-# stdio servers
-claude mcp add codex -s project -- npx -y codex mcp-server
-claude mcp add gemini -s project -- npx mcp-gemini-cli --allow-npx
 claude mcp add chronos -s project -- node ./mcp-servers/chronos/index.js
 claude mcp add lsp-tools -s project -- node ./mcp-servers/lsp-tools/index.js
 claude mcp add zai-glm -s project -- ./mcp-servers/zai-glm/.venv/bin/python ./mcp-servers/zai-glm/server.py
+```
 
-# HTTP servers (API key required)
+**Step 2a — If "local" (this project only):**
+
+```bash
+claude mcp add codex -s project -- npx -y codex mcp-server
+claude mcp add gemini -s project -- npx mcp-gemini-cli --allow-npx
+claude mcp add playwright -s project -- npx @playwright/mcp@latest
 claude mcp add context7 -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
 claude mcp add grep-app -s project --transport http https://grep.app/api/mcp
 ```
 
-**Global installation (for cross-project availability):**
+**Step 2b — If "global" (all Claude Code sessions):**
+
 ```bash
 claude mcp add codex -s user -- npx -y codex mcp-server
 claude mcp add gemini -s user -- npx mcp-gemini-cli --allow-npx
+claude mcp add playwright -s user -- npx @playwright/mcp@latest
+claude mcp add context7 -s user --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
+claude mcp add grep-app -s user --transport http https://grep.app/api/mcp
 ```
 
 ### 1.4 Install Local Dependencies
@@ -257,24 +258,28 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 ### 1.8 Verify Installation
 
 ```bash
-# Check all required tools
-echo "=== Checking Prerequisites ==="
+# Check prerequisites
+echo "=== Prerequisites ==="
 echo "Node.js: $(node --version 2>/dev/null || echo 'NOT INSTALLED')"
-echo "Codex: $(npx codex --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
 
 # Check directory structure
-echo "=== Checking Directory Structure ==="
+echo "=== Directory Structure ==="
 [ -d ".claude/agents" ] && echo "Agents: OK" || echo "Agents: MISSING"
 [ -d ".claude/skills" ] && echo "Skills: OK" || echo "Skills: MISSING"
 [ -d ".sisyphus" ] && echo "Sisyphus: OK" || echo "Sisyphus: MISSING"
 [ -d "hooks" ] && echo "Hooks: OK" || echo "Hooks: MISSING"
 
 # Check configuration files
-echo "=== Checking Configuration Files ==="
+echo "=== Configuration Files ==="
 [ -f ".claude/settings.json" ] && echo "settings.json: OK" || echo "settings.json: MISSING"
 [ -f "CLAUDE.md" ] && echo "CLAUDE.md: OK" || echo "CLAUDE.md: MISSING"
+
+# Check MCP registrations
+echo "=== MCP Servers ==="
+claude mcp list
 ```
 
 ---
