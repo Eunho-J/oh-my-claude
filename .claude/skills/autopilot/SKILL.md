@@ -189,12 +189,18 @@ Skip if: --no-validation
    mcp__chronos__debate_start({ topic: "Code review for: " + name, context: diff_content })
 
 3. Each model reviews the changes:
-   - Opus: Review implementation quality, patterns, edge cases
-   - GPT-5.2: Security and correctness review
-   - Gemini: UI/UX and user experience review (if applicable)
-   - GLM-5: Documentation and completeness review
+   - Opus (native): Review implementation quality, patterns, edge cases
+   - GPT-5.2: Security and correctness review via mcp__codex__codex (model: "gpt-5.2")
+   - Gemini-3-Pro-Preview: UI/UX and user experience review via mcp__gemini__chat (model: "gemini-3-pro-preview")
+   - GLM-5: Documentation and completeness review via mcp__zai-glm__chat (model: "glm-5")
 
-4. Debate until 3/4 consensus on APPROVED or REJECTED
+4. Record all reviews:
+   mcp__chronos__debate_add_analysis({ model: "opus", summary: "...", position: "APPROVED|REJECTED" })
+   mcp__chronos__debate_add_analysis({ model: "gpt52", summary: "...", position: "APPROVED|REJECTED" })
+   mcp__chronos__debate_add_analysis({ model: "gemini", summary: "...", position: "APPROVED|REJECTED" })
+   mcp__chronos__debate_add_analysis({ model: "glm", summary: "...", position: "APPROVED|REJECTED" })
+
+5. Debate until 3/4 consensus on APPROVED or REJECTED
 
 5a. If APPROVED (3/4 agree):
     mcp__chronos__autopilot_update_progress(4, { approved: true })
