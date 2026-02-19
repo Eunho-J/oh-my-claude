@@ -281,7 +281,7 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 1. **Ralph Loop** (Stop)
    - Auto-continue until completion promise detected
-   - State: `.sisyphus/ralph-state.json`
+   - State: `sisyphus/ralph-state.json`
 
 2. **Todo Enforcer** (Stop)
    - Continue execution while tasks remain incomplete
@@ -310,12 +310,12 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
    - Prevents OOM by limiting concurrent background agents
    - Default limit: 5 agents
    - Blocks Task tool when limit reached
-   - State: `.sisyphus/active-agents.json`
+   - State: `sisyphus/active-agents.json`
 
 ## Directory Structure
 
 ```
-.sisyphus/
+sisyphus/
 ├── plans/              # Prometheus plan files
 ├── specs/              # Autopilot spec files
 ├── notepads/           # Sisyphus learning records
@@ -549,7 +549,7 @@ All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
 - Atlas cannot modify code directly (Edit/Write blocked)
 - **NEW**: Sisyphus blocked when workmode is active
 - Must delegate via Task tool to Junior or other agents
-- Can only modify `.sisyphus/` folder directly
+- Can only modify `sisyphus/` folder directly
 
 ### Ecomode
 - Enable: `mcp__chronos__ecomode_enable()`
@@ -573,7 +573,7 @@ All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
 - Gate criteria must pass to advance phases
 
 ### Swarm (Parallel Agents)
-- Database: `.sisyphus/swarm.db` (SQLite)
+- Database: `sisyphus/swarm.db` (SQLite)
 - Atomic claiming prevents duplicate work
 - Heartbeat timeout: 5 minutes
 - Recovery: `mcp__swarm__swarm_recover()`
@@ -607,18 +607,18 @@ gemini auth login
 
 ### Adding New Agent
 
-1. Create `.claude/agents/<name>/AGENT.md`
+1. Create `claude/agents/<name>/AGENT.md`
 2. Define settings in YAML frontmatter
 3. Document role and workflow
 
 ### Adding New Skill
 
-1. Create `.claude/skills/<name>/SKILL.md`
+1. Create `claude/skills/<name>/SKILL.md`
 2. Define settings in YAML frontmatter
 3. Document trigger keywords and usage
 
 ### Adding New Hook
 
 1. Create `hooks/<name>.sh`
-2. Register in `.claude/settings.json`
+2. Register in `claude/settings.json`
 3. Configure appropriate event and matcher

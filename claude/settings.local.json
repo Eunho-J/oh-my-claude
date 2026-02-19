@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node mcp-servers/chronos/cli.js autopilot-start:*)",
+      "Bash(node mcp-servers/chronos/cli.js workmode-enable autopilot:*)"
+    ]
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "context7",
+    "grep-app",
+    "lsp-tools",
+    "chronos",
+    "codex",
+    "gemini",
+    "zai-glm"
+  ]
+}

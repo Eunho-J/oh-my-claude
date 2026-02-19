@@ -1,0 +1,5 @@
+{
+  "agents": [],
+  "limit": 5,
+  "stale_timeout_ms": 300000
+}
