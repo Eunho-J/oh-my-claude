@@ -158,7 +158,7 @@ claude mcp add zai-glm -s project -- ./mcp-servers/zai-glm/.venv/bin/python ./mc
 **Step 2a — If "local" (this project only):**
 
 ```bash
-claude mcp add codex -s project -- npx -y codex mcp-server
+claude mcp add codex -s project -- codex mcp-server
 claude mcp add gemini -s project -- npx mcp-gemini-cli --allow-npx
 claude mcp add playwright -s project -- npx @playwright/mcp@latest
 claude mcp add context7 -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
@@ -168,7 +168,7 @@ claude mcp add grep-app -s project --transport http https://grep.app/api/mcp
 **Step 2b — If "global" (all Claude Code sessions):**
 
 ```bash
-claude mcp add codex -s user -- npx -y codex mcp-server
+claude mcp add codex -s user -- codex mcp-server
 claude mcp add gemini -s user -- npx mcp-gemini-cli --allow-npx
 claude mcp add playwright -s user -- npx @playwright/mcp@latest
 claude mcp add context7 -s user --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
