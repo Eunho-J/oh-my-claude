@@ -13,14 +13,14 @@ client = ZaiClient(api_key=os.environ.get("Z_AI_API_KEY"))
 
 
 @mcp.tool()
-def chat(prompt: str, system: str = None, model: str = "glm-5") -> str:
+def chat(prompt: str, system: str = None, model: str = "glm-4.7") -> str:
     """
     Chat with GLM model (200K context).
 
     Args:
         prompt: The prompt to send
         system: Optional system prompt
-        model: Model name (default: glm-5)
+        model: Model name (default: glm-4.7)
     """
     messages = []
     if system:
@@ -37,7 +37,7 @@ def chat(prompt: str, system: str = None, model: str = "glm-5") -> str:
 @mcp.tool()
 def analyze_code(code: str, task: str, language: str = None) -> str:
     """
-    Analyze code with GLM-5's 200K context window.
+    Analyze code with GLM-4.7's 200K context window.
 
     Args:
         code: Code to analyze
@@ -56,7 +56,7 @@ def analyze_code(code: str, task: str, language: str = None) -> str:
     prompt = f"[{language}]\n{code}" if language else code
 
     response = client.chat.completions.create(
-        model="glm-5",
+        model="glm-4.7",
         messages=[
             {"role": "system", "content": system},
             {"role": "user", "content": prompt}

@@ -8,7 +8,7 @@
  * - Code analysis/review → Codex (GPT)
  * - Architecture decisions → Codex (xhigh reasoning)
  * - Image/UI analysis → Gemini
- * - Documentation search → GLM-5
+ * - Documentation search → GLM-4.7
  * - Complex implementation → Claude Opus
  * - Simple implementation → Claude Sonnet/Haiku
  */
@@ -39,7 +39,7 @@ export const MODELS = {
   CODEX_XHIGH: "codex_xhigh",
   CODEX_SPARK: "codex_spark",
   GEMINI: "gemini",
-  GLM: "glm-5",
+  GLM: "glm-4.7",
 
   // Claude models
   CLAUDE_OPUS: "claude_opus",
@@ -239,7 +239,7 @@ export function getAgentModel(agentName, ecomode = false) {
       model: MODELS.GLM,
       external: true,
       tier: null,
-      description: "GLM-5 for documentation and code search",
+      description: "GLM-4.7 for documentation and code search",
     },
 
     // Analysis agents
@@ -309,7 +309,7 @@ export function getAgentModel(agentName, ecomode = false) {
       model: MODELS.CLAUDE_OPUS,
       external: true,
       tier: null,
-      description: "Multi-model debate (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5)",
+      description: "Multi-model debate (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7)",
     },
   };
 
@@ -387,7 +387,7 @@ export function generateToolCall(model, prompt, options = {}) {
         tool: "mcp__zai-glm__chat",
         params: {
           prompt,
-          model: "glm-5",
+          model: "glm-4.7",
         },
       };
 

@@ -8,14 +8,14 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 
 ## Features
 
-- **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5)
+- **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7)
 - **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
   - Planning: Debate (4 models), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
   - Execution: Atlas (Sonnet), Junior/codex-spark, Oracle, Explore, Multimodal-looker, Librarian
   - Tier Variants: Junior-low/high (all Haiku + codex-spark), Oracle-low, Explore-high
   - User-facing: Sisyphus (Sonnet), Debate
 - **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
-- **External Model Integration**: GPT-5.2 + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro-Preview, GLM-5 via MCP
+- **External Model Integration**: GPT-5.2 + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro-Preview, GLM-4.7 via MCP
 - **Prometheus+Metis Loop**: Prometheus creates plan, Metis (GPT-5.3-Codex xhigh) reviews until approved
 - **Debate Code Review**: Phase 4 uses 4-model debate to APPROVE or loop back to execution
 - **Ralph Loop**: Auto-continuation until task completion
@@ -278,7 +278,7 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 **External Models:**
 - `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI GPT-5.3-Codex
 - `mcp__gemini__chat`, `mcp__gemini__googleSearch`, `mcp__gemini__analyzeFile` - Google Gemini
-- `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-5
+- `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-4.7
 
 **Documentation & Code Search:**
 - `mcp__context7__resolve-library-id`, `mcp__context7__query-docs` - Context7
@@ -329,7 +329,7 @@ Create a `.env` file or export environment variables:
 # Required for documentation search (Context7)
 export CONTEXT7_API_KEY="your-context7-api-key"
 
-# Required for GLM-5 (Z.ai) - Librarian agent
+# Required for GLM-4.7 (Z.ai) - Librarian agent
 export Z_AI_API_KEY="your-zai-api-key"
 ```
 
@@ -471,11 +471,11 @@ chmod +x hooks/*.sh
 | `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
 | `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
 | `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | **Sonnet-4.6** | Gemini |
-| `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-5 |
+| `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-4.7 |
 | `.claude/agents/junior/AGENT.md` | Task executor (medium) | **Haiku** | **gpt-5.3-codex-spark** |
 | `.claude/agents/junior-low/AGENT.md` | Simple task executor | **Haiku** | **gpt-5.3-codex-spark** |
 | `.claude/agents/junior-high/AGENT.md` | Complex task executor | **Haiku** | **gpt-5.3-codex-spark** |
-| `.claude/agents/debate/AGENT.md` | Multi-model debate (4 models) | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-5** |
+| `.claude/agents/debate/AGENT.md` | Multi-model debate (4 models) | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** |
 
 ### Skills
 
@@ -535,7 +535,7 @@ claude
 @oracle     - Architecture advisor (GPT-5.3-Codex)
 @explore    - Codebase exploration
 @multimodal-looker - Media analysis (Gemini)
-@librarian  - Documentation search (GLM-5)
+@librarian  - Documentation search (GLM-4.7)
 @junior     - Task executor (Haiku + codex-spark)
 @debate     - Multi-model debate (4 models)
 
@@ -646,7 +646,7 @@ mcp__chronos__ui_verification_prompt(expectations)
 Autopilot (Debate-First, 5 Phases):
 
 Phase 0 ──► DEBATE PLANNING
-            Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5
+            Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7
             → 4 models analyze request & reach 3/4 consensus plan
 
 Phase 1 ──► STRUCTURING (Prometheus + Metis Loop)
@@ -690,7 +690,7 @@ User Request
 ┌─────────────────────┐    ┌─────────────┐
 │  Debate (Planning)  │    │   Atlas     │
 │ Opus-4.6 + GPT-5.2  │    │  (Sonnet)   │
-│ + Gemini + GLM-5    │    └──────┬──────┘
+│ + Gemini + GLM-4.7    │    └──────┬──────┘
 └──────────┬──────────┘           │
     Phase 1▼               ┌──────┼──────────┐
 ┌─────────────────────┐    ▼      ▼          ▼
@@ -726,10 +726,10 @@ User Request
 | **Metis** | Haiku | GPT-5.3-Codex | **xhigh** |
 | ~~Momus~~ | Haiku | GPT-5.3-Codex | ~~xhigh~~ (DEPRECATED) |
 | Oracle | Sonnet | GPT-5.3-Codex | default |
-| **Debate** | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-5** | - |
+| **Debate** | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** | - |
 | Explore | Haiku | - | - |
 | Multimodal-looker | Sonnet-4.6 | Gemini | - |
-| Librarian | Haiku | GLM-5 | - |
+| Librarian | Haiku | GLM-4.7 | - |
 | **Junior*** | **Haiku** | **gpt-5.3-codex-spark** | - |
 
 ---

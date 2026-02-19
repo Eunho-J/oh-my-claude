@@ -36,7 +36,7 @@ export const PHASE_NAMES = {
 };
 
 export const PHASE_DESCRIPTIONS = {
-  0: "Debate: 4 models (Opus, GPT-5.2, Gemini, GLM-5) analyze request and create plan consensus",
+  0: "Debate: 4 models (Opus, GPT-5.2, Gemini, GLM-4.7) analyze request and create plan consensus",
   1: "Structuring: Prometheus converts debate conclusions into execution plan, Metis reviews in loop",
   2: "Execution: Atlas executes via Junior/codex-spark agents",
   3: "QA: Build, lint, and tests pass",

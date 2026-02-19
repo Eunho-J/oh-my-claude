@@ -6,7 +6,7 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 
 ```
 Autopilot (Debate-First):
-Phase 0: Debate Planning → 4 models (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-5) analyze & plan
+Phase 0: Debate Planning → 4 models (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7) analyze & plan
 Phase 1: Prometheus (Opus-4.6) structures plan → Metis (GPT-5.3-Codex xhigh) reviews in loop
 Phase 2: Atlas (Sonnet-4.6) → Junior (Haiku + gpt-5.3-codex-spark) executes
 Phase 3: QA (build/lint/tests + optional UI verification)
@@ -17,12 +17,12 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 ```
 
 ### External Model Integration
-- **Debate Phase 0/4**: Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5 (planning & code review)
+- **Debate Phase 0/4**: Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7 (planning & code review)
 - **Metis**: GPT-5.3-Codex with xhigh reasoning effort (plan review in Prometheus+Metis loop)
 - **Junior**: gpt-5.3-codex-spark via Codex MCP (code generation coordinator)
 - **Oracle**: GPT-5.3-Codex (architecture consultation, @oracle direct calls)
 - **Multimodal-looker**: Gemini (media analysis)
-- **Librarian**: GLM-5 (documentation search)
+- **Librarian**: GLM-4.7 (documentation search)
 - **Momus**: DEPRECATED (replaced by Metis in plan review role)
 
 ### Core Philosophy
@@ -43,11 +43,11 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 | Momus | ~~Plan Reviewer~~ **DEPRECATED** | Haiku | GPT-5.3-Codex | xhigh |
 | Oracle | Architecture Advisor | Sonnet | GPT-5.3-Codex | - |
 | Oracle-Low | Quick Architecture Lookup | Haiku | - | - |
-| Debate | Multi-model decision making | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-5** | - |
+| Debate | Multi-model decision making | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** | - |
 | Explore | Fast Contextual Grep | Haiku | - | - |
 | Explore-High | Deep Codebase Analysis | **Sonnet-4.6** | - | - |
 | Multimodal-looker | Media Analyzer | **Sonnet-4.6** | Gemini | - |
-| Librarian | Documentation/Code Search | Haiku | GLM-5 | - |
+| Librarian | Documentation/Code Search | Haiku | GLM-4.7 | - |
 | Junior | Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
 | Junior-Low | Simple Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
 | Junior-High | Complex Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
@@ -119,7 +119,7 @@ When autopilot or similar workflows are active, **workmode** is enabled:
 | swarm | SQLite atomic task claiming for parallel agents | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
 | gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
-| zai-glm | Z.ai GLM-5 (200K context) | stdio | Python MCP (uv) |
+| zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
 
 ### Authentication
 
@@ -136,7 +136,7 @@ gemini auth login
 **API Key Authentication:**
 ```bash
 export CONTEXT7_API_KEY="..."   # Context7 docs search
-export Z_AI_API_KEY="..."       # Z.ai GLM-5 MCP server
+export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 ```
 
 ### Gemini MCP Tools (choplin/mcp-gemini-cli)
@@ -153,7 +153,7 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-5 MCP server
 
 | Tool | Purpose |
 |------|---------|
-| `mcp__zai-glm__chat` | Chat with GLM-5 (200K context) |
+| `mcp__zai-glm__chat` | Chat with GLM-4.7 (200K context) |
 | `mcp__zai-glm__analyze_code` | Code analysis (review, explain, optimize, security, refactor) |
 
 **Requirements:** `Z_AI_API_KEY` environment variable, `uv` package manager
@@ -409,7 +409,7 @@ Claude:
 ```
 User: @debate JWT vs Session-based authentication for our microservices
 Claude:
-1. Phase 1: Independent analysis (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-5)
+1. Phase 1: Independent analysis (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7)
 2. Phase 2: Share analyses across all 4 models
 3. Phase 3: Structured debate rounds (max 20)
 4. Phase 4: 3/4 consensus or majority vote conclusion
@@ -449,7 +449,7 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 | Multimodal-looker | whitelist | - | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Librarian | whitelist | ralph, status | ❌ | ❌ | ✅ | ✅ | ✅ |
 | Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Debate | whitelist | debate, ralph, status | ✅ (GPT-5.2) | ✅ (Gemini-3-Pro-Preview) | **✅ (GLM-5)** | ❌ | ❌ |
+| Debate | whitelist | debate, ralph, status | ✅ (GPT-5.2) | ✅ (Gemini-3-Pro-Preview) | **✅ (GLM-4.7)** | ❌ | ❌ |
 
 ### Skill MCP Tool Access
 
@@ -505,12 +505,12 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 | Agent | Primary Model | Fallback | Purpose |
 |-------|---------------|----------|---------|
-| Debate (Phase 0/4) | Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5 | - | Planning & code review |
+| Debate (Phase 0/4) | Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7 | - | Planning & code review |
 | Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet | Plan review in Prometheus+Metis loop |
 | Junior* | gpt-5.3-codex-spark | direct Edit | Code generation |
 | Oracle | GPT-5.3-Codex | Claude Sonnet | Architecture advice |
 | Multimodal-looker | Gemini | Claude Sonnet | Image/PDF analysis |
-| Librarian | GLM-5 | Claude Haiku | Documentation search |
+| Librarian | GLM-4.7 | Claude Haiku | Documentation search |
 
 ### Junior Tier Routing
 
@@ -587,7 +587,7 @@ All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
 - **gpt-5.3-codex-spark**: Used in Junior agents for code generation (via Codex MCP)
 - **Gemini-3-Pro-Preview**: Used in Debate (via Gemini MCP `model: "gemini-3-pro-preview"`)
 - **Gemini**: 60 req/min limit (free tier), OAuth auth, **requires Bun runtime**
-- **GLM-5**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`), also used in Debate
+- **GLM-4.7**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`), also used in Debate
 
 ### uv Installation (for Z.ai GLM MCP)
 ```bash
