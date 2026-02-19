@@ -28,8 +28,7 @@
     },
     "gemini": {
       "type": "stdio",
-      "command": "bunx",
-      "args": ["mcp-gemini-cli"]
+      "command": "/Users/cayde/.bun/bin/mcp-gemini-cli"
     },
     "zai-glm": {
       "type": "stdio",
