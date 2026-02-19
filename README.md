@@ -112,6 +112,9 @@ uv --version 2>/dev/null || echo "uv: NOT INSTALLED"
 # Check jq (required for hook scripts)
 jq --version 2>/dev/null || echo "jq: NOT INSTALLED"
 
+# Check Codex CLI
+codex --version 2>/dev/null || echo "Codex CLI: NOT INSTALLED"
+
 # Check Gemini CLI
 gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
 ```
@@ -129,9 +132,22 @@ command -v jq >/dev/null || brew install jq
 # Linux (Fedora/RHEL)
 # command -v jq >/dev/null || sudo dnf install jq
 
-# Install Gemini CLI (for OAuth auth)
+# Install Codex CLI (for OpenAI OAuth auth and code generation)
+# macOS — prefer brew if available
+if command -v brew >/dev/null; then
+  command -v codex >/dev/null || brew install codex
+else
+  command -v codex >/dev/null || npm i -g @openai/codex
+fi
+# Linux
+# command -v codex >/dev/null || npm i -g @openai/codex
+
+# Install Gemini CLI (for Google OAuth auth)
 command -v gemini >/dev/null || npm install -g @google/gemini-cli
 ```
+
+> **⚠️ After installation, OAuth login is required for both Codex and Gemini CLI.**
+> See Part 2 (Manual Setup) — sections 2.2 and 2.3.
 
 ### 1.3 Register MCP Servers
 
