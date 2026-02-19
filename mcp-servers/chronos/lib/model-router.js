@@ -374,12 +374,13 @@ export function generateToolCall(model, prompt, options = {}) {
           params: {
             filePath: options.filePath,
             prompt,
+            model: "gemini-3-pro-preview",
           },
         };
       }
       return {
         tool: "mcp__gemini__chat",
-        params: { prompt },
+        params: { prompt, model: "gemini-3-pro-preview" },
       };
 
     case MODELS.GLM:
