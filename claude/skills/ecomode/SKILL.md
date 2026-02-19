@@ -27,10 +27,8 @@ When enabled, ecomode optimizes for resource efficiency:
 
 | Normal Mode | Ecomode |
 |-------------|---------|
-| junior (Sonnet) | junior-low (Haiku) |
-| oracle (Sonnet) | oracle-low (Haiku) |
+| oracle (Opus-4.6) | oracle-low (Haiku) |
 | Metis analysis | SKIPPED |
-| Momus review | SKIPPED |
 | Verbose responses | Concise responses |
 
 ## Settings
@@ -39,7 +37,6 @@ When enabled, ecomode optimizes for resource efficiency:
 |---------|---------|-------------|
 | `prefer_haiku` | true | Use Haiku variants for agents |
 | `skip_metis` | true | Skip pre-planning analysis |
-| `skip_momus` | true | Skip plan review |
 | `shorter_responses` | true | Request concise outputs |
 
 ## Workflow
@@ -83,7 +80,7 @@ Skill:
 /ecomode on
 "Fix all typos in docs"
 
-Result: Uses junior-low (Haiku) for fast, cheap execution
+Result: Uses oracle-low for quick lookups, skips Metis analysis
 ```
 
 ### Important Features
@@ -92,7 +89,7 @@ Result: Uses junior-low (Haiku) for fast, cheap execution
 /ecomode off
 "Implement payment processing"
 
-Result: Uses full Sonnet agents with Metis/Momus for quality
+Result: Uses full Opus/Sonnet agents with Metis for quality
 ```
 
 ### Mixed Workload

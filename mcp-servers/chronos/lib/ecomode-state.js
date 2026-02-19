@@ -25,7 +25,6 @@ function getDefaultState() {
     settings: {
       prefer_haiku: true,
       skip_metis: true,
-      skip_momus: true,
       shorter_responses: true,
     },
     enabled_at: null,
@@ -113,7 +112,7 @@ export function getRecommendedTier(directory, taskType) {
 
   // Ecomode tiers (prefer lower models)
   const ecoTiers = {
-    junior: "haiku", // junior → junior-low
+    junior: "haiku",
     oracle: "haiku", // oracle → oracle-low
     explore: "haiku",
     librarian: "haiku",
@@ -132,9 +131,7 @@ export function getRecommendedTier(directory, taskType) {
 
   // Determine agent suffix
   let agentSuffix = null;
-  if (taskType === "junior" && state.settings.prefer_haiku) {
-    agentSuffix = "-low";
-  } else if (taskType === "oracle" && state.settings.prefer_haiku) {
+  if (taskType === "oracle" && state.settings.prefer_haiku) {
     agentSuffix = "-low";
   }
 
@@ -144,7 +141,6 @@ export function getRecommendedTier(directory, taskType) {
     tier,
     agent_suffix: agentSuffix,
     skip_metis: state.settings.skip_metis,
-    skip_momus: state.settings.skip_momus,
     shorter_responses: state.settings.shorter_responses,
   };
 }
@@ -162,8 +158,6 @@ export function shouldSkipPhase(directory, phase) {
   switch (phase) {
     case "metis":
       return state.settings.skip_metis;
-    case "momus":
-      return state.settings.skip_momus;
     default:
       return false;
   }

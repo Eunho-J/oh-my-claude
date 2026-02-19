@@ -1,6 +1,6 @@
 ---
 name: swarm
-description: Parallel agent execution with SQLite atomic task claiming
+description: Parallel agent execution with Claude Code's native Agent Teams
 invocation: user
 allowed_tools:
   - Task
@@ -11,21 +11,20 @@ allowed_tools:
   - Read
   - Glob
   - Grep
-  - mcp__swarm__*
   - mcp__chronos__ralph_*
   - mcp__chronos__chronos_status
 ---
 
-# Swarm - Parallel Agent Execution
+# Swarm - Parallel Agent Execution via Agent Teams
 
-Launch multiple agents to execute tasks in parallel with atomic claiming.
+Launch an Agent Team to execute tasks in parallel using Claude Code's native Agent Teams feature.
 
 ## Invocation
 
 ```
 /swarm N:agent "task description"
 /swarm 3:junior "Implement all API endpoints from the plan"
-/swarm 5:junior-low "Fix all typos in documentation files"
+/swarm 5:junior "Fix all typos in documentation files"
 ```
 
 ## Format
@@ -34,55 +33,50 @@ Launch multiple agents to execute tasks in parallel with atomic claiming.
 /swarm <count>:<agent_type> "<task_pool_description>"
 ```
 
-- `count`: Number of parallel agents (1-10)
-- `agent_type`: Agent to use (junior, junior-low, junior-high, etc.)
-- `task_pool_description`: Description of the task pool to create
+- `count`: Number of team members (1-10)
+- `agent_type`: Agent role for team members (junior, oracle, explore, etc.)
+- `task_pool_description`: Description of the work to parallelize
+
+## How It Works
+
+Agent Teams is Claude Code's native experimental feature for parallel execution.
+Unlike the old SQLite-based swarm, Agent Teams provides:
+- Direct teammate-to-teammate communication (mailbox)
+- Native task list with built-in atomic claiming
+- Delegation mode: leader cannot modify code directly (same concept as workmode)
+- Plan approval mode: leader approves before teammates execute
 
 ## Workflow
 
-### Phase 1: Task Pool Setup
+### Phase 1: Task Decomposition
 
 ```markdown
-1. Parse user request
-2. Break down into individual tasks
-3. Initialize swarm with tasks via mcp__swarm__swarm_init
-4. Start Ralph Loop for completion tracking
+1. Parse user request into independent tasks
+2. Create task list via TaskCreate for each subtask
+3. Brief: describe the parallelization strategy
 ```
 
-### Phase 2: Agent Launch
+### Phase 2: Agent Team Creation
 
 ```markdown
-1. Launch N agents in parallel via Task tool
-2. Each agent:
-   a. Claims task via mcp__swarm__swarm_claim
-   b. Executes task
-   c. Reports completion via mcp__swarm__swarm_complete
-   d. Claims next task (repeat until no tasks)
+1. Create an Agent Team with N teammates:
+   "Create an agent team with N teammates.
+    Each teammate should:
+    - Claim one task from the task list
+    - Execute it independently
+    - Report completion via TaskUpdate(status: completed)
+    - Claim the next available task until none remain"
+
+2. Activate delegation mode (leader doesn't write code directly)
+   → Equivalent to workmode: all code goes through teammates
 ```
 
 ### Phase 3: Monitoring
 
 ```markdown
-1. Ralph Loop monitors progress
-2. Periodic recovery via mcp__swarm__swarm_recover
-3. Track stats via mcp__swarm__swarm_stats
-```
-
-## Agent Template
-
-Each spawned agent receives:
-
-```markdown
-You are a swarm worker agent. Your job is to:
-
-1. Claim a task: mcp__swarm__swarm_claim(agent_id="<unique_id>", agent_type="<type>")
-2. Execute the task
-3. Report result: mcp__swarm__swarm_complete(task_id="<id>", agent_id="<id>")
-4. Repeat until no more tasks
-
-If task fails, use: mcp__swarm__swarm_fail(task_id="<id>", agent_id="<id>", error="<message>")
-
-IMPORTANT: Send heartbeat periodically: mcp__swarm__swarm_heartbeat(agent_id="<id>")
+1. Monitor via TaskList - check pending/in_progress/completed counts
+2. Teammates communicate directly if they have dependencies
+3. Leader reviews and synthesizes results
 ```
 
 ## Example: Implementing API Endpoints
@@ -92,48 +86,45 @@ User: /swarm 3:junior "Implement all CRUD endpoints for User, Product, Order"
 
 Skill:
 1. Create tasks:
-   - "Implement User CRUD endpoints"
-   - "Implement Product CRUD endpoints"
-   - "Implement Order CRUD endpoints"
+   TaskCreate("Implement User CRUD endpoints")
+   TaskCreate("Implement Product CRUD endpoints")
+   TaskCreate("Implement Order CRUD endpoints")
 
-2. Initialize swarm:
-   mcp__swarm__swarm_init(tasks=[...])
+2. Create Agent Team:
+   "Create a team with 3 junior teammates.
+    Each teammate: claim a pending task, implement it, mark complete, repeat."
 
-3. Launch 3 junior agents in parallel:
-   Task(subagent_type="junior", run_in_background=true, ...)
-   Task(subagent_type="junior", run_in_background=true, ...)
-   Task(subagent_type="junior", run_in_background=true, ...)
-
-4. Monitor until all tasks complete
+3. Monitor via TaskList until all tasks completed
 ```
 
 ## Example: Documentation Fixes
 
 ```
-User: /swarm 5:junior-low "Fix all typos in README files"
+User: /swarm 5:junior "Fix all typos in README files"
 
 Skill:
 1. Find all README files: Glob(pattern="**/README*.md")
-2. Create task for each file
-3. Initialize swarm with tasks
-4. Launch 5 junior-low agents
-5. Monitor completion
+2. Create one task per file
+3. Create Agent Team:
+   "Create a team with 5 junior teammates.
+    Each teammate: claim one README task, fix typos, mark complete."
+4. Monitor completion
 ```
 
-## Task Recovery
+## Agent Teams vs Old Swarm
 
-If an agent dies or becomes unresponsive:
-
-```markdown
-1. Heartbeat timeout: 5 minutes
-2. Recovery via mcp__swarm__swarm_recover
-3. Stale tasks return to pending status
-4. Other agents can claim them
-```
+| Feature | Old Swarm (SQLite) | Agent Teams (Native) |
+|---------|-------------------|----------------------|
+| Task claiming | mcp__swarm__swarm_claim | Native task list |
+| Heartbeat | mcp__swarm__swarm_heartbeat | Automatic |
+| Recovery | mcp__swarm__swarm_recover | Automatic |
+| Communication | None (isolated) | Direct mailbox |
+| Delegation mode | N/A | Built-in (Shift+Tab) |
+| Plan approval | N/A | Built-in |
 
 ## Completion
 
-Swarm is complete when:
-- mcp__swarm__swarm_stats shows 0 pending and 0 claimed
-- All tasks are done or failed
+Team is done when:
+- All tasks in TaskList are `completed`
 - Report final summary to user
+- Clean up the team: "The task is done, clean up the team"

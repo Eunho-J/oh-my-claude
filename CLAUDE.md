@@ -23,7 +23,6 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 - **Oracle**: GPT-5.3-Codex (architecture consultation, @oracle direct calls)
 - **Multimodal-looker**: Gemini (media analysis)
 - **Librarian**: GLM-4.7 (documentation search)
-- **Momus**: DEPRECATED (replaced by Metis in plan review role)
 
 ### Core Philosophy
 1. **Separation of Planning and Execution** - Prevent context pollution
@@ -40,17 +39,14 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 | Atlas | Master Orchestrator | Sonnet | - | - |
 | Prometheus | Strategic Planner | **Opus-4.6** | - | - |
 | Metis | Pre-planning + Plan Reviewer | Haiku | GPT-5.3-Codex | xhigh |
-| Momus | ~~Plan Reviewer~~ **DEPRECATED** | Haiku | GPT-5.3-Codex | xhigh |
-| Oracle | Architecture Advisor | Sonnet | GPT-5.3-Codex | - |
+| Oracle | Architecture Advisor | **Haiku** (relay) | GPT-5.3-Codex | - |
 | Oracle-Low | Quick Architecture Lookup | Haiku | - | - |
 | Debate | Multi-model decision making | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** | - |
 | Explore | Fast Contextual Grep | Haiku | - | - |
 | Explore-High | Deep Codebase Analysis | **Sonnet-4.6** | - | - |
-| Multimodal-looker | Media Analyzer | **Sonnet-4.6** | Gemini | - |
-| Librarian | Documentation/Code Search | Haiku | GLM-4.7 | - |
-| Junior | Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
-| Junior-Low | Simple Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
-| Junior-High | Complex Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
+| Multimodal-looker | Media Analyzer | **Haiku** (relay) | Gemini | - |
+| Librarian | Documentation/Code Search | **Sonnet** (relay, sub-team leader) | GLM-4.7 | - |
+| Junior | Task Executor | Haiku (shell) | **gpt-5.3-codex-spark** | - |
 
 ### Invocation
 
@@ -59,7 +55,6 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 @atlas      - Master orchestrator (todo execution)
 @prometheus - Strategic planner (or @plan)
 @metis      - Pre-planning consultant
-@momus      - Plan reviewer
 @oracle     - Architecture consultation
 @debate     - Multi-model debate for critical decisions
 @explore    - Fast codebase exploration
@@ -78,7 +73,7 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
   - `--ui` - UI verification with Playwright + Gemini
   - `--no-qa` - Skip QA phase
   - `--no-validation` - Skip Debate code review
-- `/swarm N:agent` - Parallel agent execution with atomic task claiming
+- `/swarm N` - Parallel execution via Agent Teams
 - `/ecomode` - Resource-efficient operation mode
 - `/git-master` - Git expert (commit, rebase, history)
 - `/frontend-ui-ux` - UI/UX development
@@ -116,7 +111,6 @@ When autopilot or similar workflows are active, **workmode** is enabled:
 | grep-app | GitHub code search | HTTP | - |
 | lsp-tools | LSP/AST-Grep tools | stdio | custom |
 | chronos | Ralph Loop, Boulder, Debate, Ecomode, Autopilot, Workmode, UI Verification, Model Router | stdio | custom |
-| swarm | SQLite atomic task claiming for parallel agents | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
 | gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (npm) |
 | zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
@@ -259,21 +253,30 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 **CLI Usage:** `node mcp-servers/chronos/cli.js <command>`
 
-### Swarm MCP Tools (Parallel Agent Execution)
+### Agent Teams (Native Parallel Execution)
 
-| Tool | Purpose |
-|------|---------|
-| `mcp__swarm__swarm_init` | Initialize task pool |
-| `mcp__swarm__swarm_claim` | Atomically claim next task |
-| `mcp__swarm__swarm_complete` | Mark task as completed |
-| `mcp__swarm__swarm_fail` | Mark task as failed |
-| `mcp__swarm__swarm_heartbeat` | Update agent heartbeat |
-| `mcp__swarm__swarm_recover` | Recover stale tasks |
-| `mcp__swarm__swarm_stats` | Get task statistics |
-| `mcp__swarm__swarm_list` | List all tasks |
-| `mcp__swarm__swarm_add` | Add a single task |
+`CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` is enabled in `claude/settings.json`.
 
-**CLI Usage:** `node mcp-servers/swarm/cli.js <command>`
+Use Claude Code's native Agent Teams for parallel execution:
+
+```
+# Request naturally:
+"Create an agent team with 3 teammates to implement X, Y, Z in parallel"
+
+# Or use the /swarm skill:
+/swarm 3:junior "Implement all API endpoints"
+```
+
+**Concept mapping from old Swarm MCP:**
+
+| Old Concept | Agent Teams Equivalent |
+|------------|----------------------|
+| `mcp__swarm__swarm_init` + task pool | `TaskCreate` for each subtask |
+| `mcp__swarm__swarm_claim` (atomic) | Native task list claiming |
+| Agent heartbeat/recovery | Automatic (built-in) |
+| workmode (Sisyphus blocked) | Delegation mode (leader blocked) |
+| Atlas role (orchestrator) | Team leader role |
+| Junior workers | Teammates |
 
 ## Hook System
 
@@ -329,8 +332,7 @@ sisyphus/
 ├── ecomode.json        # Ecomode settings
 ├── autopilot.json      # Active autopilot state
 ├── workmode.json       # Workmode state
-├── active-agents.json  # Agent limiter state (OOM prevention)
-└── swarm.db            # SQLite database for swarm
+└── active-agents.json  # Agent limiter state (OOM prevention)
 ```
 
 ## Workflow Examples
@@ -366,14 +368,15 @@ Phase 2: Junior/codex-spark executes
 → Workmode active
 ```
 
-### 4. Parallel Swarm
+### 4. Parallel Agent Teams
 
 ```
 User: /autopilot --swarm 5 "Implement all API endpoints"
 Claude:
-Phase 2: 5 junior agents work in parallel
-→ Each claims tasks atomically from swarm pool
-→ Monitor: mcp__swarm__swarm_stats()
+Phase 2: Agent Team with 5 members works in parallel
+→ Each teammate claims tasks from native task list
+→ Leader in delegation mode (no direct code changes)
+→ Monitor via TaskList
 ```
 
 ### 5. UI Verification
@@ -421,7 +424,6 @@ Claude:
 ```
 User: /ecomode on
 Claude:
-- junior-low used where possible
 - oracle → oracle-low (Haiku)
 - Skip Debate planning phase
 - Shorter responses
@@ -444,7 +446,6 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 | Atlas | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Prometheus | whitelist | boulder, ralph, status | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Metis | whitelist | ralph, status | ✅ (xhigh) | ❌ | ❌ | ❌ | ❌ |
-| Momus | whitelist | ralph, status | ✅ (xhigh) | ❌ | ❌ | ❌ | ❌ |
 | Oracle | whitelist | ralph, status | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Explore | whitelist | - | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Multimodal-looker | whitelist | - | ❌ | ✅ | ❌ | ❌ | ❌ |
@@ -454,14 +455,14 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 ### Skill MCP Tool Access
 
-| Skill | Config | chronos | swarm | Other MCP |
-|-------|--------|---------|-------|-----------|
-| autopilot | whitelist | autopilot, ralph, boulder, ecomode, workmode, ui_verification, model_router, debate | ✅ | ❌ |
-| swarm | whitelist | ralph, status | ✅ | ❌ |
-| ecomode | whitelist | ecomode, status | ❌ | ❌ |
-| git-master | none (all) | ✅ all | ✅ | ✅ all |
-| frontend-ui-ux | none (all) | ✅ all | ✅ | ✅ all |
-| playwright | none (all) | ✅ all | ✅ | ✅ all |
+| Skill | Config | chronos | Other MCP |
+|-------|--------|---------|-----------|
+| autopilot | whitelist | autopilot, ralph, boulder, ecomode, workmode, ui_verification, model_router, debate | ❌ |
+| swarm | whitelist | ralph, status | ❌ |
+| ecomode | whitelist | ecomode, status | ❌ |
+| git-master | none (all) | ✅ all | ✅ all |
+| frontend-ui-ux | none (all) | ✅ all | ✅ all |
+| playwright | none (all) | ✅ all | ✅ all |
 
 ## Important Notes
 
@@ -508,20 +509,10 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 |-------|---------------|----------|---------|
 | Debate (Phase 0/4) | Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7 | - | Planning & code review |
 | Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet | Plan review in Prometheus+Metis loop |
-| Junior* | gpt-5.3-codex-spark | direct Edit | Code generation |
-| Oracle | GPT-5.3-Codex | Claude Sonnet | Architecture advice |
-| Multimodal-looker | Gemini | Claude Sonnet | Image/PDF analysis |
-| Librarian | GLM-4.7 | Claude Haiku | Documentation search |
-
-### Junior Tier Routing
-
-All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
-
-| Tier | Criteria | Agent | Execution |
-|------|----------|-------|-----------|
-| Low | 1 file, <20 lines | junior-low | Haiku + codex-spark |
-| Medium | 2-5 files, 20-100 lines | junior | Haiku + codex-spark |
-| High | 6+ files, 100+ lines | junior-high | Haiku + codex-spark |
+| Junior | gpt-5.3-codex-spark (primary) | direct Edit (trivial only) | Code generation & execution |
+| Oracle | GPT-5.3-Codex | - (Haiku relay only) | Architecture advice |
+| Multimodal-looker | Gemini | - (Haiku relay only) | Image/PDF analysis |
+| Librarian | GLM-4.7 (+ sub-team) | Claude Sonnet (large context) | Documentation search |
 
 ### UI Verification (NEW)
 - Available with `--ui` flag in autopilot
@@ -561,7 +552,7 @@ All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
 
 ### Autopilot (5-Phase Debate-First Workflow)
 - Start: `mcp__chronos__autopilot_start(name, request, options)`
-- Options: `fast`, `ui`, `swarm`, `skip_qa`, `skip_validation`, `skip_debate`
+- Options: `fast`, `ui`, `use_agent_teams`, `team_size`, `skip_qa`, `skip_validation`, `skip_debate`
 - Status: `mcp__chronos__autopilot_status()`
 - Loop Back: `mcp__chronos__autopilot_loop_back(target_phase, reason)` - for code review failures
 - Phases:
@@ -572,11 +563,13 @@ All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
   4. **Code Review** - Debate reviews code, APPROVED = pass (REJECTED = loop back to Phase 2)
 - Gate criteria must pass to advance phases
 
-### Swarm (Parallel Agents)
-- Database: `sisyphus/swarm.db` (SQLite)
-- Atomic claiming prevents duplicate work
-- Heartbeat timeout: 5 minutes
-- Recovery: `mcp__swarm__swarm_recover()`
+### Agent Teams (Parallel Execution)
+- Enabled via `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1` in `claude/settings.json`
+- Native Claude Code feature: no external MCP server needed
+- Teammates communicate directly via mailbox
+- Native task list handles atomic claiming automatically
+- Delegation mode: leader cannot modify code (equivalent to workmode)
+- Use `/swarm N:agent "task"` skill or natural language: "Create a team with N teammates to..."
 
 ### Ralph Loop
 - Max iterations: 50 (default)

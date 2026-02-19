@@ -9,10 +9,10 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 ## Features
 
 - **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7)
-- **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
+- **Multi-Agent Orchestration**: 13 specialized agents with clear role separation
   - Planning: Debate (4 models), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
-  - Execution: Atlas (Sonnet), Junior/codex-spark, Oracle, Explore, Multimodal-looker, Librarian
-  - Tier Variants: Junior-low/high (all Haiku + codex-spark), Oracle-low, Explore-high
+  - Execution: Atlas (Sonnet), Junior (codex-spark primary), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
+  - Variants: Oracle-low, Explore-high
   - User-facing: Sisyphus (Sonnet), Debate
 - **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
 - **External Model Integration**: GPT-5.2 + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro-Preview, GLM-4.7 via MCP
@@ -23,7 +23,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 - **Workmode**: Blocks direct code modification when autopilot is active
 - **UI Verification**: Playwright + Gemini for visual QA (with `--ui` flag)
 - **Smart Model Routing**: Automatic external model selection to reduce Claude API costs
-- **Swarm**: SQLite-based atomic task claiming for parallel agent execution
+- **Agent Teams**: Native Claude Code parallel execution (experimental, replaces SQLite-based Swarm)
 - **Agent Limiter**: OOM prevention by limiting concurrent background agents (default: 5)
 - **Ecomode**: Resource-efficient mode (skip debate planning phase)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
@@ -118,11 +118,6 @@ jq --version 2>/dev/null || echo "jq: NOT INSTALLED"
 
 **Install only if not present or outdated:**
 ```bash
-# Install build-essential (Linux only - required for better-sqlite3 in Swarm MCP)
-# This is needed if your Node.js version doesn't have prebuilt binaries
-sudo apt install build-essential  # Debian/Ubuntu
-# or: sudo dnf groupinstall "Development Tools"  # Fedora/RHEL
-
 # Install uv (required for Z.ai GLM MCP) - skip if already installed
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 
@@ -165,7 +160,6 @@ Register all MCP servers for this project using `claude mcp add`:
 claude mcp add codex -s project -- npx -y codex mcp-server
 claude mcp add gemini -s project -- npx mcp-gemini-cli --allow-npx
 claude mcp add chronos -s project -- node ./mcp-servers/chronos/index.js
-claude mcp add swarm -s project -- node ./mcp-servers/swarm/index.js
 claude mcp add lsp-tools -s project -- node ./mcp-servers/lsp-tools/index.js
 claude mcp add zai-glm -s project -- ./mcp-servers/zai-glm/.venv/bin/python ./mcp-servers/zai-glm/server.py
 
@@ -188,12 +182,6 @@ cd mcp-servers/chronos
 npm install
 cd ../..
 
-# Install Swarm MCP server (SQLite atomic task claiming)
-# Note: Requires build-essential for better-sqlite3 compilation
-cd mcp-servers/swarm
-npm install
-cd ../..
-
 # Install LSP Tools MCP server
 cd mcp-servers/lsp-tools
 npm install
@@ -207,7 +195,6 @@ cd ../..
 
 **Note:**
 - Chronos MCP provides state management (Ralph Loop, Boulder, Debate, Ecomode, Autopilot)
-- Swarm MCP uses `better-sqlite3` for atomic task claiming - requires build tools on Linux
 - LSP Tools MCP provides Language Server Protocol and AST-Grep integration
 - Z.ai GLM MCP uses Python with `mcp` and `zai-sdk` packages
 
@@ -232,7 +219,6 @@ cp .gitignore.sample .gitignore
 - `mcp-servers/zai-glm/.venv/` - Python virtual environment
 - `.sisyphus/boulder.json`, `.sisyphus/ralph-state.json` - Runtime state files
 - `.sisyphus/ecomode.json`, `.sisyphus/autopilot.json` - Runtime state files
-- `.sisyphus/swarm.db`, `.sisyphus/swarm.db-*` - Swarm SQLite database
 - `.sisyphus/active-agents.json` - Agent limiter state
 - `.sisyphus/debates/` - Debate state and history
 - `.sisyphus/autopilot-history/` - Archived autopilot sessions
@@ -254,13 +240,6 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 - `mcp__chronos__autopilot_*` - Autopilot 5-phase debate-first workflow
 - `mcp__chronos__autopilot_loop_back` - Loop back after code review failure
 - `mcp__chronos__chronos_status`, `mcp__chronos__chronos_should_continue`
-
-**Swarm (Parallel Execution):**
-- `mcp__swarm__swarm_init` - Initialize task pool
-- `mcp__swarm__swarm_claim` - Atomic task claiming
-- `mcp__swarm__swarm_complete`, `mcp__swarm__swarm_fail` - Task completion
-- `mcp__swarm__swarm_heartbeat`, `mcp__swarm__swarm_recover` - Agent liveness
-- `mcp__swarm__swarm_stats`, `mcp__swarm__swarm_list`, `mcp__swarm__swarm_add`
 
 **External Models:**
 - `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI GPT-5.3-Codex
@@ -434,16 +413,13 @@ chmod +x hooks/*.sh
 | `.claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
 | `.claude/agents/prometheus/AGENT.md` | Strategic planner | **Opus-4.6** | - |
 | `.claude/agents/metis/AGENT.md` | Pre-planning + plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
-| `.claude/agents/momus/AGENT.md` | ~~Plan reviewer~~ **DEPRECATED** | Haiku | GPT-5.3-Codex (xhigh) |
-| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Sonnet | GPT-5.3-Codex |
+| `.claude/agents/oracle/AGENT.md` | Architecture advisor | **Opus-4.6** | GPT-5.3-Codex |
 | `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
 | `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
 | `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
 | `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | **Sonnet-4.6** | Gemini |
-| `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-4.7 |
-| `.claude/agents/junior/AGENT.md` | Task executor (medium) | **Haiku** | **gpt-5.3-codex-spark** |
-| `.claude/agents/junior-low/AGENT.md` | Simple task executor | **Haiku** | **gpt-5.3-codex-spark** |
-| `.claude/agents/junior-high/AGENT.md` | Complex task executor | **Haiku** | **gpt-5.3-codex-spark** |
+| `.claude/agents/librarian/AGENT.md` | Documentation search | **Sonnet** | GLM-4.7 |
+| `.claude/agents/junior/AGENT.md` | Task executor | Haiku (shell) | **gpt-5.3-codex-spark** |
 | `.claude/agents/debate/AGENT.md` | Multi-model debate (4 models) | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** |
 
 ### Skills
@@ -451,7 +427,7 @@ chmod +x hooks/*.sh
 | File | Description |
 |------|-------------|
 | `.claude/skills/autopilot/SKILL.md` | **Unified 5-phase workflow** (replaces ultrawork) - `--fast`, `--swarm`, `--ui` options |
-| `.claude/skills/swarm/SKILL.md` | Parallel agent execution with atomic task claiming |
+| `.claude/skills/swarm/SKILL.md` | Parallel execution via Claude Code's native Agent Teams |
 | `.claude/skills/ecomode/SKILL.md` | Resource-efficient operation mode |
 | `.claude/skills/git-master/SKILL.md` | Git expert |
 | `.claude/skills/frontend-ui-ux/SKILL.md` | UI/UX design patterns |
@@ -480,7 +456,6 @@ chmod +x hooks/*.sh
 | `.sisyphus/autopilot.json` | Autopilot workflow state |
 | `.sisyphus/workmode.json` | Workmode state (blocks direct modification) |
 | `.sisyphus/active-agents.json` | Agent limiter state (OOM prevention) |
-| `.sisyphus/swarm.db` | Swarm SQLite database |
 | `.sisyphus/plans/` | Prometheus plan files |
 | `.sisyphus/specs/` | Autopilot spec files |
 | `.sisyphus/notepads/` | Sisyphus learning records |
@@ -579,17 +554,21 @@ mcp__chronos__ui_verification_command(url, output_path)
 mcp__chronos__ui_verification_prompt(expectations)
 ```
 
-### Swarm (Parallel Agents)
+### Agent Teams (Parallel Execution)
 
 ```bash
-# Launch multiple agents with atomic task claiming
+# Launch an Agent Team for parallel execution
 /swarm 5:junior "Implement all API endpoints"
 
+# Or use natural language:
+# "Create an agent team with 5 teammates to implement all API endpoints in parallel"
+
 # Workflow:
-# 1. Tasks are stored in SQLite database
-# 2. Agents atomically claim tasks (no duplicates)
-# 3. Heartbeat mechanism detects stale agents
-# 4. Stale tasks are recovered and re-assigned
+# 1. Tasks created in native task list (TaskCreate)
+# 2. Agent Team formed with N teammates
+# 3. Teammates claim tasks atomically from shared task list
+# 4. Teammates communicate directly via mailbox
+# 5. Leader in delegation mode (no direct code changes)
 ```
 
 ### Ecomode (Resource Efficiency)
@@ -599,8 +578,7 @@ mcp__chronos__ui_verification_prompt(expectations)
 /ecomode on
 
 # Effects:
-# - junior → junior-low (simpler tasks preferred)
-# - oracle → oracle-low (Haiku instead of Sonnet)
+# - oracle → oracle-low (Haiku instead of Opus)
 # - Skip Debate planning phase (Phase 0)
 # - Shorter responses
 
@@ -627,7 +605,7 @@ Phase 1 ──► STRUCTURING (Prometheus + Metis Loop)
 Phase 2 ──► EXECUTION
             Atlas (Sonnet) orchestrates
             → Junior agents (Haiku coordinator + gpt-5.3-codex-spark)
-            → Or Swarm (parallel Junior agents)
+            → Or Agent Teams (native parallel execution)
 
 Phase 3 ──► QA
             Build / Lint / Tests
@@ -694,13 +672,12 @@ User Request
 | Atlas | Sonnet | - | - |
 | **Prometheus** | **Opus-4.6** | - | - |
 | **Metis** | Haiku | GPT-5.3-Codex | **xhigh** |
-| ~~Momus~~ | Haiku | GPT-5.3-Codex | ~~xhigh~~ (DEPRECATED) |
-| Oracle | Sonnet | GPT-5.3-Codex | default |
+| Oracle | Haiku (relay) | GPT-5.3-Codex | default |
 | **Debate** | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** | - |
 | Explore | Haiku | - | - |
-| Multimodal-looker | Sonnet-4.6 | Gemini | - |
-| Librarian | Haiku | GLM-4.7 | - |
-| **Junior*** | **Haiku** | **gpt-5.3-codex-spark** | - |
+| Multimodal-looker | Haiku (relay) | Gemini | - |
+| **Librarian** | **Sonnet** (relay + sub-team) | GLM-4.7 | - |
+| Junior | Haiku (shell) | **gpt-5.3-codex-spark** | - |
 
 ---
 

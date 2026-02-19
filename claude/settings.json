@@ -1,4 +1,7 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "permissions": {
     "allow": [
       "mcp__chronos__ralph_get_state",
@@ -56,15 +59,6 @@
       "mcp__chronos__agent_limiter_clear",
       "mcp__chronos__chronos_status",
       "mcp__chronos__chronos_should_continue",
-      "mcp__swarm__swarm_init",
-      "mcp__swarm__swarm_claim",
-      "mcp__swarm__swarm_complete",
-      "mcp__swarm__swarm_fail",
-      "mcp__swarm__swarm_heartbeat",
-      "mcp__swarm__swarm_recover",
-      "mcp__swarm__swarm_stats",
-      "mcp__swarm__swarm_list",
-      "mcp__swarm__swarm_add",
       "mcp__codex__codex",
       "mcp__codex__codex-reply",
       "mcp__gemini__chat",

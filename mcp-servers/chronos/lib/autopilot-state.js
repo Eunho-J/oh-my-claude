@@ -6,7 +6,7 @@
  * Phases:
  * 0. Debate Planning - 4 models debate and create plan consensus
  * 1. Structuring - Prometheus structures plan, Metis reviews in loop
- * 2. Execution - Atlas executes via Junior/codex-spark (or Swarm)
+ * 2. Execution - Atlas executes via Junior/codex-spark (or Agent Teams)
  * 3. QA - Build, lint, and tests pass
  * 4. Code Review - Debate reviews code changes, loops back to Phase 2 if rejected
  */
@@ -38,7 +38,7 @@ export const PHASE_NAMES = {
 export const PHASE_DESCRIPTIONS = {
   0: "Debate: 4 models (Opus, GPT-5.2, Gemini, GLM-4.7) analyze request and create plan consensus",
   1: "Structuring: Prometheus converts debate conclusions into execution plan, Metis reviews in loop",
-  2: "Execution: Atlas executes via Junior/codex-spark agents",
+  2: "Execution: Atlas executes via Junior/codex-spark agents (or Agent Teams for parallel)",
   3: "QA: Build, lint, and tests pass",
   4: "Code Review: Debate reviews code changes, loops back to Phase 2 if rejected",
 };
@@ -128,8 +128,8 @@ export function startAutopilot(directory, name, request, options = {}) {
     updated_at: now,
     options: {
       skip_debate: options.skip_debate || false,
-      use_swarm: options.use_swarm || false,
-      swarm_agents: options.swarm_agents || 3,
+      use_agent_teams: options.use_agent_teams || false,
+      team_size: options.team_size || 3,
       fast: options.fast || false,
       ui: options.ui || false,
       skip_qa: options.skip_qa || false,

@@ -712,20 +712,15 @@ server.tool(
       .boolean()
       .optional()
       .describe("Skip Metis pre-planning phase (default: true)"),
-    skip_momus: z
-      .boolean()
-      .optional()
-      .describe("Skip Momus plan review phase (default: true)"),
     shorter_responses: z
       .boolean()
       .optional()
       .describe("Request shorter responses from agents (default: true)"),
   },
-  async ({ prefer_haiku, skip_metis, skip_momus, shorter_responses }) => {
+  async ({ prefer_haiku, skip_metis, shorter_responses }) => {
     const customSettings = {};
     if (prefer_haiku !== undefined) customSettings.prefer_haiku = prefer_haiku;
     if (skip_metis !== undefined) customSettings.skip_metis = skip_metis;
-    if (skip_momus !== undefined) customSettings.skip_momus = skip_momus;
     if (shorter_responses !== undefined) customSettings.shorter_responses = shorter_responses;
 
     const state = enableEcomode(getDirectory(), customSettings);
@@ -797,7 +792,7 @@ server.tool(
   "ecomode_should_skip",
   "Check if a planning phase should be skipped in ecomode",
   {
-    phase: z.enum(["metis", "momus"]).describe("Planning phase to check"),
+    phase: z.enum(["metis"]).describe("Planning phase to check"),
   },
   async ({ phase }) => {
     const skip = shouldSkipPhase(getDirectory(), phase);
@@ -823,18 +818,18 @@ server.tool(
     name: z.string().describe("Name of the autopilot session"),
     request: z.string().describe("The original user request"),
     skip_debate: z.boolean().optional().describe("Skip Debate planning phase (Phase 0)"),
-    use_swarm: z.boolean().optional().describe("Use swarm for parallel execution"),
-    swarm_agents: z.number().optional().describe("Number of swarm agents (default: 3)"),
+    use_agent_teams: z.boolean().optional().describe("Use Agent Teams for parallel execution"),
+    team_size: z.number().optional().describe("Number of Agent Team members (default: 3)"),
     fast: z.boolean().optional().describe("Fast mode: skip Debate/Metis phases (alias for --fast)"),
     ui: z.boolean().optional().describe("Enable UI verification in QA phase"),
     skip_qa: z.boolean().optional().describe("Skip QA phase"),
     skip_validation: z.boolean().optional().describe("Skip code review phase"),
   },
-  async ({ name, request, skip_debate, use_swarm, swarm_agents, fast, ui, skip_qa, skip_validation }) => {
+  async ({ name, request, skip_debate, use_agent_teams, team_size, fast, ui, skip_qa, skip_validation }) => {
     const options = {
       skip_debate: fast || skip_debate,
-      use_swarm,
-      swarm_agents,
+      use_agent_teams,
+      team_size,
       fast: fast || false,
       ui: ui || false,
       skip_qa: skip_qa || false,
@@ -861,7 +856,7 @@ server.tool(
               options: {
                 fast: options.fast,
                 ui: options.ui,
-                swarm: options.use_swarm ? options.swarm_agents : null,
+                teams: options.use_agent_teams ? options.team_size : null,
               },
             },
             null,

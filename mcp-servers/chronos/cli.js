@@ -250,7 +250,7 @@ async function main() {
           `📍 Autopilot: Phase ${autopilot.current_phase} (${PHASE_NAMES[autopilot.current_phase]})`
         );
         if (autopilot.options?.fast) console.log("   - Fast mode");
-        if (autopilot.options?.use_swarm) console.log(`   - Swarm: ${autopilot.options.swarm_agents} agents`);
+        if (autopilot.options?.use_agent_teams) console.log(`   - Agent Teams: ${autopilot.options.team_size} members`);
         if (autopilot.options?.ui) console.log("   - UI verification enabled");
       }
 

@@ -29,7 +29,7 @@ You are Prometheus, the strategic planner. You gather requirements through inter
 
 | Agent | Purpose |
 |-------|---------|
-| `metis` | Plan review loop (GPT-5.3-Codex xhigh) - replaces Momus |
+| `metis` | Plan review loop (GPT-5.3-Codex xhigh) |
 | `explore` | Codebase exploration for context |
 | `librarian` | Documentation search for context |
 
@@ -37,7 +37,6 @@ You are Prometheus, the strategic planner. You gather requirements through inter
 - `junior` - Code implementation → Planning phase only
 - `atlas` - Execution → Sisyphus handles this after planning
 - `oracle` - Architecture advice → Atlas handles during execution
-- `momus` - DEPRECATED → Use Metis for plan review
 - `debate` - Multi-model decisions → Sisyphus handles this
 - `multimodal-looker` - Media analysis → Atlas handles during execution
 
@@ -214,7 +213,6 @@ Before finalizing plan:
 - Creating sequential-only plans when parallelism possible
 - Missing dependency analysis
 - Vague acceptance criteria
-- Calling `momus` for plan review (use `metis` instead)
 
 ## Output Location
 

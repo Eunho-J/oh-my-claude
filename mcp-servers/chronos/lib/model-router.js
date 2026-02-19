@@ -115,7 +115,7 @@ const COMPLEXITY_THRESHOLDS = {
   LOW: {
     max_files: 1,
     max_lines: 20,
-    agents: ["junior-low"],
+    agents: ["junior"],
     model: MODELS.CODEX_SPARK,
   },
   MEDIUM: {
@@ -127,7 +127,7 @@ const COMPLEXITY_THRESHOLDS = {
   HIGH: {
     max_files: Infinity,
     max_lines: Infinity,
-    agents: ["junior-high"],
+    agents: ["junior"],
     model: MODELS.CODEX_SPARK,
   },
 };
@@ -173,26 +173,10 @@ export function getJuniorTier(taskMetrics) {
     };
   }
 
-  // Determine by file and line count
-  if (files <= COMPLEXITY_THRESHOLDS.LOW.max_files && lines <= COMPLEXITY_THRESHOLDS.LOW.max_lines) {
-    return {
-      tier: "low",
-      agent: "junior-low",
-      model: MODELS.CODEX_SPARK,
-    };
-  }
-
-  if (files <= COMPLEXITY_THRESHOLDS.MEDIUM.max_files && lines <= COMPLEXITY_THRESHOLDS.MEDIUM.max_lines) {
-    return {
-      tier: "medium",
-      agent: "junior",
-      model: MODELS.CODEX_SPARK,
-    };
-  }
-
+  // All tiers now use a single junior agent
   return {
-    tier: "high",
-    agent: "junior-high",
+    tier: "standard",
+    agent: "junior",
     model: MODELS.CODEX_SPARK,
   };
 }
@@ -213,19 +197,12 @@ export function getAgentModel(agentName, ecomode = false) {
       tier: null,
       description: "GPT-5.3-Codex with xhigh reasoning for pre-planning analysis",
     },
-    momus: {
-      model: MODELS.CODEX_XHIGH,
-      external: true,
-      tier: null,
-      description: "GPT-5.3-Codex with xhigh reasoning for plan review",
-    },
-
     // Advisory agents - prefer external models
     oracle: {
       model: ecomode ? MODELS.CLAUDE_HAIKU : MODELS.CODEX,
       external: !ecomode,
       tier: ecomode ? "low" : null,
-      description: "GPT-5.3-Codex for architecture advice (Haiku in ecomode)",
+      description: "Opus-4.6 + GPT-5.3-Codex for architecture advice (Haiku in ecomode)",
     },
     "oracle-low": {
       model: MODELS.CLAUDE_HAIKU,
@@ -264,24 +241,12 @@ export function getAgentModel(agentName, ecomode = false) {
       description: "Deep codebase analysis",
     },
 
-    // Execution agents (Haiku coordinator + codex-spark)
+    // Execution agent (codex-spark primary)
     junior: {
       model: MODELS.CODEX_SPARK,
       external: true,
-      tier: "medium",
-      description: "Standard task execution (Haiku coordinator + gpt-5.3-codex-spark)",
-    },
-    "junior-low": {
-      model: MODELS.CODEX_SPARK,
-      external: true,
-      tier: "low",
-      description: "Simple task execution (Haiku coordinator + gpt-5.3-codex-spark)",
-    },
-    "junior-high": {
-      model: MODELS.CODEX_SPARK,
-      external: true,
-      tier: "high",
-      description: "Complex task execution (Haiku coordinator + gpt-5.3-codex-spark)",
+      tier: "standard",
+      description: "Task execution via gpt-5.3-codex-spark (Haiku shell)",
     },
 
     // Orchestration agents

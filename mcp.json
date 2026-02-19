@@ -31,11 +31,6 @@
       "command": "npx",
       "args": ["mcp-gemini-cli", "--allow-npx"]
     },
-    "swarm": {
-      "type": "stdio",
-      "command": "node",
-      "args": ["./mcp-servers/swarm/index.js"]
-    },
     "zai-glm": {
       "type": "stdio",
       "command": "./mcp-servers/zai-glm/.venv/bin/python",

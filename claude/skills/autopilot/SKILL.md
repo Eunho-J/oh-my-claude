@@ -21,7 +21,6 @@ allowed_tools:
   - mcp__chronos__model_router_*
   - mcp__chronos__debate_*
   - mcp__chronos__chronos_status
-  - mcp__swarm__*
 ---
 
 # Autopilot - Unified Autonomous Workflow (Debate-First)
@@ -48,7 +47,7 @@ Execute a complete workflow from initial request to validated code. Uses a debat
 |------|--------|----------|
 | **Full** (default) | 0-4 | Complex features, new systems |
 | **Fast** (`--fast`) | 1-2 only | Bug fixes, simple changes |
-| **Swarm** (`--swarm N`) | Parallel execution | Multiple independent tasks |
+| **Agent Teams** (`--swarm N`) | Parallel execution via Agent Teams | Multiple independent tasks |
 | **UI** (`--ui`) | + UI verification | Frontend development |
 
 ## 5 Phases
@@ -138,15 +137,18 @@ Skip if: --fast
 3. Set output and advance
 ```
 
-### Phase 2: Execution (Atlas or Swarm)
+### Phase 2: Execution (Atlas or Agent Teams)
 
 ```markdown
 If --swarm N:
-  1. Parse plan into tasks
-  2. Initialize swarm: mcp__swarm__swarm_init(tasks)
-  3. Launch N junior agents in parallel
-     (Each Junior is Haiku coordinator + gpt-5.3-codex-spark)
-  4. Monitor: mcp__swarm__swarm_stats()
+  1. Parse plan into independent tasks via TaskCreate
+  2. Create Agent Team with N teammates:
+     "Create an agent team with N teammates. Each teammate should claim a
+      pending task from the task list, execute it, mark it complete, then
+      claim the next available task until none remain."
+  3. Leader (Atlas role) activates delegation mode - no direct code changes
+  4. Monitor via TaskList until all tasks completed
+  5. Clean up team when done
 
 Else:
   1. Delegate to Atlas
@@ -237,8 +239,8 @@ State file: `.sisyphus/autopilot.json`
   "options": {
     "fast": false,
     "ui": true,
-    "use_swarm": true,
-    "swarm_agents": 3,
+    "use_agent_teams": true,
+    "team_size": 3,
     "skip_qa": false,
     "skip_validation": false
   },
@@ -262,13 +264,7 @@ State file: `.sisyphus/autopilot.json`
 | Junior* | gpt-5.3-codex-spark | Code generation |
 | Atlas | Claude Sonnet-4.6 | Orchestration |
 
-Junior tier routing based on task complexity:
-
-| Complexity | Criteria | Agent | Execution |
-|------------|----------|-------|-----------|
-| Low | 1 file, <20 lines | junior-low | Haiku + codex-spark |
-| Medium | 2-5 files, 20-100 lines | junior | Haiku + codex-spark |
-| High | 6+ files, 100+ lines | junior-high | Haiku + codex-spark |
+Junior routing: all complexity levels → `junior` (codex-spark primary)
 
 ## Examples
 
@@ -294,14 +290,15 @@ Phase 2: Junior/codex-spark executes
 → Complete (QA/Code Review skipped by default in fast mode)
 ```
 
-### Parallel Swarm
+### Parallel Agent Teams
 
 ```
 /autopilot --swarm 5 "Implement all REST endpoints"
 
-Phase 2: 5 junior/codex-spark agents work in parallel
-→ Each claims tasks atomically from swarm pool
-→ Monitor: mcp__swarm__swarm_stats()
+Phase 2: Agent Team with 5 members works in parallel
+→ Each teammate claims tasks from shared task list
+→ Leader in delegation mode (no direct code changes)
+→ Monitor via TaskList
 ```
 
 ### UI Verification
