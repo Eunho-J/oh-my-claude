@@ -23,7 +23,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 - **Workmode**: Blocks direct code modification when autopilot is active
 - **UI Verification**: Playwright + Gemini for visual QA (with `--ui` flag)
 - **Smart Model Routing**: Automatic external model selection to reduce Claude API costs
-- **Agent Teams**: Native Claude Code parallel execution (experimental, replaces SQLite-based Swarm)
+- **Agent Teams**: Native Claude Code parallel execution with optional **split pane mode** (tmux / iTerm2)
 - **Agent Limiter**: OOM prevention by limiting concurrent background agents (default: 5)
 - **Ecomode**: Resource-efficient mode (skip debate planning phase)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
@@ -220,6 +220,76 @@ cd ../..
 ```bash
 chmod +x hooks/*.sh
 ```
+
+### 1.5b Terminal Integration for Agent Teams (Optional)
+
+Agent Teams support **split pane mode** — each teammate runs in its own terminal pane so you can watch all agents simultaneously. Two terminals are supported: **tmux** and **iTerm2**.
+
+> **Agent instruction:** Ask the user which terminal integration they want:
+>
+> ```
+> AskUserQuestion:
+>   "Which terminal integration would you like for Agent Teams split pane mode?"
+>   Options:
+>     - "tmux - each teammate in its own pane (recommended for macOS/Linux)"
+>     - "iTerm2 - native macOS split panes"
+>     - "None (in-process) - all teammates run in the main terminal"
+> ```
+>
+> Then follow the corresponding section below.
+
+**Option A: tmux**
+
+```bash
+# Check if tmux is already installed
+tmux -V 2>/dev/null && echo "tmux: OK" || echo "tmux: NOT INSTALLED"
+
+# Install if not present
+# macOS
+command -v tmux >/dev/null || brew install tmux
+# Linux (Debian/Ubuntu)
+# command -v tmux >/dev/null || sudo apt install tmux
+# Linux (Fedora/RHEL)
+# command -v tmux >/dev/null || sudo dnf install tmux
+```
+
+No settings change needed — the default `"auto"` already enables split pane when Claude is launched
+inside a tmux session. Just run `claude` from within tmux:
+
+```bash
+tmux new -s work
+claude
+```
+
+---
+
+**Option B: iTerm2**
+
+1. Install the `it2` CLI:
+
+```bash
+npm install -g it2
+```
+
+2. Enable Python API in iTerm2: **iTerm2 → Settings → General → Magic → Enable Python API**
+
+3. Update `.claude/settings.json` to `"tmux"` (Claude Code auto-detects iTerm2 vs tmux):
+
+```bash
+tmp=$(mktemp)
+jq '.teammateMode = "tmux"' .claude/settings.json > "$tmp" && mv "$tmp" .claude/settings.json
+```
+
+> **Note:** `tmux -CC` mode inside iTerm2 is the recommended entry point per Claude Code docs.
+
+---
+
+**Option C: None (in-process)**
+
+No action needed. The default `"auto"` uses in-process mode when Claude is not running inside a
+tmux session.
+
+---
 
 ### 1.6 Configure .gitignore
 
@@ -422,6 +492,40 @@ chmod +x hooks/*.sh
 ./hooks/ralph-loop.sh < /dev/null
 ```
 
+### Agent Teams Teammates Not Appearing in Split Panes
+
+```bash
+# Verify tmux is installed and on PATH
+which tmux
+tmux -V
+
+# Verify .claude/settings.json has teammateMode set to "tmux"
+jq '.teammateMode' .claude/settings.json
+
+# Set it if missing
+tmp=$(mktemp)
+jq '.teammateMode = "tmux"' .claude/settings.json > "$tmp" && mv "$tmp" .claude/settings.json
+```
+
+For iTerm2: confirm `it2` is installed (`which it2`) and Python API is enabled
+(**iTerm2 → Settings → General → Magic → Enable Python API**).
+
+If teammates appear but split panes don't open, start Claude from inside a tmux session:
+```bash
+tmux new -s work
+claude
+```
+
+### Orphaned tmux Sessions After Agent Teams
+
+```bash
+# List all tmux sessions
+tmux ls
+
+# Kill sessions left by Agent Teams
+tmux kill-session -t <session-name>
+```
+
 ---
 
 ## File Reference
@@ -591,6 +695,31 @@ mcp__chronos__ui_verification_prompt(expectations)
 # 4. Teammates communicate directly via mailbox
 # 5. Leader in delegation mode (no direct code changes)
 ```
+
+#### Display Modes
+
+| Mode | Setting | Requirement | Description |
+|------|---------|-------------|-------------|
+| `auto` (default) | `"auto"` | None | Split pane if inside tmux; otherwise in-process |
+| Split pane | `"tmux"` | tmux or iTerm2 | Each teammate in its own pane |
+| In-process | `"in-process"` | None | All teammates in the main terminal |
+
+```bash
+# Force split pane mode (tmux / iTerm2 must be installed — see step 1.5b)
+# Edit .claude/settings.json:
+#   "teammateMode": "tmux"
+
+# Force in-process mode
+# Edit .claude/settings.json:
+#   "teammateMode": "in-process"
+
+# Override for a single session (without editing settings.json)
+claude --teammate-mode in-process
+```
+
+> When running `/autopilot --swarm N`, split pane mode lets you watch all N teammates execute in
+> parallel in real time. Navigate between panes with Shift+Up/Down (in-process) or click the pane
+> (split mode).
 
 ### Ecomode (Resource Efficiency)
 
