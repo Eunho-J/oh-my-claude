@@ -28,7 +28,13 @@
     },
     "gemini": {
       "type": "stdio",
-      "command": "mcp-gemini-cli"
+      "command": "npx",
+      "args": ["mcp-gemini-cli", "--allow-npx"]
+    },
+    "swarm": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["./mcp-servers/swarm/index.js"]
     },
     "zai-glm": {
       "type": "stdio",

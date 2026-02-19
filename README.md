@@ -80,11 +80,10 @@ These steps can be executed automatically by Claude Code.
 git clone https://github.com/Eunho-J/oh-my-claude.git /tmp/oh-my-claude
 
 # Copy all configuration files to current project
-cp -r /tmp/oh-my-claude/claude .
-cp -r /tmp/oh-my-claude/sisyphus .
+cp -r /tmp/oh-my-claude/claude .claude
+cp -r /tmp/oh-my-claude/sisyphus .sisyphus
 cp -r /tmp/oh-my-claude/hooks .
 cp -r /tmp/oh-my-claude/mcp-servers .
-cp /tmp/oh-my-claude/mcp.json .
 cp /tmp/oh-my-claude/CLAUDE.md .
 cp /tmp/oh-my-claude/.gitignore.sample .
 
@@ -93,11 +92,10 @@ rm -rf /tmp/oh-my-claude
 ```
 
 **Note:** This copies the following to your project:
-- `claude/` - Agent and skill definitions, settings
-- `sisyphus/` - State management directory
+- `.claude/` - Agent and skill definitions, settings
+- `.sisyphus/` - State management directory
 - `hooks/` - Hook scripts
 - `mcp-servers/` - Custom MCP server implementations
-- `mcp.json` - MCP server configuration
 - `CLAUDE.md` - Project instructions for Claude
 - `.gitignore.sample` - Template for .gitignore (copy to .gitignore in step 1.6)
 
@@ -141,9 +139,6 @@ command -v jq >/dev/null || brew install jq
 
 **Check existing installations first:**
 ```bash
-# Check Codex CLI
-codex --version 2>/dev/null || echo "Codex: NOT INSTALLED"
-
 # Check Gemini CLI
 gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
 
@@ -153,42 +148,37 @@ npx playwright --version 2>/dev/null || echo "Playwright: NOT INSTALLED"
 
 **Install only if not present:**
 ```bash
-# Install Codex CLI (for Oracle agent) - skip if already installed
-command -v codex >/dev/null || npm install -g codex
-
 # Install Gemini CLI (for OAuth auth) - skip if already installed
 command -v gemini >/dev/null || npm install -g @google/gemini-cli
-
-# Install mcp-gemini-cli (MCP server wrapper) - skip if already installed
-command -v mcp-gemini-cli >/dev/null || npm install -g mcp-gemini-cli
 
 # Install Playwright (for browser automation skill)
 npx playwright install
 ```
 
-### 1.3.1 Local vs Global MCP Installation
+### 1.3.1 Register MCP Servers
 
-oh-my-claude provides MCP server configuration in two ways:
+Register all MCP servers for this project using `claude mcp add`:
 
-**Local Installation (Default - Recommended for per-project setup):**
-- The `mcp.json` file in the project root is already configured
-- MCP servers are available only within this project
-- No additional configuration needed
-
-**Global Installation (For cross-project availability):**
-- Use `claude mcp add` to register MCP servers globally
-- MCP servers become available in all Claude Code projects
-
+**Project-level installation (recommended):**
 ```bash
-# Register MCP servers globally (optional)
-claude mcp add codex -s user -- npx -y codex mcp-server
-claude mcp add gemini -s user -- mcp-gemini-cli
-claude mcp add chronos -s user -- node /path/to/mcp-servers/chronos/index.js
-claude mcp add swarm -s user -- node /path/to/mcp-servers/swarm/index.js
-claude mcp add lsp-tools -s user -- node /path/to/mcp-servers/lsp-tools/index.js
+# stdio servers
+claude mcp add codex -s project -- npx -y codex mcp-server
+claude mcp add gemini -s project -- npx mcp-gemini-cli --allow-npx
+claude mcp add chronos -s project -- node ./mcp-servers/chronos/index.js
+claude mcp add swarm -s project -- node ./mcp-servers/swarm/index.js
+claude mcp add lsp-tools -s project -- node ./mcp-servers/lsp-tools/index.js
+claude mcp add zai-glm -s project -- ./mcp-servers/zai-glm/.venv/bin/python ./mcp-servers/zai-glm/server.py
+
+# HTTP servers (API key required)
+claude mcp add context7 -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
+claude mcp add grep-app -s project --transport http https://grep.app/api/mcp
 ```
 
-> **Note:** Local `mcp.json` is included in the repository and works out of the box. Global installation is useful when you want MCP servers available across all your projects.
+**Global installation (for cross-project availability):**
+```bash
+claude mcp add codex -s user -- npx -y codex mcp-server
+claude mcp add gemini -s user -- npx mcp-gemini-cli --allow-npx
+```
 
 ### 1.4 Install Local Dependencies
 
@@ -240,21 +230,21 @@ cp .gitignore.sample .gitignore
 - `.env` - API keys and secrets
 - `node_modules/` - Dependencies (reinstall with `npm install`)
 - `mcp-servers/zai-glm/.venv/` - Python virtual environment
-- `sisyphus/boulder.json`, `sisyphus/ralph-state.json` - Runtime state files
-- `sisyphus/ecomode.json`, `sisyphus/autopilot.json` - Runtime state files
-- `sisyphus/swarm.db`, `sisyphus/swarm.db-*` - Swarm SQLite database
-- `sisyphus/active-agents.json` - Agent limiter state
-- `sisyphus/debates/` - Debate state and history
-- `sisyphus/autopilot-history/` - Archived autopilot sessions
+- `.sisyphus/boulder.json`, `.sisyphus/ralph-state.json` - Runtime state files
+- `.sisyphus/ecomode.json`, `.sisyphus/autopilot.json` - Runtime state files
+- `.sisyphus/swarm.db`, `.sisyphus/swarm.db-*` - Swarm SQLite database
+- `.sisyphus/active-agents.json` - Agent limiter state
+- `.sisyphus/debates/` - Debate state and history
+- `.sisyphus/autopilot-history/` - Archived autopilot sessions
 
 **What is preserved:**
-- `sisyphus/plans/` - Prometheus plan files (user content)
-- `sisyphus/specs/` - Autopilot spec files (user content)
-- `sisyphus/notepads/` - Sisyphus learning records (user content)
+- `.sisyphus/plans/` - Prometheus plan files (user content)
+- `.sisyphus/specs/` - Autopilot spec files (user content)
+- `.sisyphus/notepads/` - Sisyphus learning records (user content)
 
 ### 1.7 MCP Permissions (Pre-configured)
 
-The `claude/settings.json` file already includes all MCP tool permissions. These are pre-allowed so you don't need to approve each tool manually:
+The `.claude/settings.json` file already includes all MCP tool permissions. These are pre-allowed so you don't need to approve each tool manually:
 
 **Chronos (State Management):**
 - `mcp__chronos__ralph_*` - Ralph Loop control
@@ -297,14 +287,13 @@ echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 
 # Check directory structure
 echo "=== Checking Directory Structure ==="
-[ -d "claude/agents" ] && echo "Agents: OK" || echo "Agents: MISSING"
-[ -d "claude/skills" ] && echo "Skills: OK" || echo "Skills: MISSING"
-[ -d "sisyphus" ] && echo "Sisyphus: OK" || echo "Sisyphus: MISSING"
+[ -d ".claude/agents" ] && echo "Agents: OK" || echo "Agents: MISSING"
+[ -d ".claude/skills" ] && echo "Skills: OK" || echo "Skills: MISSING"
+[ -d ".sisyphus" ] && echo "Sisyphus: OK" || echo "Sisyphus: MISSING"
 [ -d "hooks" ] && echo "Hooks: OK" || echo "Hooks: MISSING"
 
 # Check configuration files
 echo "=== Checking Configuration Files ==="
-[ -f "mcp.json" ] && echo "mcp.json: OK" || echo "mcp.json: MISSING"
 [ -f ".claude/settings.json" ] && echo "settings.json: OK" || echo "settings.json: MISSING"
 [ -f "CLAUDE.md" ] && echo "CLAUDE.md: OK" || echo "CLAUDE.md: MISSING"
 ```
@@ -404,14 +393,6 @@ claude mcp list
 
 ## Troubleshooting
 
-### Codex Authentication Issues
-
-```bash
-# Clear cached credentials and re-login
-codex auth logout
-codex auth login
-```
-
 ### Gemini Authentication Issues
 
 ```bash
@@ -449,32 +430,32 @@ chmod +x hooks/*.sh
 
 | File | Description | Model | External Model |
 |------|-------------|-------|----------------|
-| `claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | **Sonnet** | - |
-| `claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
-| `claude/agents/prometheus/AGENT.md` | Strategic planner | **Opus-4.6** | - |
-| `claude/agents/metis/AGENT.md` | Pre-planning + plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
-| `claude/agents/momus/AGENT.md` | ~~Plan reviewer~~ **DEPRECATED** | Haiku | GPT-5.3-Codex (xhigh) |
-| `claude/agents/oracle/AGENT.md` | Architecture advisor | Sonnet | GPT-5.3-Codex |
-| `claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
-| `claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
-| `claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
-| `claude/agents/multimodal-looker/AGENT.md` | Media analyzer | **Sonnet-4.6** | Gemini |
-| `claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-4.7 |
-| `claude/agents/junior/AGENT.md` | Task executor (medium) | **Haiku** | **gpt-5.3-codex-spark** |
-| `claude/agents/junior-low/AGENT.md` | Simple task executor | **Haiku** | **gpt-5.3-codex-spark** |
-| `claude/agents/junior-high/AGENT.md` | Complex task executor | **Haiku** | **gpt-5.3-codex-spark** |
-| `claude/agents/debate/AGENT.md` | Multi-model debate (4 models) | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** |
+| `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | **Sonnet** | - |
+| `.claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
+| `.claude/agents/prometheus/AGENT.md` | Strategic planner | **Opus-4.6** | - |
+| `.claude/agents/metis/AGENT.md` | Pre-planning + plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
+| `.claude/agents/momus/AGENT.md` | ~~Plan reviewer~~ **DEPRECATED** | Haiku | GPT-5.3-Codex (xhigh) |
+| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Sonnet | GPT-5.3-Codex |
+| `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
+| `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
+| `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
+| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | **Sonnet-4.6** | Gemini |
+| `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-4.7 |
+| `.claude/agents/junior/AGENT.md` | Task executor (medium) | **Haiku** | **gpt-5.3-codex-spark** |
+| `.claude/agents/junior-low/AGENT.md` | Simple task executor | **Haiku** | **gpt-5.3-codex-spark** |
+| `.claude/agents/junior-high/AGENT.md` | Complex task executor | **Haiku** | **gpt-5.3-codex-spark** |
+| `.claude/agents/debate/AGENT.md` | Multi-model debate (4 models) | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** |
 
 ### Skills
 
 | File | Description |
 |------|-------------|
-| `claude/skills/autopilot/SKILL.md` | **Unified 5-phase workflow** (replaces ultrawork) - `--fast`, `--swarm`, `--ui` options |
-| `claude/skills/swarm/SKILL.md` | Parallel agent execution with atomic task claiming |
-| `claude/skills/ecomode/SKILL.md` | Resource-efficient operation mode |
-| `claude/skills/git-master/SKILL.md` | Git expert |
-| `claude/skills/frontend-ui-ux/SKILL.md` | UI/UX design patterns |
-| `claude/skills/playwright/SKILL.md` | Browser automation |
+| `.claude/skills/autopilot/SKILL.md` | **Unified 5-phase workflow** (replaces ultrawork) - `--fast`, `--swarm`, `--ui` options |
+| `.claude/skills/swarm/SKILL.md` | Parallel agent execution with atomic task claiming |
+| `.claude/skills/ecomode/SKILL.md` | Resource-efficient operation mode |
+| `.claude/skills/git-master/SKILL.md` | Git expert |
+| `.claude/skills/frontend-ui-ux/SKILL.md` | UI/UX design patterns |
+| `.claude/skills/playwright/SKILL.md` | Browser automation |
 
 ### Hooks
 
@@ -485,25 +466,26 @@ chmod +x hooks/*.sh
 | `hooks/comment-checker.sh` | PostToolUse | Warns about unnecessary comments |
 | `hooks/debate-lock.sh` | PreToolUse | Blocks code changes during debate |
 | `hooks/delegation-guard.sh` | PreToolUse | Prevents Atlas from direct code edits |
-| `hooks/autopilot-gate.sh` | (info only) | Displays autopilot phase status |
+| `hooks/autopilot-gate.sh` | PreToolUse (info only) | Displays autopilot phase status |
 | `hooks/post-compact.sh` | SessionStart | Restores context after compact |
+| `hooks/agent-limiter.sh` | PreToolUse (Task) | Limits concurrent agents (OOM prevention) |
 
 ### State Files
 
 | File | Description |
 |------|-------------|
-| `sisyphus/boulder.json` | Current work status |
-| `sisyphus/ralph-state.json` | Ralph loop state |
-| `sisyphus/ecomode.json` | Ecomode settings |
-| `sisyphus/autopilot.json` | Autopilot workflow state |
-| `sisyphus/workmode.json` | Workmode state (blocks direct modification) |
-| `sisyphus/active-agents.json` | Agent limiter state (OOM prevention) |
-| `sisyphus/swarm.db` | Swarm SQLite database |
-| `sisyphus/plans/` | Prometheus plan files |
-| `sisyphus/specs/` | Autopilot spec files |
-| `sisyphus/notepads/` | Sisyphus learning records |
-| `sisyphus/autopilot-history/` | Archived autopilot sessions |
-| `sisyphus/ui-verification/` | UI verification screenshots and results |
+| `.sisyphus/boulder.json` | Current work status |
+| `.sisyphus/ralph-state.json` | Ralph loop state |
+| `.sisyphus/ecomode.json` | Ecomode settings |
+| `.sisyphus/autopilot.json` | Autopilot workflow state |
+| `.sisyphus/workmode.json` | Workmode state (blocks direct modification) |
+| `.sisyphus/active-agents.json` | Agent limiter state (OOM prevention) |
+| `.sisyphus/swarm.db` | Swarm SQLite database |
+| `.sisyphus/plans/` | Prometheus plan files |
+| `.sisyphus/specs/` | Autopilot spec files |
+| `.sisyphus/notepads/` | Sisyphus learning records |
+| `.sisyphus/autopilot-history/` | Archived autopilot sessions |
+| `.sisyphus/ui-verification/` | UI verification screenshots and results |
 
 ---
 
