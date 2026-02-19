@@ -118,7 +118,7 @@ When autopilot or similar workflows are active, **workmode** is enabled:
 | chronos | Ralph Loop, Boulder, Debate, Ecomode, Autopilot, Workmode, UI Verification, Model Router | stdio | custom |
 | swarm | SQLite atomic task claiming for parallel agents | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
-| gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (Bun) |
+| gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (npm) |
 | zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
 
 ### Authentication
@@ -128,8 +128,9 @@ When autopilot or similar workflows are active, **workmode** is enabled:
 # Codex (OpenAI)
 codex auth login
 
-# Gemini (Google) - requires Bun
+# Gemini (Google)
 npm install -g @google/gemini-cli
+npm install -g mcp-gemini-cli
 gemini auth login
 ```
 
@@ -586,7 +587,7 @@ All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
 - **GPT-5.2**: Used in Debate (via Codex MCP `model: "gpt-5.2"`)
 - **gpt-5.3-codex-spark**: Used in Junior agents for code generation (via Codex MCP)
 - **Gemini-3-Pro-Preview**: Used in Debate (via Gemini MCP `model: "gemini-3-pro-preview"`)
-- **Gemini**: 60 req/min limit (free tier), OAuth auth, **requires Bun runtime**
+- **Gemini**: 60 req/min limit (free tier), OAuth auth, npm install (`mcp-gemini-cli`)
 - **GLM-4.7**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`), also used in Debate
 
 ### uv Installation (for Z.ai GLM MCP)
@@ -595,13 +596,11 @@ All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
 curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-### Bun Installation (for Gemini MCP)
+### Gemini MCP Installation
 ```bash
-# macOS/Linux
-curl -fsSL https://bun.sh/install | bash
-
-# Windows
-powershell -c "irm bun.sh/install.ps1 | iex"
+npm install -g @google/gemini-cli
+npm install -g mcp-gemini-cli
+gemini auth login
 ```
 
 ## Development Guide

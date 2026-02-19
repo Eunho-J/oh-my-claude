@@ -111,9 +111,6 @@ node --version 2>/dev/null || echo "Node.js: NOT INSTALLED"
 # Check build tools (required for native modules like better-sqlite3)
 g++ --version 2>/dev/null | head -1 || echo "g++: NOT INSTALLED"
 
-# Check Bun
-bun --version 2>/dev/null || echo "Bun: NOT INSTALLED"
-
 # Check uv
 uv --version 2>/dev/null || echo "uv: NOT INSTALLED"
 
@@ -127,9 +124,6 @@ jq --version 2>/dev/null || echo "jq: NOT INSTALLED"
 # This is needed if your Node.js version doesn't have prebuilt binaries
 sudo apt install build-essential  # Debian/Ubuntu
 # or: sudo dnf groupinstall "Development Tools"  # Fedora/RHEL
-
-# Install Bun runtime (required for Gemini MCP) - skip if already installed
-command -v bun >/dev/null || curl -fsSL https://bun.sh/install | bash
 
 # Install uv (required for Z.ai GLM MCP) - skip if already installed
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -162,8 +156,11 @@ npx playwright --version 2>/dev/null || echo "Playwright: NOT INSTALLED"
 # Install Codex CLI (for Oracle agent) - skip if already installed
 command -v codex >/dev/null || npm install -g codex
 
-# Install mcp-gemini-cli (https://github.com/choplin/mcp-gemini-cli) - skip if already installed
+# Install Gemini CLI (for OAuth auth) - skip if already installed
 command -v gemini >/dev/null || npm install -g @google/gemini-cli
+
+# Install mcp-gemini-cli (MCP server wrapper) - skip if already installed
+command -v mcp-gemini-cli >/dev/null || npm install -g mcp-gemini-cli
 
 # Install Playwright (for browser automation skill)
 npx playwright install
@@ -185,7 +182,7 @@ oh-my-claude provides MCP server configuration in two ways:
 ```bash
 # Register MCP servers globally (optional)
 claude mcp add codex -s user -- npx -y codex mcp-server
-claude mcp add gemini -s user -- bunx mcp-gemini-cli
+claude mcp add gemini -s user -- mcp-gemini-cli
 claude mcp add chronos -s user -- node /path/to/mcp-servers/chronos/index.js
 claude mcp add swarm -s user -- node /path/to/mcp-servers/swarm/index.js
 claude mcp add lsp-tools -s user -- node /path/to/mcp-servers/lsp-tools/index.js
@@ -294,7 +291,6 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 # Check all required tools
 echo "=== Checking Prerequisites ==="
 echo "Node.js: $(node --version 2>/dev/null || echo 'NOT INSTALLED')"
-echo "Bun: $(bun --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Codex: $(npx codex --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
@@ -422,14 +418,6 @@ codex auth login
 # Clear Gemini credentials
 rm -rf ~/.gemini/
 gemini auth login
-```
-
-### Bun Not Found
-
-```bash
-# Add Bun to PATH (add to ~/.bashrc or ~/.zshrc)
-export BUN_INSTALL="$HOME/.bun"
-export PATH="$BUN_INSTALL/bin:$PATH"
 ```
 
 ### MCP Server Connection Failed
