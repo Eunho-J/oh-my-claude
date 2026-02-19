@@ -8,21 +8,24 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 
 ## Features
 
+- **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5)
 - **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
-  - Planning: Metis (GPT-5.3-Codex xhigh), Prometheus, Momus (GPT-5.3-Codex xhigh)
-  - Execution: Atlas, Junior, Oracle, Explore, Multimodal-looker, Librarian
-  - Tier Variants: Junior-low/high, Oracle-low, Explore-high
-  - User-facing: Sisyphus (Primary AI), Debate
-- **Tier-based Model Routing**: Automatic agent selection based on task complexity (Haiku/Sonnet/Opus)
-- **External Model Integration**: GPT-5.3-Codex (xhigh reasoning), Google Gemini, GLM-5 via MCP
+  - Planning: Debate (4 models), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
+  - Execution: Atlas (Sonnet), Junior/codex-spark, Oracle, Explore, Multimodal-looker, Librarian
+  - Tier Variants: Junior-low/high (all Haiku + codex-spark), Oracle-low, Explore-high
+  - User-facing: Sisyphus (Sonnet), Debate
+- **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
+- **External Model Integration**: GPT-5.2 + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro-Preview, GLM-5 via MCP
+- **Prometheus+Metis Loop**: Prometheus creates plan, Metis (GPT-5.3-Codex xhigh) reviews until approved
+- **Debate Code Review**: Phase 4 uses 4-model debate to APPROVE or loop back to execution
 - **Ralph Loop**: Auto-continuation until task completion
-- **Unified Autopilot**: 5-phase workflow with options (`--fast`, `--swarm`, `--ui`, `--no-qa`, `--no-validation`)
+- **Unified Autopilot**: 5-phase debate-first workflow (`--fast`, `--swarm`, `--ui`, `--no-qa`, `--no-validation`)
 - **Workmode**: Blocks direct code modification when autopilot is active
 - **UI Verification**: Playwright + Gemini for visual QA (with `--ui` flag)
 - **Smart Model Routing**: Automatic external model selection to reduce Claude API costs
 - **Swarm**: SQLite-based atomic task claiming for parallel agent execution
 - **Agent Limiter**: OOM prevention by limiting concurrent background agents (default: 5)
-- **Ecomode**: Resource-efficient mode (skip analysis phases)
+- **Ecomode**: Resource-efficient mode (skip debate planning phase)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
 - **Planning/Execution Separation**: Clean context management
 - **Skill System**: autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
@@ -259,9 +262,10 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 **Chronos (State Management):**
 - `mcp__chronos__ralph_*` - Ralph Loop control
 - `mcp__chronos__boulder_*` - Boulder state management
-- `mcp__chronos__debate_*` - Debate session management
+- `mcp__chronos__debate_*` - Debate session management (planning + code review)
 - `mcp__chronos__ecomode_*` - Ecomode settings
-- `mcp__chronos__autopilot_*` - Autopilot 5-phase workflow
+- `mcp__chronos__autopilot_*` - Autopilot 5-phase debate-first workflow
+- `mcp__chronos__autopilot_loop_back` - Loop back after code review failure
 - `mcp__chronos__chronos_status`, `mcp__chronos__chronos_should_continue`
 
 **Swarm (Parallel Execution):**
@@ -457,21 +461,21 @@ chmod +x hooks/*.sh
 
 | File | Description | Model | External Model |
 |------|-------------|-------|----------------|
-| `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | Opus | - |
+| `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | **Sonnet** | - |
 | `.claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
-| `.claude/agents/prometheus/AGENT.md` | Strategic planner | Opus | - |
-| `.claude/agents/metis/AGENT.md` | Pre-planning consultant | Haiku | GPT-5.3-Codex (xhigh) |
-| `.claude/agents/momus/AGENT.md` | Plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
+| `.claude/agents/prometheus/AGENT.md` | Strategic planner | **Opus-4.6** | - |
+| `.claude/agents/metis/AGENT.md` | Pre-planning + plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
+| `.claude/agents/momus/AGENT.md` | ~~Plan reviewer~~ **DEPRECATED** | Haiku | GPT-5.3-Codex (xhigh) |
 | `.claude/agents/oracle/AGENT.md` | Architecture advisor | Sonnet | GPT-5.3-Codex |
 | `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
 | `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
-| `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | Sonnet | - |
-| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Sonnet | Gemini |
+| `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
+| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | **Sonnet-4.6** | Gemini |
 | `.claude/agents/librarian/AGENT.md` | Documentation search | Haiku | GLM-5 |
-| `.claude/agents/junior/AGENT.md` | Task executor (medium) | Sonnet | - |
-| `.claude/agents/junior-low/AGENT.md` | Simple task executor | **Sonnet** | - |
-| `.claude/agents/junior-high/AGENT.md` | Complex task executor | Opus | - |
-| `.claude/agents/debate/AGENT.md` | Multi-model debate | Opus | GPT-5.3-Codex, Gemini |
+| `.claude/agents/junior/AGENT.md` | Task executor (medium) | **Haiku** | **gpt-5.3-codex-spark** |
+| `.claude/agents/junior-low/AGENT.md` | Simple task executor | **Haiku** | **gpt-5.3-codex-spark** |
+| `.claude/agents/junior-high/AGENT.md` | Complex task executor | **Haiku** | **gpt-5.3-codex-spark** |
+| `.claude/agents/debate/AGENT.md` | Multi-model debate (4 models) | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-5** |
 
 ### Skills
 
@@ -524,21 +528,20 @@ chmod +x hooks/*.sh
 claude
 
 # Invoke specific agent
-@sisyphus   - Primary AI (user-facing)
+@sisyphus   - Primary AI (user-facing, Sonnet-4.6)
 @atlas      - Master orchestrator
-@prometheus - Strategic planner
-@metis      - Pre-planning consultant
-@momus      - Plan reviewer
-@oracle     - Architecture advisor
+@prometheus - Strategic planner (Opus-4.6)
+@metis      - Pre-planning + plan reviewer (GPT-5.3-Codex xhigh)
+@oracle     - Architecture advisor (GPT-5.3-Codex)
 @explore    - Codebase exploration
-@multimodal-looker - Media analysis
-@librarian  - Documentation search
-@junior     - Task executor
-@debate     - Multi-model debate
+@multimodal-looker - Media analysis (Gemini)
+@librarian  - Documentation search (GLM-5)
+@junior     - Task executor (Haiku + codex-spark)
+@debate     - Multi-model debate (4 models)
 
 # Invoke skills
-/autopilot - Unified 5-phase workflow (replaces ultrawork)
-/autopilot --fast - Fast mode (skip Metis/Momus) - alias: ulw
+/autopilot - Unified 5-phase debate-first workflow
+/autopilot --fast - Fast mode (skip Debate planning) - alias: ulw
 /autopilot --swarm 5 - Parallel execution with 5 agents
 /autopilot --ui - UI verification with Playwright + Gemini
 /swarm 3:junior - Parallel execution with 3 agents
@@ -548,13 +551,13 @@ claude
 /playwright - Browser automation
 ```
 
-### Autopilot Mode (Unified Workflow)
+### Autopilot Mode (Debate-First Workflow)
 
 ```bash
 # Full 5-phase workflow
 /autopilot "Add complete authentication system with JWT"
 
-# Fast mode (skip Metis/Momus) - alias: ulw
+# Fast mode (skip Debate planning) - alias: ulw
 ulw "Fix login button styling"
 
 # Parallel execution with 5 agents
@@ -568,11 +571,11 @@ ulw "Fix login button styling"
 
 # This will:
 # 1. Enable workmode (blocks Sisyphus from direct code modification)
-# 2. Phase 0: Metis analyzes request (skip if --fast)
-# 3. Phase 1: Prometheus creates plan, Momus reviews (skip review if --fast)
-# 4. Phase 2: Atlas distributes tasks (or Swarm for parallel)
+# 2. Phase 0: 4 models debate and agree on implementation approach (skip if --fast)
+# 3. Phase 1: Prometheus creates plan, Metis reviews in loop until approved
+# 4. Phase 2: Atlas → Junior/codex-spark execute tasks (or Swarm for parallel)
 # 5. Phase 3: QA - build, lint, tests (+ UI if --ui)
-# 6. Phase 4: Oracle validation
+# 6. Phase 4: 4 models code review → APPROVED or loop back to Phase 2
 # 7. Disable workmode on completion
 ```
 
@@ -626,9 +629,9 @@ mcp__chronos__ui_verification_prompt(expectations)
 /ecomode on
 
 # Effects:
-# - junior → junior-low (Haiku instead of Sonnet)
+# - junior → junior-low (simpler tasks preferred)
 # - oracle → oracle-low (Haiku instead of Sonnet)
-# - Skip Metis/Momus analysis phases
+# - Skip Debate planning phase (Phase 0)
 # - Shorter responses
 
 # Disable ecomode
@@ -640,11 +643,30 @@ mcp__chronos__ui_verification_prompt(expectations)
 ## Architecture
 
 ```
-Planning Phase:
-User → Sisyphus → [Metis(GPT-5.3-Codex)] → Prometheus → [Momus(GPT-5.3-Codex)] → Plan File
+Autopilot (Debate-First, 5 Phases):
 
-Execution Phase:
-Plan File → /autopilot → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
+Phase 0 ──► DEBATE PLANNING
+            Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5
+            → 4 models analyze request & reach 3/4 consensus plan
+
+Phase 1 ──► STRUCTURING (Prometheus + Metis Loop)
+            Prometheus (Opus-4.6) creates structured execution plan
+            Metis (GPT-5.3-Codex xhigh) reviews against debate conclusions
+            → Repeat until APPROVED
+
+Phase 2 ──► EXECUTION
+            Atlas (Sonnet) orchestrates
+            → Junior agents (Haiku coordinator + gpt-5.3-codex-spark)
+            → Or Swarm (parallel Junior agents)
+
+Phase 3 ──► QA
+            Build / Lint / Tests
+            + UI verification (Playwright + Gemini) if --ui
+
+Phase 4 ──► DEBATE CODE REVIEW
+            4 models review git diff + key files
+            APPROVED → Complete
+            REJECTED → Loop back to Phase 2 (with fix plan)
 ```
 
 ```
@@ -653,52 +675,62 @@ User Request
      ▼
 ┌─────────────────┐
 │    Sisyphus     │ (Primary AI)
-│  (Claude Opus)  │
+│  (Sonnet-4.6)   │
 └────────┬────────┘
          │
     ┌────┴────────────────────────┐
     │                             │
     ▼                             ▼
-┌─────────────┐           ┌─────────────┐
-│   Planning  │           │  Execution  │
-│    Phase    │           │    Phase    │
-└─────┬───────┘           └──────┬──────┘
-      │                          │
-      ▼                          ▼
-┌─────────────────┐       ┌─────────────┐
-│   Prometheus    │       │   Atlas     │ (Orchestrator)
-│   (Opus)        │       │  (Sonnet)   │
-├─────────────────┤       └──────┬──────┘
-│ Metis → GPT-5.3 │              │
-│   -Codex (xhigh)│   ┌──────────┼──────────┐
-├─────────────────┤   ▼          ▼          ▼
-│ Momus → GPT-5.3 │ ┌──────┐ ┌───────┐ ┌──────────┐
-│   -Codex (xhigh)│ │Junior│ │Oracle │ │Librarian │
-└─────────────────┘ │Sonnet│ │Sonnet │ │ Haiku    │
-                    └──────┘ └───┬───┘ └────┬─────┘
-                                 │          │
-                                 ▼          ▼
-                            ┌────────┐ ┌───────┐
-                            │GPT-5.3 │ │ GLM-5 │
-                            │ -Codex │ │(Z.ai) │
-                            └────────┘ └───────┘
+┌─────────────────────┐    ┌─────────────┐
+│   /autopilot        │    │  Direct /   │
+│   (Debate-First)    │    │  Delegation │
+└──────────┬──────────┘    └──────┬──────┘
+           │                      │
+    Phase 0▼                      ▼
+┌─────────────────────┐    ┌─────────────┐
+│  Debate (Planning)  │    │   Atlas     │
+│ Opus-4.6 + GPT-5.2  │    │  (Sonnet)   │
+│ + Gemini + GLM-5    │    └──────┬──────┘
+└──────────┬──────────┘           │
+    Phase 1▼               ┌──────┼──────────┐
+┌─────────────────────┐    ▼      ▼          ▼
+│  Prometheus (Opus)  │ ┌──────────────┐ ┌──────────┐
+│  + Metis (GPT xhigh)│ │Junior (Haiku)│ │ Oracle   │
+│  review loop        │ │+ codex-spark │ │ (Sonnet  │
+└──────────┬──────────┘ └──────────────┘ │ +GPT-5.3)│
+    Phase 2▼                              └──────────┘
+┌─────────────────────┐
+│  Atlas → Junior     │
+│  (codex-spark)      │
+└──────────┬──────────┘
+    Phase 3▼
+┌─────────────────────┐
+│  QA (Build/Lint/    │
+│  Tests + UI opt.)   │
+└──────────┬──────────┘
+    Phase 4▼
+┌─────────────────────┐
+│  Debate Code Review │
+│  4 models → APPROVE │
+│  or loop to Phase 2 │
+└─────────────────────┘
 ```
 
 ### Agent Model Summary
 
 | Agent | Base | External | Reasoning |
 |-------|------|----------|-----------|
-| Sisyphus | Opus | - | - |
+| **Sisyphus** | **Sonnet-4.6** | - | - |
 | Atlas | Sonnet | - | - |
-| Prometheus | Opus | - | - |
+| **Prometheus** | **Opus-4.6** | - | - |
 | **Metis** | Haiku | GPT-5.3-Codex | **xhigh** |
-| **Momus** | Haiku | GPT-5.3-Codex | **xhigh** |
+| ~~Momus~~ | Haiku | GPT-5.3-Codex | ~~xhigh~~ (DEPRECATED) |
 | Oracle | Sonnet | GPT-5.3-Codex | default |
-| Debate | Opus | GPT-5.3-Codex, Gemini | - |
+| **Debate** | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-5** | - |
 | Explore | Haiku | - | - |
-| Multimodal-looker | Sonnet | Gemini | - |
+| Multimodal-looker | Sonnet-4.6 | Gemini | - |
 | Librarian | Haiku | GLM-5 | - |
-| Junior | Sonnet | - | - |
+| **Junior*** | **Haiku** | **gpt-5.3-codex-spark** | - |
 
 ---
 

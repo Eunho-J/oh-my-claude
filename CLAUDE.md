@@ -5,20 +5,25 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 ## Architecture
 
 ```
-Planning Phase:
-User → Sisyphus → [Metis(GPT-5.3-Codex xhigh)] → Prometheus → [Momus(GPT-5.3-Codex xhigh)] → Plan File
+Autopilot (Debate-First):
+Phase 0: Debate Planning → 4 models (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-5) analyze & plan
+Phase 1: Prometheus (Opus-4.6) structures plan → Metis (GPT-5.3-Codex xhigh) reviews in loop
+Phase 2: Atlas (Sonnet-4.6) → Junior (Haiku + gpt-5.3-codex-spark) executes
+Phase 3: QA (build/lint/tests + optional UI verification)
+Phase 4: Debate Code Review → 4 models approve or loop back to Phase 2
 
-Execution Phase:
-Plan File → /autopilot → boulder.json → Atlas → [Oracle, Explore, Multimodal-looker, Librarian, Junior]
+Manual Workflow:
+User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] | [Debate]
 ```
 
 ### External Model Integration
-- **Metis**: GPT-5.3-Codex with xhigh reasoning effort (pre-planning analysis)
-- **Momus**: GPT-5.3-Codex with xhigh reasoning effort (plan review)
-- **Oracle**: GPT-5.3-Codex (architecture consultation)
+- **Debate Phase 0/4**: Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5 (planning & code review)
+- **Metis**: GPT-5.3-Codex with xhigh reasoning effort (plan review in Prometheus+Metis loop)
+- **Junior**: gpt-5.3-codex-spark via Codex MCP (code generation coordinator)
+- **Oracle**: GPT-5.3-Codex (architecture consultation, @oracle direct calls)
 - **Multimodal-looker**: Gemini (media analysis)
 - **Librarian**: GLM-5 (documentation search)
-- **Debate**: GPT-5.3-Codex + Gemini (multi-model consensus)
+- **Momus**: DEPRECATED (replaced by Metis in plan review role)
 
 ### Core Philosophy
 1. **Separation of Planning and Execution** - Prevent context pollution
@@ -31,21 +36,21 @@ Plan File → /autopilot → boulder.json → Atlas → [Oracle, Explore, Multim
 
 | Agent | Role | Model | External Model | Reasoning |
 |-------|------|-------|----------------|-----------|
-| Sisyphus | Primary AI (User-facing) | Opus | - | - |
+| Sisyphus | Primary AI (User-facing) | **Sonnet** | - | - |
 | Atlas | Master Orchestrator | Sonnet | - | - |
-| Prometheus | Strategic Planner | Opus | - | - |
-| Metis | Pre-planning Consultant | Haiku | GPT-5.3-Codex | xhigh |
-| Momus | Plan Reviewer | Haiku | GPT-5.3-Codex | xhigh |
+| Prometheus | Strategic Planner | **Opus-4.6** | - | - |
+| Metis | Pre-planning + Plan Reviewer | Haiku | GPT-5.3-Codex | xhigh |
+| Momus | ~~Plan Reviewer~~ **DEPRECATED** | Haiku | GPT-5.3-Codex | xhigh |
 | Oracle | Architecture Advisor | Sonnet | GPT-5.3-Codex | - |
 | Oracle-Low | Quick Architecture Lookup | Haiku | - | - |
-| Debate | Multi-model decision making | Opus | GPT-5.3-Codex, Gemini | - |
+| Debate | Multi-model decision making | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-5** | - |
 | Explore | Fast Contextual Grep | Haiku | - | - |
-| Explore-High | Deep Codebase Analysis | Sonnet | - | - |
-| Multimodal-looker | Media Analyzer | Sonnet | Gemini | - |
+| Explore-High | Deep Codebase Analysis | **Sonnet-4.6** | - | - |
+| Multimodal-looker | Media Analyzer | **Sonnet-4.6** | Gemini | - |
 | Librarian | Documentation/Code Search | Haiku | GLM-5 | - |
-| Junior | Task Executor | Sonnet | - | - |
-| Junior-Low | Simple Task Executor | **Sonnet** | - | - |
-| Junior-High | Complex Task Executor | Opus | - | - |
+| Junior | Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
+| Junior-Low | Simple Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
+| Junior-High | Complex Task Executor | **Haiku** | **gpt-5.3-codex-spark** | - |
 
 ### Invocation
 
@@ -67,12 +72,12 @@ Plan File → /autopilot → boulder.json → Atlas → [Oracle, Explore, Multim
 
 ### Available Skills
 
-- `/autopilot` - **Unified autonomous workflow** (replaces ultrawork)
-  - `--fast` / `ulw` - Fast mode (skip Metis/Momus)
+- `/autopilot` - **Unified autonomous workflow** (Debate-First)
+  - `--fast` / `ulw` - Fast mode (skip Debate planning)
   - `--swarm N` - Parallel execution with N agents
   - `--ui` - UI verification with Playwright + Gemini
   - `--no-qa` - Skip QA phase
-  - `--no-validation` - Skip Oracle validation
+  - `--no-validation` - Skip Debate code review
 - `/swarm N:agent` - Parallel agent execution with atomic task claiming
 - `/ecomode` - Resource-efficient operation mode
 - `/git-master` - Git expert (commit, rebase, history)
@@ -195,7 +200,7 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-5 MCP server
 | `mcp__chronos__ecomode_get_tier` | Get recommended tier for task type |
 | `mcp__chronos__ecomode_should_skip` | Check if phase should be skipped |
 
-#### Autopilot (5-Phase Workflow)
+#### Autopilot (5-Phase Debate-First Workflow)
 | Tool | Purpose |
 |------|---------|
 | `mcp__chronos__autopilot_start` | Start 5-phase autopilot workflow |
@@ -207,6 +212,7 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-5 MCP server
 | `mcp__chronos__autopilot_fail` | Mark autopilot as failed |
 | `mcp__chronos__autopilot_status` | Get full autopilot status |
 | `mcp__chronos__autopilot_clear` | Clear autopilot state |
+| `mcp__chronos__autopilot_loop_back` | Loop back to earlier phase (code review failure) |
 
 #### Workmode (NEW)
 | Tool | Purpose |
@@ -335,17 +341,17 @@ User: Add authentication feature
 Claude: [Junior agent implements directly]
 ```
 
-### 2. Autopilot (Full 5-Phase)
+### 2. Autopilot (Full 5-Phase, Debate-First)
 
 ```
 User: /autopilot "Add complete authentication system with JWT"
 Claude:
-Phase 0 (Expansion): Metis creates spec
-Phase 1 (Planning): Prometheus + Momus create plan
-Phase 2 (Execution): Atlas distributes to Junior
+Phase 0 (Debate Planning): 4 models debate & agree on implementation approach
+Phase 1 (Structuring): Prometheus structures plan, Metis reviews in loop until approved
+Phase 2 (Execution): Atlas → Junior/codex-spark implements
 Phase 3 (QA): Build, lint, tests pass
-Phase 4 (Validation): Oracle reviews code
-→ Workmode active throughout (Sisyphus cannot modify code directly)
+Phase 4 (Code Review): 4 models review code → APPROVED or loop back to Phase 2
+→ Workmode active throughout
 ```
 
 ### 3. Fast Mode (ulw alias)
@@ -353,9 +359,9 @@ Phase 4 (Validation): Oracle reviews code
 ```
 User: ulw "Fix login button styling"
 Claude:
-Phase 1: Prometheus creates quick plan
-Phase 2: Junior executes
-→ Skip Metis/Momus phases
+Phase 1: Prometheus creates quick plan (Metis review optional)
+Phase 2: Junior/codex-spark executes
+→ Skip Debate planning phase
 → Workmode active
 ```
 
@@ -403,10 +409,10 @@ Claude:
 ```
 User: @debate JWT vs Session-based authentication for our microservices
 Claude:
-1. Phase 1: Independent analysis (Opus, GPT-5.3-Codex, Gemini)
-2. Phase 2: Share analyses across models
+1. Phase 1: Independent analysis (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-5)
+2. Phase 2: Share analyses across all 4 models
 3. Phase 3: Structured debate rounds (max 20)
-4. Phase 4: Consensus or majority vote conclusion
+4. Phase 4: 3/4 consensus or majority vote conclusion
 ```
 
 ### 9. Ecomode (Resource Efficiency)
@@ -416,7 +422,7 @@ User: /ecomode on
 Claude:
 - junior-low used where possible
 - oracle → oracle-low (Haiku)
-- Skip Metis/Momus phases
+- Skip Debate planning phase
 - Shorter responses
 
 User: /ecomode off
@@ -443,13 +449,13 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 | Multimodal-looker | whitelist | - | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Librarian | whitelist | ralph, status | ❌ | ❌ | ✅ | ✅ | ✅ |
 | Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Debate | whitelist | debate, ralph, status | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Debate | whitelist | debate, ralph, status | ✅ (GPT-5.2) | ✅ (Gemini-3-Pro-Preview) | **✅ (GLM-5)** | ❌ | ❌ |
 
 ### Skill MCP Tool Access
 
 | Skill | Config | chronos | swarm | Other MCP |
 |-------|--------|---------|-------|-----------|
-| autopilot | whitelist | autopilot, ralph, boulder, ecomode, workmode, ui_verification, model_router | ✅ | ❌ |
+| autopilot | whitelist | autopilot, ralph, boulder, ecomode, workmode, ui_verification, model_router, debate | ✅ | ❌ |
 | swarm | whitelist | ralph, status | ✅ | ❌ |
 | ecomode | whitelist | ecomode, status | ❌ | ❌ |
 | git-master | none (all) | ✅ all | ✅ | ✅ all |
@@ -461,7 +467,7 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 ### Agent Hierarchy
 - **Sisyphus**: Primary AI - user-facing, routes requests
 - **Atlas**: Orchestrator - executes plans via todo list (cannot write code)
-- **Prometheus/Metis/Momus**: Planning phase agents (Metis/Momus use external models)
+- **Prometheus/Metis**: Planning phase agents (Metis uses GPT-5.3-Codex xhigh for plan review)
 - **Junior/Oracle/etc.**: Execution phase agents
 
 ### Agent Delegation Rules
@@ -470,15 +476,15 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 | Agent | Can Delegate To | Cannot Delegate To |
 |-------|-----------------|-------------------|
-| Sisyphus | metis, prometheus, atlas, debate, explore | junior, oracle, librarian, multimodal-looker, momus |
-| Prometheus | momus, explore, librarian | junior, atlas, oracle, metis, debate |
-| Atlas | junior, oracle, explore, librarian, multimodal-looker | sisyphus, metis, prometheus, momus, debate |
+| Sisyphus | metis, prometheus, atlas, debate, explore | junior, oracle, librarian, multimodal-looker |
+| Prometheus | metis (plan review), explore, librarian | junior, atlas, oracle, debate |
+| Atlas | junior, oracle, explore, librarian, multimodal-looker | sisyphus, metis, prometheus, debate |
 | Junior | (none - Task disabled) | all |
 | Others | (none - Task disabled) | all |
 
 **Key rules:**
 - Sisyphus CANNOT call Junior directly → must go through Atlas
-- Planning agents (Metis/Prometheus/Momus) do NOT call execution agents
+- Prometheus calls Metis for plan review (Prometheus+Metis loop)
 - Execution agents (Junior/Oracle/etc.) do NOT delegate further
 
 ### Workmode
@@ -499,21 +505,22 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 | Agent | Primary Model | Fallback | Purpose |
 |-------|---------------|----------|---------|
-| Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet | Pre-planning analysis |
-| Momus | GPT-5.3-Codex (xhigh) | Claude Sonnet | Plan review |
+| Debate (Phase 0/4) | Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5 | - | Planning & code review |
+| Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet | Plan review in Prometheus+Metis loop |
+| Junior* | gpt-5.3-codex-spark | direct Edit | Code generation |
 | Oracle | GPT-5.3-Codex | Claude Sonnet | Architecture advice |
 | Multimodal-looker | Gemini | Claude Sonnet | Image/PDF analysis |
 | Librarian | GLM-5 | Claude Haiku | Documentation search |
 
 ### Junior Tier Routing
 
-Based on task complexity:
+All Junior tiers use Haiku coordinator + gpt-5.3-codex-spark:
 
-| Tier | Criteria | Agent | Model |
-|------|----------|-------|-------|
-| Low | 1 file, <20 lines | junior-low | Sonnet |
-| Medium | 2-5 files, 20-100 lines | junior | Sonnet |
-| High | 6+ files, 100+ lines | junior-high | Opus |
+| Tier | Criteria | Agent | Execution |
+|------|----------|-------|-----------|
+| Low | 1 file, <20 lines | junior-low | Haiku + codex-spark |
+| Medium | 2-5 files, 20-100 lines | junior | Haiku + codex-spark |
+| High | 6+ files, 100+ lines | junior-high | Haiku + codex-spark |
 
 ### UI Verification (NEW)
 - Available with `--ui` flag in autopilot
@@ -533,9 +540,8 @@ Based on task complexity:
   - `mcp__chronos__agent_limiter_clear()` - Clear all (recovery)
 
 ### Reasoning Effort Configuration
-- **Metis**: GPT-5.3-Codex with `xhigh` reasoning (pre-planning analysis)
-- **Momus**: GPT-5.3-Codex with `xhigh` reasoning (plan review)
-- xhigh reasoning provides deeper analysis for critical planning decisions
+- **Metis**: GPT-5.3-Codex with `xhigh` reasoning (plan review in Prometheus+Metis loop)
+- xhigh reasoning provides deeper analysis for plan validation against debate conclusions
 - Config: `{"reasoning": {"effort": "xhigh"}}`
 
 ### Delegation Guard
@@ -549,19 +555,20 @@ Based on task complexity:
 - Disable: `mcp__chronos__ecomode_disable()`
 - Status: `mcp__chronos__ecomode_status()`
 - Effects:
-  - Skips Metis/Momus phases
+  - Skips Debate planning phase
   - Requests shorter responses
 
-### Autopilot (5-Phase Workflow)
+### Autopilot (5-Phase Debate-First Workflow)
 - Start: `mcp__chronos__autopilot_start(name, request, options)`
-- Options: `fast`, `ui`, `swarm`, `skip_qa`, `skip_validation`
+- Options: `fast`, `ui`, `swarm`, `skip_qa`, `skip_validation`, `skip_debate`
 - Status: `mcp__chronos__autopilot_status()`
+- Loop Back: `mcp__chronos__autopilot_loop_back(target_phase, reason)` - for code review failures
 - Phases:
-  1. **Expansion** - Metis creates spec (skip if --fast)
-  2. **Planning** - Prometheus + Momus create plan (Momus skip if --fast)
-  3. **Execution** - Atlas/Swarm execute tasks
-  4. **QA** - Build, lint, tests (+ UI if --ui) must pass
-  5. **Validation** - Oracle security review
+  0. **Debate Planning** - 4 models debate & plan (skip if --fast)
+  1. **Structuring** - Prometheus creates plan, Metis reviews in loop
+  2. **Execution** - Atlas/Junior/codex-spark execute tasks
+  3. **QA** - Build, lint, tests (+ UI if --ui) must pass
+  4. **Code Review** - Debate reviews code, APPROVED = pass (REJECTED = loop back to Phase 2)
 - Gate criteria must pass to advance phases
 
 ### Swarm (Parallel Agents)
@@ -576,8 +583,11 @@ Based on task complexity:
 
 ### External Models
 - **GPT-5.3-Codex**: Session management via `threadId`, OAuth auth, supports reasoning effort (xhigh/high/medium/low)
+- **GPT-5.2**: Used in Debate (via Codex MCP `model: "gpt-5.2"`)
+- **gpt-5.3-codex-spark**: Used in Junior agents for code generation (via Codex MCP)
+- **Gemini-3-Pro-Preview**: Used in Debate (via Gemini MCP `model: "gemini-3-pro-preview"`)
 - **Gemini**: 60 req/min limit (free tier), OAuth auth, **requires Bun runtime**
-- **GLM-5**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`)
+- **GLM-5**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`), also used in Debate
 
 ### uv Installation (for Z.ai GLM MCP)
 ```bash

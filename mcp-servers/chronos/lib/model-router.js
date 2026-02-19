@@ -37,6 +37,7 @@ export const MODELS = {
   // External models
   CODEX: "codex",
   CODEX_XHIGH: "codex_xhigh",
+  CODEX_SPARK: "codex_spark",
   GEMINI: "gemini",
   GLM: "glm-5",
 
@@ -115,19 +116,19 @@ const COMPLEXITY_THRESHOLDS = {
     max_files: 1,
     max_lines: 20,
     agents: ["junior-low"],
-    model: MODELS.CLAUDE_SONNET,
+    model: MODELS.CODEX_SPARK,
   },
   MEDIUM: {
     max_files: 5,
     max_lines: 100,
     agents: ["junior"],
-    model: MODELS.CLAUDE_SONNET,
+    model: MODELS.CODEX_SPARK,
   },
   HIGH: {
     max_files: Infinity,
     max_lines: Infinity,
     agents: ["junior-high"],
-    model: MODELS.CLAUDE_OPUS,
+    model: MODELS.CODEX_SPARK,
   },
 };
 
@@ -168,7 +169,7 @@ export function getJuniorTier(taskMetrics) {
     return {
       tier: "medium",
       agent: "junior",
-      model: MODELS.CLAUDE_SONNET,
+      model: MODELS.CODEX_SPARK,
     };
   }
 
@@ -177,7 +178,7 @@ export function getJuniorTier(taskMetrics) {
     return {
       tier: "low",
       agent: "junior-low",
-      model: MODELS.CLAUDE_SONNET,
+      model: MODELS.CODEX_SPARK,
     };
   }
 
@@ -185,14 +186,14 @@ export function getJuniorTier(taskMetrics) {
     return {
       tier: "medium",
       agent: "junior",
-      model: MODELS.CLAUDE_SONNET,
+      model: MODELS.CODEX_SPARK,
     };
   }
 
   return {
     tier: "high",
     agent: "junior-high",
-    model: MODELS.CLAUDE_OPUS,
+    model: MODELS.CODEX_SPARK,
   };
 }
 
@@ -263,24 +264,24 @@ export function getAgentModel(agentName, ecomode = false) {
       description: "Deep codebase analysis",
     },
 
-    // Execution agents
+    // Execution agents (Haiku coordinator + codex-spark)
     junior: {
-      model: MODELS.CLAUDE_SONNET,
-      external: false,
+      model: MODELS.CODEX_SPARK,
+      external: true,
       tier: "medium",
-      description: "Standard task execution",
+      description: "Standard task execution (Haiku coordinator + gpt-5.3-codex-spark)",
     },
     "junior-low": {
-      model: MODELS.CLAUDE_SONNET,
-      external: false,
+      model: MODELS.CODEX_SPARK,
+      external: true,
       tier: "low",
-      description: "Simple task execution (upgraded from Haiku)",
+      description: "Simple task execution (Haiku coordinator + gpt-5.3-codex-spark)",
     },
     "junior-high": {
-      model: MODELS.CLAUDE_OPUS,
-      external: false,
+      model: MODELS.CODEX_SPARK,
+      external: true,
       tier: "high",
-      description: "Complex task execution",
+      description: "Complex task execution (Haiku coordinator + gpt-5.3-codex-spark)",
     },
 
     // Orchestration agents
@@ -294,13 +295,13 @@ export function getAgentModel(agentName, ecomode = false) {
       model: MODELS.CLAUDE_OPUS,
       external: false,
       tier: null,
-      description: "Strategic planning",
+      description: "Strategic planning (Opus-4.6)",
     },
     sisyphus: {
-      model: MODELS.CLAUDE_OPUS,
+      model: MODELS.CLAUDE_SONNET,
       external: false,
       tier: null,
-      description: "Primary user-facing agent",
+      description: "Primary user-facing agent (Sonnet-4.6)",
     },
 
     // Debate agent
@@ -308,7 +309,7 @@ export function getAgentModel(agentName, ecomode = false) {
       model: MODELS.CLAUDE_OPUS,
       external: true,
       tier: null,
-      description: "Multi-model debate (Opus + GPT + Gemini)",
+      description: "Multi-model debate (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5)",
     },
   };
 
@@ -349,11 +350,16 @@ export function generateToolCall(model, prompt, options = {}) {
   switch (model) {
     case MODELS.CODEX:
     case MODELS.CODEX_XHIGH:
+    case MODELS.CODEX_SPARK:
       return {
         tool: "mcp__codex__codex",
         params: {
           prompt,
-          model: model === MODELS.CODEX_XHIGH ? "gpt-5.3-codex" : undefined,
+          model: model === MODELS.CODEX_XHIGH
+            ? "gpt-5.3-codex"
+            : model === MODELS.CODEX_SPARK
+              ? "gpt-5.3-codex-spark"
+              : undefined,
           config: model === MODELS.CODEX_XHIGH
             ? { reasoning: { effort: "xhigh" } }
             : undefined,
@@ -414,6 +420,7 @@ export function estimateCostTier(model) {
     [MODELS.CLAUDE_OPUS]: "high",
     [MODELS.CODEX]: "low",
     [MODELS.CODEX_XHIGH]: "medium",
+    [MODELS.CODEX_SPARK]: "low",
     [MODELS.GEMINI]: "low",
     [MODELS.GLM]: "low",
   };

@@ -85,6 +85,7 @@ import {
   failAutopilot,
   getAutopilotStatus,
   clearAutopilot,
+  loopBackToPhase,
   PHASE_NAMES,
   PHASE_DESCRIPTIONS,
 } from "./lib/autopilot-state.js";
@@ -484,8 +485,8 @@ server.tool(
   "Add a model's independent analysis to the debate",
   {
     model: z
-      .enum(["opus", "gpt", "gemini"])
-      .describe("The model providing the analysis"),
+      .enum(["opus", "gpt52", "gemini", "glm"])
+      .describe("The model providing the analysis (opus, gpt52, gemini, glm)"),
     summary: z.string().describe("Analysis summary"),
     position: z.string().describe("Model's position on the topic"),
   },
@@ -522,15 +523,15 @@ server.tool(
   "Add a debate round (statement and responses)",
   {
     speaker: z
-      .enum(["opus", "gpt", "gemini"])
-      .describe("The model speaking"),
+      .enum(["opus", "gpt52", "gemini", "glm"])
+      .describe("The model speaking (opus, gpt52, gemini, glm)"),
     content: z.string().describe("What the model said"),
     agreements: z
-      .array(z.enum(["opus", "gpt", "gemini"]))
+      .array(z.enum(["opus", "gpt52", "gemini", "glm"]))
       .optional()
       .describe("Models that agreed"),
     disagreements: z
-      .array(z.enum(["opus", "gpt", "gemini"]))
+      .array(z.enum(["opus", "gpt52", "gemini", "glm"]))
       .optional()
       .describe("Models that disagreed"),
   },
@@ -578,8 +579,8 @@ server.tool(
   {
     item: z.string().describe("The item being voted on"),
     model: z
-      .enum(["opus", "gpt", "gemini"])
-      .describe("The voting model"),
+      .enum(["opus", "gpt52", "gemini", "glm"])
+      .describe("The voting model (opus, gpt52, gemini, glm)"),
     vote: z.boolean().describe("The vote (true = yes/agree, false = no/disagree)"),
   },
   async ({ item, model, vote }) => {
@@ -817,27 +818,21 @@ server.tool(
 
 server.tool(
   "autopilot_start",
-  "Start a new 5-phase autopilot workflow",
+  "Start a new 5-phase autopilot workflow (Phase 0: Debate Planning, Phase 1: Prometheus+Metis, Phase 2: Execution, Phase 3: QA, Phase 4: Debate Code Review)",
   {
     name: z.string().describe("Name of the autopilot session"),
     request: z.string().describe("The original user request"),
-    skip_metis: z.boolean().optional().describe("Skip Metis expansion phase"),
-    skip_momus: z.boolean().optional().describe("Skip Momus review in planning"),
+    skip_debate: z.boolean().optional().describe("Skip Debate planning phase (Phase 0)"),
     use_swarm: z.boolean().optional().describe("Use swarm for parallel execution"),
     swarm_agents: z.number().optional().describe("Number of swarm agents (default: 3)"),
-    fast: z.boolean().optional().describe("Fast mode: skip Metis/Momus phases (alias for --fast)"),
+    fast: z.boolean().optional().describe("Fast mode: skip Debate/Metis phases (alias for --fast)"),
     ui: z.boolean().optional().describe("Enable UI verification in QA phase"),
     skip_qa: z.boolean().optional().describe("Skip QA phase"),
-    skip_validation: z.boolean().optional().describe("Skip validation phase"),
+    skip_validation: z.boolean().optional().describe("Skip code review phase"),
   },
-  async ({ name, request, skip_metis, skip_momus, use_swarm, swarm_agents, fast, ui, skip_qa, skip_validation }) => {
-    // Fast mode shortcuts
-    const effectiveSkipMetis = fast || skip_metis;
-    const effectiveSkipMomus = fast || skip_momus;
-
+  async ({ name, request, skip_debate, use_swarm, swarm_agents, fast, ui, skip_qa, skip_validation }) => {
     const options = {
-      skip_metis: effectiveSkipMetis,
-      skip_momus: effectiveSkipMomus,
+      skip_debate: fast || skip_debate,
       use_swarm,
       swarm_agents,
       fast: fast || false,
@@ -1025,6 +1020,31 @@ server.tool("autopilot_clear", "Clear the autopilot state (archives it first)", 
     ],
   };
 });
+
+server.tool(
+  "autopilot_loop_back",
+  "Loop back to an earlier phase after Debate code review failure (increments review_loop_count)",
+  {
+    target_phase: z.number().min(0).max(3).describe("Phase to loop back to (typically 2 = execution)"),
+    reason: z.string().optional().describe("Reason for looping back (from code review feedback)"),
+  },
+  async ({ target_phase, reason }) => {
+    const result = loopBackToPhase(getDirectory(), target_phase, reason || "");
+    if (result.error) {
+      return {
+        content: [{ type: "text", text: JSON.stringify({ success: false, error: result.error }) }],
+      };
+    }
+    return {
+      content: [
+        {
+          type: "text",
+          text: JSON.stringify(result, null, 2),
+        },
+      ],
+    };
+  }
+);
 
 // ============================================================================
 // Workmode Tools
@@ -1348,6 +1368,7 @@ server.tool(
         status: autopilot.status,
         current_phase: autopilot.current_phase,
         phase_name: PHASE_NAMES[autopilot.current_phase],
+        review_loop_count: autopilot.review_loop_count || 0,
         options: autopilot.options,
       } : null,
       agent_limiter: {

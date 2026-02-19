@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Unified autonomous workflow from spec to validation (replaces ultrawork)
+description: Unified autonomous workflow from spec to validated code (Debate-First)
 invocation: user
 allowed_tools:
   - Task
@@ -19,13 +19,14 @@ allowed_tools:
   - mcp__chronos__workmode_*
   - mcp__chronos__ui_verification_*
   - mcp__chronos__model_router_*
+  - mcp__chronos__debate_*
   - mcp__chronos__chronos_status
   - mcp__swarm__*
 ---
 
-# Autopilot - Unified Autonomous Workflow
+# Autopilot - Unified Autonomous Workflow (Debate-First)
 
-Execute a complete workflow from initial request to validated code. This skill replaces and extends the previous ultrawork skill.
+Execute a complete workflow from initial request to validated code. Uses a debate-first approach where 4 AI models collaboratively plan before execution.
 
 ## Invocation
 
@@ -54,21 +55,21 @@ Execute a complete workflow from initial request to validated code. This skill r
 
 | Phase | Name | Agent | Gate Criteria |
 |-------|------|-------|---------------|
-| 0 | Expansion | Metis (GPT-5.3-Codex) | spec.md created |
-| 1 | Planning | Prometheus → Momus | plan approved |
-| 2 | Execution | Atlas → Junior | all tasks done |
+| 0 | Debate Planning | Debate (4 models) | debate concluded with plan |
+| 1 | Structuring | Prometheus → Metis loop | plan approved by Metis |
+| 2 | Execution | Atlas → Junior/codex-spark | all tasks done |
 | 3 | QA | Junior | build + lint + tests (+ ui) pass |
-| 4 | Validation | Oracle (GPT-5.3-Codex) | security + code review |
+| 4 | Code Review | Debate (4 models) | debate APPROVED |
 
 ## Options
 
 | Flag | Description |
 |------|-------------|
-| `--fast` | Skip Metis/Momus (equivalent to `ulw`) |
+| `--fast` | Skip Debate planning, simplified Metis review (equivalent to `ulw`) |
 | `--swarm N` | Use N parallel agents in execution |
 | `--ui` | Enable Playwright + Gemini UI verification in QA |
 | `--no-qa` | Skip QA phase |
-| `--no-validation` | Skip Oracle validation |
+| `--no-validation` | Skip code review phase |
 
 ## Workmode
 
@@ -92,24 +93,49 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
    mcp__chronos__ralph_start(completion_promise, max_iterations)
 ```
 
-### Phase 0: Expansion (Metis)
+### Phase 0: Debate Planning
 
 ```markdown
 Skip if: --fast
 
-1. Delegate to Metis agent (GPT-5.3-Codex xhigh reasoning)
-2. Metis creates: .sisyphus/specs/{name}.md
-3. Set output: mcp__chronos__autopilot_set_output(0, spec_path)
-4. Advance: mcp__chronos__autopilot_advance()
+1. Start debate for planning:
+   mcp__chronos__debate_start({ topic: request, context: codebase_context })
+
+2. Each model provides planning analysis:
+   - Opus (native): Analyze request and propose implementation approach
+   - GPT-5.2: Independent analysis via mcp__codex__codex (model: "gpt-5.2")
+   - Gemini-3-Pro-Preview: Independent analysis via mcp__gemini__chat (model: "gemini-3-pro-preview")
+   - GLM-5: Independent analysis via mcp__zai-glm__chat (model: "glm-5")
+
+3. Record each model's analysis:
+   mcp__chronos__debate_add_analysis({ model: "opus", summary: "...", position: "..." })
+   mcp__chronos__debate_add_analysis({ model: "gpt52", summary: "...", position: "..." })
+   mcp__chronos__debate_add_analysis({ model: "gemini", summary: "...", position: "..." })
+   mcp__chronos__debate_add_analysis({ model: "glm", summary: "...", position: "..." })
+
+4. Conduct debate rounds until 3/4 consensus
+
+5. Conclude with implementation plan:
+   mcp__chronos__debate_conclude({ decision: "Implementation plan...", method: "consensus" })
+
+6. Set output: mcp__chronos__autopilot_set_output(0, debate_id)
+7. Advance: mcp__chronos__autopilot_advance()
 ```
 
-### Phase 1: Planning (Prometheus + Momus)
+### Phase 1: Structuring (Prometheus + Metis Loop)
 
 ```markdown
-1. Delegate to Prometheus agent with spec
-2. Prometheus creates plan: .sisyphus/plans/{name}.md
-3. Momus reviews (GPT-5.3-Codex xhigh) unless --fast
-4. Set output and advance
+1. Delegate to Prometheus with debate conclusions
+   - Prometheus creates: .sisyphus/plans/{name}.md
+   - Uses debate consensus as planning input
+
+2. Prometheus+Metis review loop:
+   a. Prometheus submits plan to Metis for review
+   b. Metis reviews plan against debate conclusions (GPT-5.3-Codex xhigh)
+   c. If NEEDS REVISION → Prometheus revises plan
+   d. Repeat until Metis returns APPROVED
+
+3. Set output and advance
 ```
 
 ### Phase 2: Execution (Atlas or Swarm)
@@ -119,11 +145,13 @@ If --swarm N:
   1. Parse plan into tasks
   2. Initialize swarm: mcp__swarm__swarm_init(tasks)
   3. Launch N junior agents in parallel
+     (Each Junior is Haiku coordinator + gpt-5.3-codex-spark)
   4. Monitor: mcp__swarm__swarm_stats()
 
 Else:
   1. Delegate to Atlas
   2. Atlas creates todos and delegates to Junior
+     (Junior uses codex-spark for code generation)
   3. Monitor via TaskList
 
 Update progress: mcp__chronos__autopilot_update_progress(2, {done, total})
@@ -147,22 +175,37 @@ Update: mcp__chronos__autopilot_update_progress(3, {build, lint, tests, ui})
 All must pass to advance.
 ```
 
-### Phase 4: Validation (Oracle)
+### Phase 4: Code Review (Debate)
 
 ```markdown
 Skip if: --no-validation
 
-1. Delegate to Oracle (Codex primary)
-2. Oracle checks:
-   - Security vulnerabilities
-   - Code quality
-   - Architecture compliance
+1. Gather code changes:
+   - git diff summary
+   - Key changed files content
+   - Playwright screenshots (if --ui)
 
-Update: mcp__chronos__autopilot_update_progress(4, {
-  blocking_issues: 0,
-  warnings: [],
-  approved: true
-})
+2. Start code review debate:
+   mcp__chronos__debate_start({ topic: "Code review for: " + name, context: diff_content })
+
+3. Each model reviews the changes:
+   - Opus: Review implementation quality, patterns, edge cases
+   - GPT-5.2: Security and correctness review
+   - Gemini: UI/UX and user experience review (if applicable)
+   - GLM-5: Documentation and completeness review
+
+4. Debate until 3/4 consensus on APPROVED or REJECTED
+
+5a. If APPROVED (3/4 agree):
+    mcp__chronos__autopilot_update_progress(4, { approved: true })
+    → Advance to completion
+
+5b. If REJECTED:
+    mcp__chronos__debate_conclude({ decision: "REJECTED: [reasons]" })
+    → Prometheus creates fix plan based on rejection reasons
+    → Loop back to Phase 2:
+       mcp__chronos__autopilot_loop_back({ target_phase: 2, reason: "rejection reasons" })
+    → Continue execution with fix plan (unlimited loops)
 ```
 
 ### Completion
@@ -181,9 +224,10 @@ State file: `.sisyphus/autopilot.json`
 
 ```json
 {
-  "id": "autopilot-20260131-auth",
+  "id": "autopilot-20260219-auth",
   "current_phase": 2,
   "status": "running",
+  "review_loop_count": 0,
   "options": {
     "fast": false,
     "ui": true,
@@ -193,7 +237,7 @@ State file: `.sisyphus/autopilot.json`
     "skip_validation": false
   },
   "phases": {
-    "0": { "status": "completed", "output": ".sisyphus/specs/auth.md" },
+    "0": { "status": "completed", "output": "debate-id" },
     "1": { "status": "completed", "output": ".sisyphus/plans/auth.md" },
     "2": { "status": "in_progress", "progress": { "done": 3, "total": 7 } },
     "3": { "status": "pending" },
@@ -204,23 +248,21 @@ State file: `.sisyphus/autopilot.json`
 
 ## Model Routing
 
-External models are used to reduce Claude API costs:
+| Agent | Primary Model | Purpose |
+|-------|---------------|---------|
+| Debate | Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-5 | Planning & code review |
+| Prometheus | Claude Opus-4.6 | Plan structuring |
+| Metis | GPT-5.3-Codex (xhigh) | Plan review |
+| Junior* | gpt-5.3-codex-spark | Code generation |
+| Atlas | Claude Sonnet-4.6 | Orchestration |
 
-| Agent | Primary Model | Fallback |
-|-------|---------------|----------|
-| Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet |
-| Momus | GPT-5.3-Codex (xhigh) | Claude Sonnet |
-| Oracle | GPT-5.3-Codex | Claude Sonnet |
-| Multimodal-looker | Gemini | Claude Sonnet |
-| Librarian | GLM-5 | Claude Haiku |
+Junior tier routing based on task complexity:
 
-Junior agent tiers based on task complexity:
-
-| Complexity | Criteria | Agent |
-|------------|----------|-------|
-| Low | 1 file, <20 lines | junior-low (Sonnet) |
-| Medium | 2-5 files, 20-100 lines | junior (Sonnet) |
-| High | 6+ files, 100+ lines | junior-high (Opus) |
+| Complexity | Criteria | Agent | Execution |
+|------------|----------|-------|-----------|
+| Low | 1 file, <20 lines | junior-low | Haiku + codex-spark |
+| Medium | 2-5 files, 20-100 lines | junior | Haiku + codex-spark |
+| High | 6+ files, 100+ lines | junior-high | Haiku + codex-spark |
 
 ## Examples
 
@@ -229,11 +271,11 @@ Junior agent tiers based on task complexity:
 ```
 /autopilot "Add user profile page with avatar upload"
 
-Phase 0: Metis → spec
-Phase 1: Prometheus → plan, Momus → review
-Phase 2: Atlas → Junior (parallel tasks)
+Phase 0: 4 models debate implementation approach
+Phase 1: Prometheus structures plan, Metis reviews until approved
+Phase 2: Atlas → Junior/codex-spark (parallel tasks)
 Phase 3: Build/Lint/Tests pass
-Phase 4: Oracle approves
+Phase 4: 4 models review code → APPROVED
 ```
 
 ### Fast Mode (ulw alias)
@@ -241,9 +283,9 @@ Phase 4: Oracle approves
 ```
 ulw "Fix login button styling"
 
-Phase 1: Prometheus → quick plan
-Phase 2: Junior executes
-→ Complete (QA/Validation skipped by default in fast mode)
+Phase 1: Prometheus → quick plan (Metis review skipped)
+Phase 2: Junior/codex-spark executes
+→ Complete (QA/Code Review skipped by default in fast mode)
 ```
 
 ### Parallel Swarm
@@ -251,7 +293,7 @@ Phase 2: Junior executes
 ```
 /autopilot --swarm 5 "Implement all REST endpoints"
 
-Phase 2: 5 junior agents work in parallel
+Phase 2: 5 junior/codex-spark agents work in parallel
 → Each claims tasks atomically from swarm pool
 → Monitor: mcp__swarm__swarm_stats()
 ```
@@ -266,6 +308,21 @@ Phase 3 (QA):
 2. Gemini analyzes UI
 3. Compares against expectations
 4. Reports issues
+
+Phase 4 (Code Review):
+→ Playwright screenshot included in debate context
+```
+
+### Code Review Loop
+
+```
+Phase 4: Debate REJECTS code (security issue found)
+→ review_loop_count: 1
+→ Prometheus creates fix plan
+→ Loop back to Phase 2
+Phase 2: Junior fixes security issue
+Phase 3: QA passes again
+Phase 4: Debate APPROVES → Complete
 ```
 
 ## Error Handling

@@ -2,7 +2,7 @@
  * Debate State Management
  *
  * Manages multi-model debate sessions for critical decision making.
- * Three AI models (Opus, GPT-5.3-Codex, Gemini) debate topics and reach consensus.
+ * Four AI models (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-5) debate topics and reach consensus.
  */
 
 import {
@@ -33,7 +33,7 @@ export const DEFAULT_MAX_ROUNDS = 6;
 /**
  * @typedef {Object} DebateRound
  * @property {number} round - Round number
- * @property {string} speaker - Model that spoke (opus, gpt, gemini)
+ * @property {string} speaker - Model that spoke (opus, gpt52, gemini, glm)
  * @property {string} content - What the model said
  * @property {string[]} agreements - Models that agreed
  * @property {string[]} disagreements - Models that disagreed
@@ -43,8 +43,9 @@ export const DEFAULT_MAX_ROUNDS = 6;
 /**
  * @typedef {Object} DebateVote
  * @property {boolean|null} opus - Opus's vote
- * @property {boolean|null} gpt - GPT's vote
+ * @property {boolean|null} gpt52 - GPT-5.2's vote
  * @property {boolean|null} gemini - Gemini's vote
+ * @property {boolean|null} glm - GLM-5's vote
  */
 
 /**
@@ -208,8 +209,8 @@ export function addAnalysis(directory, model, summary, position) {
     timestamp: nowISO(),
   };
 
-  // Check if all analyses are complete
-  const allModels = ["opus", "gpt", "gemini"];
+  // Check if all analyses are complete (4 models)
+  const allModels = ["opus", "gpt52", "gemini", "glm"];
   const completedAnalyses = Object.keys(state.analyses);
   if (allModels.every((m) => completedAnalyses.includes(m))) {
     state.status = "debating";
@@ -249,11 +250,11 @@ export function addDebateRound(
     timestamp: nowISO(),
   });
 
-  // Increment round after all 3 models have spoken in current round
+  // Increment round after all 4 models have spoken in current round
   const currentRoundEntries = state.debate_log.filter(
     (entry) => entry.round === state.round
   );
-  if (currentRoundEntries.length >= 3) {
+  if (currentRoundEntries.length >= 4) {
     state.round += 1;
   }
 
@@ -268,27 +269,39 @@ export function addDebateRound(
 }
 
 /**
- * Check if consensus has been reached.
+ * Check if consensus has been reached (3/4 majority for 4 models).
  * @param {DebateState} state - Current debate state
  * @returns {{reached: boolean, position: string|null}} Consensus status
  */
 export function checkConsensus(state) {
-  if (!state.analyses || Object.keys(state.analyses).length < 3) {
+  const totalModels = 4;
+  const majorityThreshold = 3; // 3/4 majority
+
+  if (!state.analyses || Object.keys(state.analyses).length < totalModels) {
     return { reached: false, position: null };
   }
 
   const positions = Object.values(state.analyses).map((a) => a.position.toLowerCase());
   const uniquePositions = [...new Set(positions)];
 
+  // Unanimous agreement
   if (uniquePositions.length === 1) {
     return { reached: true, position: uniquePositions[0] };
   }
 
-  // Check recent debate rounds for agreement
-  if (state.debate_log.length >= 3) {
-    const recentRounds = state.debate_log.slice(-3);
+  // Check for 3/4 majority
+  for (const pos of uniquePositions) {
+    const count = positions.filter((p) => p === pos).length;
+    if (count >= majorityThreshold) {
+      return { reached: true, position: pos };
+    }
+  }
+
+  // Check recent debate rounds for agreement (3/4 models agree)
+  if (state.debate_log.length >= 4) {
+    const recentRounds = state.debate_log.slice(-4);
     const allAgree = recentRounds.every(
-      (r) => r.agreements && r.agreements.length >= 2
+      (r) => r.agreements && r.agreements.length >= majorityThreshold - 1
     );
     if (allAgree) {
       return { reached: true, position: recentRounds[0].content.slice(0, 100) };
@@ -311,7 +324,7 @@ export function addVote(directory, item, model, vote) {
   if (!state) return null;
 
   if (!state.votes[item]) {
-    state.votes[item] = { opus: null, gpt: null, gemini: null };
+    state.votes[item] = { opus: null, gpt52: null, gemini: null, glm: null };
   }
 
   state.votes[item][model] = vote;

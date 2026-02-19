@@ -1,7 +1,7 @@
 ---
 name: sisyphus
 description: Primary AI. User-facing agent that selects appropriate agents and workflows
-model: opus
+model: sonnet
 permissionMode: acceptEdits
 disallowedTools: []
 ---

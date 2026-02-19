@@ -4,11 +4,11 @@
  * Manages the 5-phase autopilot workflow state.
  *
  * Phases:
- * 0. Expansion - Metis analyzes and creates spec
- * 1. Planning - Prometheus creates plan, Momus reviews
- * 2. Execution - Atlas executes via Junior (or Swarm)
+ * 0. Debate Planning - 4 models debate and create plan consensus
+ * 1. Structuring - Prometheus structures plan, Metis reviews in loop
+ * 2. Execution - Atlas executes via Junior/codex-spark (or Swarm)
  * 3. QA - Build, lint, and tests pass
- * 4. Validation - Oracle security/code review
+ * 4. Code Review - Debate reviews code changes, loops back to Phase 2 if rejected
  */
 
 import fs from "fs";
@@ -20,27 +20,27 @@ const AUTOPILOT_FILENAME = "autopilot.json";
  * Phase definitions
  */
 export const PHASES = {
-  EXPANSION: 0,
-  PLANNING: 1,
+  DEBATE_PLANNING: 0,
+  STRUCTURING: 1,
   EXECUTION: 2,
   QA: 3,
-  VALIDATION: 4,
+  CODE_REVIEW: 4,
 };
 
 export const PHASE_NAMES = {
-  0: "expansion",
-  1: "planning",
+  0: "debate_planning",
+  1: "structuring",
   2: "execution",
   3: "qa",
-  4: "validation",
+  4: "code_review",
 };
 
 export const PHASE_DESCRIPTIONS = {
-  0: "Metis analyzes request and creates spec",
-  1: "Prometheus creates plan, Momus reviews",
-  2: "Atlas executes via Junior agents",
-  3: "Build, lint, and tests pass",
-  4: "Oracle security and code review",
+  0: "Debate: 4 models (Opus, GPT-5.2, Gemini, GLM-5) analyze request and create plan consensus",
+  1: "Structuring: Prometheus converts debate conclusions into execution plan, Metis reviews in loop",
+  2: "Execution: Atlas executes via Junior/codex-spark agents",
+  3: "QA: Build, lint, and tests pass",
+  4: "Code Review: Debate reviews code changes, loops back to Phase 2 if rejected",
 };
 
 /**
@@ -123,11 +123,11 @@ export function startAutopilot(directory, name, request, options = {}) {
     current_phase: 0,
     status: "running",
     phases: createPhaseState(),
+    review_loop_count: 0,
     created_at: now,
     updated_at: now,
     options: {
-      skip_metis: options.skip_metis || false,
-      skip_momus: options.skip_momus || false,
+      skip_debate: options.skip_debate || false,
       use_swarm: options.use_swarm || false,
       swarm_agents: options.swarm_agents || 3,
       fast: options.fast || false,
@@ -141,8 +141,8 @@ export function startAutopilot(directory, name, request, options = {}) {
   state.phases[0].status = "in_progress";
   state.phases[0].started_at = now;
 
-  // If skipping Metis (or fast mode), start at planning phase
-  if (options.skip_metis || options.fast) {
+  // If fast mode, skip debate planning phase
+  if (options.fast || options.skip_debate) {
     state.phases[0].status = "skipped";
     state.phases[0].completed_at = now;
     state.current_phase = 1;
@@ -210,11 +210,11 @@ const GATE_CRITERIA = {
     return { passed: true };
   },
   4: (state) => {
-    // Validation complete when review done
+    // Code review complete when Debate approves (APPROVED decision)
     const findings = state.phases[4].findings;
-    if (!findings) return { passed: false, reason: "No validation findings recorded" };
-    if (findings.blocking_issues > 0) {
-      return { passed: false, reason: `${findings.blocking_issues} blocking issues found` };
+    if (!findings) return { passed: false, reason: "No code review findings recorded" };
+    if (!findings.approved) {
+      return { passed: false, reason: "Debate code review did not approve (APPROVED required)" };
     }
     return { passed: true };
   },
@@ -413,6 +413,59 @@ export function getAutopilotStatus(directory) {
     options: state.options,
     created_at: state.created_at,
     updated_at: state.updated_at,
+  };
+}
+
+/**
+ * Loop back to an earlier phase (for code review failures)
+ * @param {string} directory - Base directory
+ * @param {number} targetPhase - Phase to loop back to (typically 2 = execution)
+ * @param {string} [reason] - Reason for looping back
+ * @returns {Object|null} Updated state or error
+ */
+export function loopBackToPhase(directory, targetPhase, reason = "") {
+  const state = readAutopilotState(directory);
+  if (!state) {
+    return { error: "No active autopilot" };
+  }
+
+  const now = new Date().toISOString();
+
+  if (targetPhase < 0 || targetPhase > 4) {
+    return { error: `Invalid target phase ${targetPhase}` };
+  }
+
+  // Increment review loop count
+  state.review_loop_count = (state.review_loop_count || 0) + 1;
+
+  // Reset phases from targetPhase onwards
+  for (let i = targetPhase; i <= 4; i++) {
+    state.phases[i] = {
+      status: "pending",
+      output: null,
+      started_at: null,
+      completed_at: null,
+      ...(i === 2 ? { progress: null } : {}),
+      ...(i === 3 ? { results: null } : {}),
+      ...(i === 4 ? { findings: null } : {}),
+    };
+  }
+
+  // Set target phase as in_progress
+  state.current_phase = targetPhase;
+  state.phases[targetPhase].status = "in_progress";
+  state.phases[targetPhase].started_at = now;
+  state.phases[targetPhase].loop_back_reason = reason;
+
+  state.updated_at = now;
+
+  return {
+    success: true,
+    current_phase: targetPhase,
+    phase_name: PHASE_NAMES[targetPhase],
+    review_loop_count: state.review_loop_count,
+    reason,
+    state: writeAutopilotState(directory, state),
   };
 }
 
