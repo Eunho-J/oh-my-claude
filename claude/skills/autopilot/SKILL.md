@@ -105,7 +105,7 @@ Skip if: --fast
 
 2. Each model provides planning analysis:
    - Opus (native): Analyze request and propose implementation approach
-   - GPT-5.2: Independent analysis via mcp__codex__codex (model: "gpt-5.2")
+   - gpt-5.3-codex: Relayed via debate-relay teammate (model: "gpt-5.3-codex")
    - Gemini-3-Pro-Preview: Independent analysis via mcp__gemini__chat (model: "gemini-3-pro-preview")
    - GLM-4.7: Independent analysis via mcp__zai-glm__chat (model: "glm-4.7")
 
@@ -217,7 +217,7 @@ Skip if: --no-validation
 
 3. Each model reviews the changes:
    - Opus (native): Review implementation quality, patterns, edge cases
-   - GPT-5.2: Security and correctness review via mcp__codex__codex (model: "gpt-5.2")
+   - gpt-5.3-codex: Security and correctness review (relayed via debate-relay teammate)
    - Gemini-3-Pro-Preview: UI/UX and user experience review via mcp__gemini__chat (model: "gemini-3-pro-preview")
    - GLM-4.7: Documentation and completeness review via mcp__zai-glm__chat (model: "glm-4.7")
 
@@ -283,7 +283,7 @@ State file: `.sisyphus/autopilot.json`
 
 | Agent | Primary Model | Purpose |
 |-------|---------------|---------|
-| Debate | Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7 | Planning & code review |
+| Debate | Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro-Preview + GLM-4.7 | Planning & code review |
 | Prometheus | Claude Opus-4.6 | Plan structuring |
 | Metis | GPT-5.3-Codex (xhigh) | Plan review |
 | Junior* | gpt-5.3-codex-spark | Code generation |
