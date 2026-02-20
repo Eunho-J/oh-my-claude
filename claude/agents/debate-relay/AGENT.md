@@ -83,7 +83,7 @@ This preserves conversation context across debate rounds.
 ```
 mcp__gemini__chat({
   prompt: "{message content from team leader}",
-  model: "gemini-3-pro-preview"
+  model: "gemini-3-pro"
 })
 ```
 

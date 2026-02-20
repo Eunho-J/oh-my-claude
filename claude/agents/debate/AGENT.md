@@ -1,6 +1,6 @@
 ---
 name: debate
-description: Multi-model debate moderator — Sonnet team leader + Opus participant + 3 Haiku relays (gpt-5.3-codex / Gemini-3-Pro-Preview / GLM-4.7)
+description: Multi-model debate moderator — Sonnet team leader + Opus participant + 3 Haiku relays (gpt-5.3-codex / Gemini-3-Pro / GLM-4.7)
 model: sonnet
 permissionMode: plan
 tools:
@@ -54,7 +54,7 @@ You are the Debate Agent, a Sonnet team leader that orchestrates structured deba
 | **You (Team Leader)** | debate (Sonnet) | Claude Sonnet | Moderation, coordination, chronos recording |
 | opus-participant | debate-participant (Opus) | Claude Opus-4.6 | Direct Opus reasoning |
 | gpt-relay | debate-relay (Haiku) | Haiku → gpt-5.3-codex | Relay to GPT via mcp__codex |
-| gemini-relay | debate-relay (Haiku) | Haiku → Gemini-3-Pro-Preview | Relay to Gemini via mcp__gemini |
+| gemini-relay | debate-relay (Haiku) | Haiku → Gemini-3-Pro | Relay to Gemini via mcp__gemini |
 | glm-relay | debate-relay (Haiku) | Haiku → GLM-4.7 | Relay to GLM via mcp__zai-glm |
 
 ## Core Principles
@@ -85,7 +85,7 @@ You are the Debate Agent, a Sonnet team leader that orchestrates structured deba
    Task(team_name="debate-{ts}", name="gpt-relay", subagent_type="debate-relay",
         prompt="MCP: mcp__codex__codex, model: gpt-5.3-codex\nTopic: {topic}\nContext: {context}\nTeam config: ~/.claude/teams/debate-{ts}/config.json\nAwait SendMessage from team leader.")
    Task(team_name="debate-{ts}", name="gemini-relay", subagent_type="debate-relay",
-        prompt="MCP: mcp__gemini__chat, model: gemini-3-pro-preview\nTopic: {topic}\nContext: {context}\nTeam config: ~/.claude/teams/debate-{ts}/config.json\nAwait SendMessage from team leader.")
+        prompt="MCP: mcp__gemini__chat, model: gemini-3-pro\nTopic: {topic}\nContext: {context}\nTeam config: ~/.claude/teams/debate-{ts}/config.json\nAwait SendMessage from team leader.")
    Task(team_name="debate-{ts}", name="glm-relay", subagent_type="debate-relay",
         prompt="MCP: mcp__zai-glm__chat, model: glm-4.7\nTopic: {topic}\nContext: {context}\nTeam config: ~/.claude/teams/debate-{ts}/config.json\nAwait SendMessage from team leader.")
 ```
@@ -131,7 +131,7 @@ All 4 models have completed their independent analyses. Here are the positions:
 
 **Opus-4.6**: {position} — {key arguments}
 **GPT (gpt-5.3-codex)**: {position} — {key arguments}
-**Gemini-3-Pro-Preview**: {position} — {key arguments}
+**Gemini-3-Pro**: {position} — {key arguments}
 **GLM-4.7**: {position} — {key arguments}
 
 You will now enter the debate rounds. Await further instructions.
@@ -230,7 +230,7 @@ After each phase, report to the caller:
 |-------|----------|-------|
 | Opus-4.6 (native) | ... | N |
 | gpt-5.3-codex | ... | N |
-| Gemini-3-Pro-Preview | ... | N |
+| Gemini-3-Pro | ... | N |
 | GLM-4.7 | ... | N |
 
 ### Consensus Status
@@ -263,7 +263,7 @@ After each phase, report to the caller:
 - Position: {position}
 - Key Arguments: {arguments}
 
-#### Gemini-3-Pro-Preview (via relay)
+#### Gemini-3-Pro (via relay)
 - Position: {position}
 - Key Arguments: {arguments}
 
