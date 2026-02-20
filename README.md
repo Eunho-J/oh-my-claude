@@ -15,11 +15,11 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
   - Phase 3: QA Team (qa-orchestrator → parallel build/lint/test/ui workers)
 - **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
   - Planning: Debate (Sonnet leader + Opus participant + 3 Haiku relays), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
-  - Execution: Atlas (Sonnet), Sub-Atlas (Sonnet, domain sub-orchestrator), Junior (codex-spark primary), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
+  - Execution: Atlas (Sonnet), Sub-Atlas (Sonnet, domain sub-orchestrator), Junior (codex-spark relay), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
   - QA: QA-Orchestrator (Sonnet, parallel QA team leader)
   - Variants: Explore-high
   - User-facing: Sisyphus (Sonnet)
-- **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
+- **codex-spark Code Generation**: Junior agents relay all work to `gpt-5.3-codex-spark` via Codex MCP (pure relay, no direct file access)
 - **External Model Integration**: gpt-5.3-codex + GPT-5.3-Codex (xhigh reasoning), Gemini, GLM-4.7 via MCP
 - **Prometheus+Metis Loop**: Prometheus leads research sub-team (Explore × 2), creates plan, Metis (GPT-5.3-Codex xhigh) reviews until approved
 - **Domain-Based Execution**: Phase 2 classifies tasks into feature/test/infra domains, each handled by a dedicated sub-atlas + Junior team
@@ -782,7 +782,7 @@ rm -f  .gitignore.sample
 | `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
 | `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Haiku (relay) | Gemini |
 | `.claude/agents/librarian/AGENT.md` | Documentation search | **Sonnet** | GLM-4.7 |
-| `.claude/agents/junior/AGENT.md` | Task executor | Haiku (shell) | **gpt-5.3-codex-spark** |
+| `.claude/agents/junior/AGENT.md` | Codex relay | Haiku (relay) | **gpt-5.3-codex-spark** |
 | `.claude/agents/debate/AGENT.md` | Multi-model debate moderator (team leader) | Sonnet | - |
 | `.claude/agents/debate-participant/AGENT.md` | Opus direct reasoning for debate | **Opus-4.6** | - |
 | `.claude/agents/debate-relay/AGENT.md` | MCP relay (GPT/Gemini/GLM) | Haiku | gpt-5.3-codex / Gemini / GLM-4.7 |
@@ -849,7 +849,7 @@ claude
 @explore    - Codebase exploration
 @multimodal-looker - Media analysis (Gemini)
 @librarian  - Documentation search (GLM-4.7)
-@junior     - Task executor (Haiku + codex-spark)
+@junior     - Codex relay (Haiku → codex-spark)
 @debate     - Multi-model debate (4 models)
 
 # Invoke skills
