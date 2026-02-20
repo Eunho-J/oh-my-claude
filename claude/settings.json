@@ -86,7 +86,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/post-compact.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/post-compact.sh\" ] && cd \"$R\" && ./hooks/post-compact.sh'",
             "timeout": 5000
           }
         ]
@@ -97,12 +97,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/ralph-loop.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/ralph-loop.sh\" ] && cd \"$R\" && ./hooks/ralph-loop.sh'",
             "timeout": 10000
           },
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/todo-enforcer.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/todo-enforcer.sh\" ] && cd \"$R\" && ./hooks/todo-enforcer.sh'",
             "timeout": 10000
           }
         ]
@@ -114,7 +114,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/comment-checker.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/comment-checker.sh\" ] && cd \"$R\" && ./hooks/comment-checker.sh'",
             "timeout": 30000
           }
         ]
@@ -126,17 +126,17 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/debate-lock.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/debate-lock.sh\" ] && cd \"$R\" && ./hooks/debate-lock.sh'",
             "timeout": 5000
           },
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/delegation-guard.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/delegation-guard.sh\" ] && cd \"$R\" && ./hooks/delegation-guard.sh'",
             "timeout": 5000
           },
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/autopilot-gate.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/autopilot-gate.sh\" ] && cd \"$R\" && ./hooks/autopilot-gate.sh'",
             "timeout": 5000
           }
         ]
@@ -146,7 +146,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; cd \"$R\" && ./hooks/agent-limiter.sh'",
+            "command": "bash -c 'R=$(git rev-parse --show-toplevel 2>/dev/null); [ -z \"$R\" ] && { d=\"$PWD\"; while [ ! -d \"$d/.claude\" ] && [ \"$d\" != \"/\" ]; do d=\"$(dirname \"$d\")\"; done; R=\"$d\"; }; [ -f \"$R/hooks/agent-limiter.sh\" ] && cd \"$R\" && ./hooks/agent-limiter.sh'",
             "timeout": 5000
           }
         ]
