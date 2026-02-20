@@ -125,19 +125,36 @@ Task(
 )
 ```
 
-### Step 7: Wait for Worker Completion
+### Step 7: Monitor Workers and Clean Up Promptly
 
-Workers auto-deliver completion messages. Collect all results.
+Workers auto-deliver completion messages. **On each worker completion message:**
 
-Handle failures:
-- If a worker fails: re-spawn with adjusted prompt or mark task as failed
-- Report failures to atlas immediately via SendMessage
+```
+1. TaskList()
+   → Check remaining pending tasks for that worker
+
+2. IF worker has no more assigned tasks:
+   a. Check if unassigned pending domain tasks exist
+   b. IF yes: assign to the idle worker via TaskUpdate(owner="worker-AN")
+              SendMessage(recipient="worker-AN", content="New task: [details]", summary="New task")
+   c. IF no:  shutdown the worker immediately:
+              SendMessage(type="shutdown_request", recipient="worker-AN", content="No more tasks")
+              → This frees agent limiter capacity right away
+
+3. IF worker reports failure:
+   → Re-spawn with adjusted prompt or mark task as failed
+   → Report failures to atlas immediately via SendMessage
+```
+
+**Key principle**: Shut down each worker as soon as it has no remaining tasks. Do NOT wait for all workers to finish before cleaning up.
 
 ### Step 8: Report to Atlas
 
-After all domain tasks complete:
+After all domain tasks complete and all workers are shut down:
 
 ```
+TeamDelete()   ← Delete inner team (MANDATORY)
+
 SendMessage(
   recipient="atlas",
   content="Domain {domain} complete. Tasks: [list]. Summary: [brief]",
@@ -145,23 +162,9 @@ SendMessage(
 )
 ```
 
-### Step 9: Clean Up Inner Team
-
-**This step is MANDATORY.** Always clean up your inner team:
-
-```
-# Shutdown each inner worker
-SendMessage(type="shutdown_request", recipient="worker-A1", content="Domain tasks complete, shutting down")
-SendMessage(type="shutdown_request", recipient="worker-A2", content="Domain tasks complete, shutting down")
-...
-
-# Wait for shutdown responses, then delete inner team
-TeamDelete()   ← This uses the current team context (inner team)
-```
-
 **Note**: After `TeamCreate("{domain}-{ts}")`, your team context switches to the inner team. After `TeamDelete()`, you return to the outer team context.
 
-### Step 10: Handle Shutdown Request from Atlas
+### Step 9: Handle Shutdown Request from Atlas
 
 When you receive a shutdown request from atlas:
 
@@ -169,20 +172,18 @@ When you receive a shutdown request from atlas:
 {"type": "shutdown_request", "requestId": "...", ...}
 ```
 
-**If inner team is still active**, clean it up first:
+**If inner team is still active** (workers not yet shut down), clean it up first:
 
 ```
-1. Send shutdown_request to all inner workers (if any still running)
+1. Send shutdown_request to all remaining inner workers
 2. TeamDelete(inner_team_name)  ← Force cleanup to prevent orphaned teams
-3. mcp__chronos__agent_limiter_unregister(agent_id)
-4. SendMessage(type="shutdown_response", request_id="...", approve=true)
+3. SendMessage(type="shutdown_response", request_id="...", approve=true)
 ```
 
-**If inner team already cleaned up:**
+**If inner team already cleaned up** (normal path — workers shut down during Step 7):
 
 ```
-1. mcp__chronos__agent_limiter_unregister(agent_id)
-2. SendMessage(type="shutdown_response", request_id="...", approve=true)
+1. SendMessage(type="shutdown_response", request_id="...", approve=true)
 ```
 
 ## Dependency Rules

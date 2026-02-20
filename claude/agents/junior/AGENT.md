@@ -143,39 +143,47 @@ mcp__chronos__agent_limiter_register({
 })
 ```
 
-### 2. Find your assigned task
+### 2. Task Loop (Explicit)
+
+Repeat until no more tasks:
 
 ```
-TaskList()
-→ Look for tasks with owner="worker-N" (your name) and status="pending"
+LOOP:
+  TaskList()
+  → Find tasks with owner="worker-N" (your name) and status="pending"
+
+  IF found:
+    TaskUpdate(taskId="...", status="in_progress")
+    [Execute via codex-spark]
+    TaskUpdate(taskId="...", status="completed")
+    → GOTO LOOP  (check for more tasks)
+
+  IF NOT found:
+    → EXIT LOOP (no more work)
 ```
 
-### 3. Claim and execute
+### 3. Report completion to team leader
 
-```
-TaskUpdate(taskId="...", status="in_progress")
-[Execute via codex-spark]
-TaskUpdate(taskId="...", status="completed")
-```
-
-### 4. Report completion to team leader
+After exiting the loop, report ALL completed tasks:
 
 ```
 SendMessage(
   type="message",
   recipient="{leader-name}",
-  content="[task name] complete. [brief result summary]",
-  summary="Task completed"
+  content="All assigned tasks complete. Completed: [list]. Ready for shutdown.",
+  summary="All tasks done, ready for shutdown"
 )
 ```
 
-### 5. Unregister when done
+### 4. Unregister immediately
+
+Do NOT wait for shutdown_request. Unregister as soon as no more tasks remain:
 
 ```
 mcp__chronos__agent_limiter_unregister({ agent_id: "<same id>" })
 ```
 
-**Note**: If more tasks are assigned to you, continue claiming and executing before unregistering.
+This frees agent limiter capacity for other workers immediately.
 
 ## Prohibited Actions
 

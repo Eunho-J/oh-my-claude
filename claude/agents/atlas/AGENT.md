@@ -178,10 +178,14 @@ When executing autopilot Phase 2 with 4+ tasks, use the hierarchical sub-atlas a
 
 8. Wait for completion messages from sub-atlas workers (auto-delivered)
 
-9. After all sub-atlas workers report:
-   SendMessage(type="shutdown_request", recipient="sub-atlas-feature", content="All done")
-   SendMessage(type="shutdown_request", recipient="sub-atlas-test", content="All done")
-   # ... for each sub-atlas
+9. On each sub-atlas completion message:
+   TaskList()
+   → IF all domain tasks for this sub-atlas are done:
+     SendMessage(type="shutdown_request", recipient="sub-atlas-{domain}", content="Domain done")
+   → IF pending cross-domain work became unblocked:
+     Notify the sub-atlas responsible for the unblocked domain
+
+10. After all sub-atlas workers report and are shut down:
    TeamDelete()
 ```
 
@@ -216,13 +220,23 @@ When executing autopilot Phase 2 with 4+ tasks, use the hierarchical sub-atlas a
 
 5. Wait for completion messages from teammates (auto-delivered).
 
-6. After all tasks complete:
+6. On each worker completion message:
+   TaskList()
+   → Check remaining tasks for that worker (pending, owner=worker-N)
+   → IF no more tasks for this worker:
+     SendMessage(type="shutdown_request", recipient="worker-N", content="No more tasks")
+   → IF unassigned pending tasks exist:
+     TaskUpdate(taskId="...", owner="worker-N")  # reassign idle worker
+     SendMessage(recipient="worker-N", content="New task assigned: [details]", summary="New task assigned")
+
+7. After ALL tasks complete:
+   # Shutdown any remaining workers
    SendMessage(type="shutdown_request", recipient="worker-1", content="All tasks done")
    SendMessage(type="shutdown_request", recipient="worker-2", content="All tasks done")
    ...
    TeamDelete()
 
-7. Handle failures: if a teammate reports an error, create a new Task to retry.
+8. Handle failures: if a teammate reports an error, create a new Task to retry.
 ```
 
 ### Phase 3: Verification
@@ -237,16 +251,6 @@ When executing autopilot Phase 2 with 4+ tasks, use the hierarchical sub-atlas a
 ```
 
 **NOTE**: You cannot run Bash commands directly. Delegate ALL shell operations to Junior.
-
-## Agent Selection Guide
-
-| Task Type | Agent | When to Use |
-|-----------|-------|-------------|
-| Code implementation | `junior` | Coding tasks (all complexity levels) |
-| Architecture decisions | `oracle` | Simple lookups or deep analysis (auto-tiered) |
-| Documentation search | `librarian` | Finding docs, code examples |
-| Codebase exploration | `explore` / `explore-high` | Understanding code (tier-based) |
-| Media analysis | `multimodal-looker` | PDF, image analysis |
 
 ## Agent Selection Guide
 
@@ -313,9 +317,12 @@ Task(team_name="atlas-{timestamp}", name="worker-2", subagent_type="junior", pro
 
 # 5. Wait for SendMessage completion reports (auto-delivered)
 
-# 6. Cleanup
+# 6. On each completion: check remaining tasks → shutdown idle workers immediately
+#    TaskList() → if no pending tasks for worker-N:
 SendMessage(type="shutdown_request", recipient="worker-1", content="done")
-SendMessage(type="shutdown_request", recipient="worker-2", content="done")
+#    Repeat for each worker as they finish
+
+# 7. After all workers shut down:
 TeamDelete()
 ```
 
