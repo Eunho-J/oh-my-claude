@@ -8,6 +8,9 @@ allowed_tools:
   - TaskUpdate
   - TaskList
   - TaskGet
+  - TeamCreate
+  - TeamDelete
+  - SendMessage
   - Read
   - Glob
   - Grep
@@ -56,19 +59,35 @@ Unlike the old SQLite-based swarm, Agent Teams provides:
 3. Brief: describe the parallelization strategy
 ```
 
-### Phase 2: Agent Team Creation
+### Phase 2: Agent Team Creation and Execution
 
 ```markdown
-1. Create an Agent Team with N teammates:
-   "Create an agent team with N teammates.
-    Each teammate should:
-    - Claim one task from the task list
-    - Execute it independently
-    - Report completion via TaskUpdate(status: completed)
-    - Claim the next available task until none remain"
+1. Check agent limiter capacity:
+   mcp__chronos__agent_limiter_can_spawn()
+   → If blocked (limit reached), notify user and stop
 
-2. Activate delegation mode (leader doesn't write code directly)
-   → Equivalent to workmode: all code goes through teammates
+2. Create the team:
+   TeamCreate(team_name="swarm-{Date.now()}")
+
+3. Assign each task to a named worker:
+   TaskUpdate(taskId="task-1", owner="worker-1")
+   TaskUpdate(taskId="task-2", owner="worker-2")
+   ...
+
+4. Spawn teammates (one Task call per worker):
+   Task(
+     team_name="swarm-{timestamp}",
+     name="worker-1",
+     subagent_type="junior",
+     prompt="You are a teammate in team swarm-{timestamp}.
+     Check TaskList for tasks assigned to owner='worker-1'.
+     Execute each task, mark it completed via TaskUpdate,
+     then report to the team leader via SendMessage.
+     Team config: ~/.claude/teams/swarm-{timestamp}/config.json"
+   )
+   (repeat for worker-2, worker-3, …)
+
+5. Wait for completion messages from teammates (auto-delivered).
 ```
 
 ### Phase 3: Monitoring
@@ -86,15 +105,27 @@ User: /swarm 3:junior "Implement all CRUD endpoints for User, Product, Order"
 
 Skill:
 1. Create tasks:
-   TaskCreate("Implement User CRUD endpoints")
-   TaskCreate("Implement Product CRUD endpoints")
-   TaskCreate("Implement Order CRUD endpoints")
+   TaskCreate("Implement User CRUD endpoints")   → taskId: "1"
+   TaskCreate("Implement Product CRUD endpoints") → taskId: "2"
+   TaskCreate("Implement Order CRUD endpoints")   → taskId: "3"
 
-2. Create Agent Team:
-   "Create a team with 3 junior teammates.
-    Each teammate: claim a pending task, implement it, mark complete, repeat."
+2. Check limiter and create team:
+   mcp__chronos__agent_limiter_can_spawn()
+   TeamCreate(team_name="swarm-1234567890")
 
-3. Monitor via TaskList until all tasks completed
+3. Assign and spawn:
+   TaskUpdate(taskId="1", owner="worker-1")
+   TaskUpdate(taskId="2", owner="worker-2")
+   TaskUpdate(taskId="3", owner="worker-3")
+   Task(team_name="swarm-1234567890", name="worker-1", subagent_type="junior", prompt="...")
+   Task(team_name="swarm-1234567890", name="worker-2", subagent_type="junior", prompt="...")
+   Task(team_name="swarm-1234567890", name="worker-3", subagent_type="junior", prompt="...")
+
+4. Receive completion messages, then:
+   SendMessage(type="shutdown_request", recipient="worker-1", content="done")
+   SendMessage(type="shutdown_request", recipient="worker-2", content="done")
+   SendMessage(type="shutdown_request", recipient="worker-3", content="done")
+   TeamDelete()
 ```
 
 ## Example: Documentation Fixes
@@ -103,12 +134,16 @@ Skill:
 User: /swarm 5:junior "Fix all typos in README files"
 
 Skill:
-1. Find all README files: Glob(pattern="**/README*.md")
-2. Create one task per file
-3. Create Agent Team:
-   "Create a team with 5 junior teammates.
-    Each teammate: claim one README task, fix typos, mark complete."
-4. Monitor completion
+1. Find all README files: Glob(pattern="**/README*.md") → 5 files
+2. Create one task per file: TaskCreate × 5 → taskIds: "1".."5"
+3. Check limiter and create team:
+   mcp__chronos__agent_limiter_can_spawn()
+   TeamCreate(team_name="swarm-1234567890")
+4. Assign tasks and spawn 5 workers:
+   TaskUpdate(taskId="1", owner="worker-1") ... TaskUpdate(taskId="5", owner="worker-5")
+   Task(team_name="swarm-1234567890", name="worker-1", subagent_type="junior", prompt="...") × 5
+5. Receive completion messages, cleanup:
+   SendMessage(shutdown_request) × 5 → TeamDelete()
 ```
 
 ## Agent Teams vs Old Swarm
@@ -122,9 +157,18 @@ Skill:
 | Delegation mode | N/A | Built-in (Shift+Tab) |
 | Plan approval | N/A | Built-in |
 
-## Completion
+## Completion and Cleanup
 
-Team is done when:
-- All tasks in TaskList are `completed`
-- Report final summary to user
-- Clean up the team: "The task is done, clean up the team"
+When all tasks show `completed` in TaskList:
+
+```markdown
+1. Send shutdown requests to all teammates:
+   SendMessage(type="shutdown_request", recipient="worker-1", content="All tasks complete, shutting down")
+   SendMessage(type="shutdown_request", recipient="worker-2", content="All tasks complete, shutting down")
+   ...
+
+2. Delete the team:
+   TeamDelete()
+
+3. Report final summary to user
+```

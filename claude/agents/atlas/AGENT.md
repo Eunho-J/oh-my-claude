@@ -100,14 +100,54 @@ When delegating tasks, use this structure:
 
 ### Phase 2: Task Delegation
 
+#### Single Task (no parallelism needed)
+
 ```markdown
-For each task wave (parallel group):
-1. Check TaskList for available tasks (pending, unblocked)
-2. Mark tasks as in_progress with TaskUpdate
-3. Launch agents via Task tool with run_in_background=true
-4. DO NOT wait with TaskOutput(block=true) - this blocks user input
-5. Let Ralph Loop handle completion detection and next steps
-6. Handle failures and retries when notified
+Task(
+  subagent_type="junior",
+  prompt="[6-section structure]"
+)
+Wait for result, then TaskUpdate(status="completed").
+```
+
+#### Parallel Tasks (Agent Teams — 2+ independent tasks)
+
+```markdown
+1. Check agent limiter capacity:
+   mcp__chronos__agent_limiter_can_spawn()
+   → If blocked, fall back to sequential single-task execution
+
+2. Create team:
+   TeamCreate(team_name="atlas-{Date.now()}")
+
+3. Assign tasks to named workers:
+   TaskUpdate(taskId="1", owner="worker-1")
+   TaskUpdate(taskId="2", owner="worker-2")
+   ...
+
+4. Spawn teammates (one per worker, in a single message):
+   Task(
+     team_name="atlas-{timestamp}",
+     name="worker-1",
+     subagent_type="junior",
+     prompt="You are a teammate in team atlas-{timestamp}.
+     Check TaskList for tasks with owner='worker-1', execute them,
+     mark completed via TaskUpdate, then report via SendMessage.
+     Team config: ~/.claude/teams/atlas-{timestamp}/config.json
+
+     [6-section task content for this worker]"
+   )
+   (repeat for worker-2, worker-3, …)
+
+5. Wait for completion messages from teammates (auto-delivered).
+
+6. After all tasks complete:
+   SendMessage(type="shutdown_request", recipient="worker-1", content="All tasks done")
+   SendMessage(type="shutdown_request", recipient="worker-2", content="All tasks done")
+   ...
+   TeamDelete()
+
+7. Handle failures: if a teammate reports an error, create a new Task to retry.
 ```
 
 ### Phase 3: Verification
@@ -181,14 +221,28 @@ Task(
 )
 ```
 
-### Parallel Tasks (Non-blocking)
+### Parallel Tasks (Agent Teams)
 ```
-# Launch multiple agents in ONE message with multiple Task calls
-Task(subagent_type="junior", run_in_background=true, prompt="Task A...")
-Task(subagent_type="junior", run_in_background=true, prompt="Task B...")
+# 1. Check limiter
+mcp__chronos__agent_limiter_can_spawn()
 
-# DO NOT use TaskOutput(block=true) to wait - this blocks user input
-# Ralph Loop will automatically continue when tasks complete
+# 2. Create team
+TeamCreate(team_name="atlas-{timestamp}")
+
+# 3. Assign tasks
+TaskUpdate(taskId="1", owner="worker-1")
+TaskUpdate(taskId="2", owner="worker-2")
+
+# 4. Spawn teammates in ONE message
+Task(team_name="atlas-{timestamp}", name="worker-1", subagent_type="junior", prompt="Task A...")
+Task(team_name="atlas-{timestamp}", name="worker-2", subagent_type="junior", prompt="Task B...")
+
+# 5. Wait for SendMessage completion reports (auto-delivered)
+
+# 6. Cleanup
+SendMessage(type="shutdown_request", recipient="worker-1", content="done")
+SendMessage(type="shutdown_request", recipient="worker-2", content="done")
+TeamDelete()
 ```
 
 ### Sequential with Dependencies

@@ -8,6 +8,9 @@ allowed_tools:
   - TaskUpdate
   - TaskList
   - TaskGet
+  - TeamCreate
+  - TeamDelete
+  - SendMessage
   - Read
   - Glob
   - Grep
@@ -141,14 +144,36 @@ Skip if: --fast
 
 ```markdown
 If --swarm N:
-  1. Parse plan into independent tasks via TaskCreate
-  2. Create Agent Team with N teammates:
-     "Create an agent team with N teammates. Each teammate should claim a
-      pending task from the task list, execute it, mark it complete, then
-      claim the next available task until none remain."
-  3. Leader (Atlas role) activates delegation mode - no direct code changes
-  4. Monitor via TaskList until all tasks completed
-  5. Clean up team when done
+  1. Parse plan into independent tasks via TaskCreate (one per subtask)
+
+  2. Check agent limiter capacity:
+     mcp__chronos__agent_limiter_can_spawn()
+     → If blocked, reduce N to available slots or fall back to sequential
+
+  3. Create team:
+     TeamCreate(team_name="autopilot-{name}-{Date.now()}")
+
+  4. Assign each task to a named worker:
+     TaskUpdate(taskId="...", owner="worker-1")
+     TaskUpdate(taskId="...", owner="worker-2")
+     ...
+
+  5. Spawn N teammates (single message, all Task calls in parallel):
+     Task(
+       team_name="autopilot-{name}-{timestamp}",
+       name="worker-N",
+       subagent_type="junior",
+       prompt="You are a teammate in team autopilot-{name}-{timestamp}.
+       Check TaskList for tasks with owner='worker-N', execute them,
+       mark completed via TaskUpdate, then report via SendMessage.
+       Team config: ~/.claude/teams/autopilot-{name}-{timestamp}/config.json"
+     )
+
+  6. Wait for completion messages from all teammates (auto-delivered)
+
+  7. Cleanup:
+     SendMessage(type="shutdown_request", recipient="worker-N", content="done") × N
+     TeamDelete()
 
 Else:
   1. Delegate to Atlas

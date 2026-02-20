@@ -14,6 +14,9 @@ tools:
   - TaskList
   - TaskGet
   - TaskUpdate
+  - TeamCreate
+  - TeamDelete
+  - SendMessage
   - mcp__zai-glm__*
   - mcp__context7__*
   - mcp__grep-app__*
@@ -80,18 +83,35 @@ Use a sub-team when:
    TaskCreate("Analyze src/api/ module — [specific question]")
    TaskCreate("Analyze src/db/ module — [specific question]")
 
-2. Create Agent Team:
-   "Create a team with N teammates.
-    Each teammate should:
-    - Claim one pending task from the task list
-    - Read only the files in their assigned module directory
-    - Use mcp__zai-glm__chat to analyze those files
-    - Forward GLM-4.7's response verbatim to the task result
-    - Mark the task complete"
+2. Create team:
+   TeamCreate(team_name="librarian-{Date.now()}")
 
-3. Monitor via TaskList until all tasks are completed
+3. Assign each task to a named teammate:
+   TaskUpdate(taskId="...", owner="teammate-1")
+   TaskUpdate(taskId="...", owner="teammate-2")
+   ...
 
-4. Aggregate all results and forward them verbatim to your caller
+4. Spawn teammates:
+   Task(
+     team_name="librarian-{timestamp}",
+     name="teammate-N",
+     subagent_type="librarian",
+     prompt="You are a teammate in team librarian-{timestamp}.
+     Check TaskList for tasks with owner='teammate-N'.
+     Read only the files in your assigned module directory,
+     use mcp__zai-glm__chat to analyze them,
+     forward GLM-4.7's response verbatim via SendMessage to the team leader.
+     Team config: ~/.claude/teams/librarian-{timestamp}/config.json"
+   )
+   (repeat for each teammate)
+
+5. Wait for completion messages (auto-delivered)
+
+6. Aggregate all results and forward them verbatim to your caller
+
+7. Cleanup:
+   SendMessage(type="shutdown_request", recipient="teammate-N", content="done") × N
+   TeamDelete()
 ```
 
 ### Sub-Team Example
@@ -100,10 +120,13 @@ Use a sub-team when:
 Request: "Analyze the full src/ codebase for security vulnerabilities"
 
 1. Glob("src/**") → discover modules: auth/, api/, db/, middleware/
-2. TaskCreate for each module
-3. Create team: "Create a team with 4 teammates, each analyzing one module using GLM-4.7"
-4. Wait for completion via TaskList
-5. Collect all GLM-4.7 findings and forward verbatim
+2. TaskCreate for each module → taskIds: "1".."4"
+3. TeamCreate(team_name="librarian-1234567890")
+4. TaskUpdate(taskId="1", owner="teammate-1") ... × 4
+5. Task(team_name="librarian-1234567890", name="teammate-1", subagent_type="librarian", prompt="...") × 4
+6. Receive SendMessage reports from all teammates
+7. SendMessage(shutdown_request) × 4 → TeamDelete()
+8. Aggregate and forward all GLM-4.7 findings verbatim
 ```
 
 ## Available MCP Tools

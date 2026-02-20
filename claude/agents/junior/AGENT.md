@@ -122,6 +122,57 @@ If codex-spark reports failures:
 2. Iterate until clean
 3. If truly blocked after 3 iterations, report to caller with full error context
 
+## Teammate Mode (Spawned as part of an Agent Team)
+
+When spawned via `Task(team_name=..., name="worker-N", ...)`:
+
+### 1. Register with agent limiter
+
+```
+mcp__chronos__agent_limiter_register({
+  agent_id: "junior-" + Date.now(),
+  agent_type: "junior"
+})
+```
+
+### 2. Find your assigned task
+
+```
+TaskList()
+→ Look for tasks with owner="worker-N" (your name) and status="pending"
+```
+
+### 3. Claim and execute
+
+```
+TaskUpdate(taskId="...", status="in_progress")
+[Execute via codex-spark as normal]
+TaskUpdate(taskId="...", status="completed")
+```
+
+### 4. Report completion to team leader
+
+```
+# Find leader name from team config
+Read("~/.claude/teams/{team-name}/config.json")
+→ members array: find the entry that is the leader
+
+SendMessage(
+  type="message",
+  recipient="{leader-name}",
+  content="[task name] complete. [brief result summary]",
+  summary="Task completed"
+)
+```
+
+### 5. Unregister when done
+
+```
+mcp__chronos__agent_limiter_unregister({ agent_id: "<same id>" })
+```
+
+**Note**: If more tasks are assigned to you (owner matches), continue claiming and executing before unregistering.
+
 ## Prohibited Actions
 
 - Using direct Edit/Write for non-trivial code changes
