@@ -150,6 +150,7 @@ mcp__grep-app__searchGitHub(
 
 ### Z.ai GLM-4.7 - Large Context Analysis
 
+**Stateless (single call):**
 ```
 mcp__zai-glm__chat(
   prompt: "Analyze this codebase structure...",
@@ -163,6 +164,37 @@ mcp__zai-glm__analyze_code(
   language: "typescript"
 )
 ```
+
+**Session-based (multi-turn, persistent history):**
+```
+// 1. Create session
+sid = mcp__zai-glm__session_create(
+  system: "You are a code architecture expert analyzing this codebase",
+  model: "glm-4.7"
+)
+// → "Session created: a1b2c3d4"
+
+// 2. Multi-turn conversation
+mcp__zai-glm__session_chat(session_id: "a1b2c3d4", message: "Analyze src/auth/...")
+mcp__zai-glm__session_chat(session_id: "a1b2c3d4", message: "Now focus on the JWT flow")
+mcp__zai-glm__session_chat(session_id: "a1b2c3d4", message: "Compare with src/api/auth.ts")
+
+// 3. Cleanup when done
+mcp__zai-glm__session_delete(session_id: "a1b2c3d4")
+
+// Other session tools
+mcp__zai-glm__session_list()              // list all active sessions
+mcp__zai-glm__session_clear(session_id)  // clear history, keep system prompt
+```
+
+**When to use sessions:**
+- Multi-turn analysis where context accumulates (e.g., iteratively exploring a codebase)
+- When follow-up questions depend on previous answers
+- Long research sessions that build on prior findings
+
+**When to use stateless `chat`:**
+- Single, self-contained queries
+- Independent sub-team tasks (each teammate uses its own session or stateless call)
 
 **Requirements:** `Z_AI_API_KEY` environment variable must be set
 

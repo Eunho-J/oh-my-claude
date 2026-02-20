@@ -160,8 +160,13 @@ export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 
 | Tool | Purpose |
 |------|---------|
-| `mcp__zai-glm__chat` | Chat with GLM-4.7 (200K context) |
-| `mcp__zai-glm__analyze_code` | Code analysis (review, explain, optimize, security, refactor) |
+| `mcp__zai-glm__chat` | Stateless chat with GLM-4.7 (200K context) |
+| `mcp__zai-glm__analyze_code` | Stateless code analysis (review, explain, optimize, security, refactor) |
+| `mcp__zai-glm__session_create` | Create persistent chat session (returns session_id) |
+| `mcp__zai-glm__session_chat` | Multi-turn chat within a session (maintains history) |
+| `mcp__zai-glm__session_list` | List active sessions with metadata |
+| `mcp__zai-glm__session_delete` | Delete session and its history |
+| `mcp__zai-glm__session_clear` | Clear session history (preserve system prompt) |
 
 **Requirements:** `Z_AI_API_KEY` environment variable, `uv` package manager
 
