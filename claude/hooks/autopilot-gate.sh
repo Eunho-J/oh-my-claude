@@ -5,8 +5,7 @@
 
 set -e
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-AUTOPILOT_FILE="$PROJECT_ROOT/.sisyphus/autopilot.json"
+AUTOPILOT_FILE=".sisyphus/autopilot.json"
 
 # Skip if no autopilot is active
 if [ ! -f "$AUTOPILOT_FILE" ]; then

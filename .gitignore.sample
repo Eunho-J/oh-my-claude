@@ -3,14 +3,13 @@
 # cp .gitignore.sample .gitignore
 
 # ===========================================
-# oh-my-claude Configuration (copied to your project)
+# oh-my-claude Configuration (local install)
 # ===========================================
-.claude/
+# Uncomment to ignore the entire local install:
+# .claude/
 .mcp.json
 .sisyphus/
 CLAUDE.md
-hooks/
-mcp-servers/
 
 # ===========================================
 # Environment & Secrets
@@ -23,13 +22,13 @@ mcp-servers/
 # Node.js Dependencies
 # ===========================================
 node_modules/
-mcp-servers/*/node_modules/
+.claude/mcp-servers/*/node_modules/
 
 # ===========================================
 # Python (Z.ai GLM MCP Server)
 # ===========================================
-mcp-servers/zai-glm/.venv/
-mcp-servers/zai-glm/__pycache__/
+.claude/mcp-servers/zai-glm/.venv/
+.claude/mcp-servers/zai-glm/__pycache__/
 *.pyc
 *.pyo
 

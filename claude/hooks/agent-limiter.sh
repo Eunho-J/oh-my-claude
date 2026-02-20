@@ -7,9 +7,8 @@
 
 set -e
 
-# Find project root
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-CHRONOS_CLI="$PROJECT_ROOT/mcp-servers/chronos/cli.js"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+CHRONOS_CLI="$SCRIPT_DIR/../mcp-servers/chronos/cli.js"
 
 # Check if chronos CLI exists
 if [ ! -f "$CHRONOS_CLI" ]; then

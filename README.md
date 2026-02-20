@@ -43,6 +43,30 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 >
 > **Follow the steps in order.** Each section depends on the previous one being completed.
 
+## Installation Modes
+
+Choose one before starting:
+
+| Mode | Description | Installed to |
+|------|-------------|--------------|
+| **Global** | Available in ALL Claude Code sessions | `~/.claude/` |
+| **Local** | Scoped to this project only | `.claude/` in project root |
+
+After installation, the directory structure is identical in both cases:
+
+```
+{.claude or ~/.claude}/
+├── agents/           # 17 specialized agents
+├── skills/           # autopilot, swarm, ecomode, git-master, ...
+├── hooks/            # ralph-loop, todo-enforcer, delegation-guard, ...
+├── mcp-servers/      # chronos, lsp-tools, zai-glm
+└── settings.json     # permissions, hooks, team mode
+```
+
+Hook scripts automatically resolve: **local `.claude/hooks/`** takes priority over **global `~/.claude/hooks/`**.
+
+---
+
 This guide separates setup into two categories:
 1. **Automated Setup** - Can be performed by Claude Code (or other CLI agents)
 2. **Manual Setup** - Requires user interaction (OAuth login, API key configuration)
@@ -79,18 +103,42 @@ These steps can be executed automatically by Claude Code.
 >
 > Only proceed if the user selects "Yes". If "No", stop the setup process.
 > ```
+>
+> Then ask:
+> ```
+> AskUserQuestion:
+>   "Where would you like to install oh-my-claude?"
+>   Options:
+>     - "Global — available in all Claude Code sessions (~/.claude/)"
+>     - "Local — this project only (.claude/ in project root)"
+> ```
+>
+> Remember this choice — it affects steps 1.1, 1.3, 1.4, and 1.5.
 
 ### 1.1 Clone Repository and Copy Files
 
 ```bash
-# Clone oh-my-claude to /tmp
 git clone https://github.com/Eunho-J/oh-my-claude.git /tmp/oh-my-claude
+```
 
-# Copy all configuration files to current project
+**If Global:**
+
+```bash
+# Copy everything to ~/.claude (agents, skills, hooks, mcp-servers, settings)
+cp -r /tmp/oh-my-claude/claude/. ~/.claude/
+
+# Clean up
+rm -rf /tmp/oh-my-claude
+```
+
+**If Local:**
+
+```bash
+# Copy everything to .claude/ in your project
 cp -r /tmp/oh-my-claude/claude .claude
+
+# Copy state directory and project files
 cp -r /tmp/oh-my-claude/sisyphus .sisyphus
-cp -r /tmp/oh-my-claude/hooks .
-cp -r /tmp/oh-my-claude/mcp-servers .
 cp /tmp/oh-my-claude/CLAUDE.md .
 cp /tmp/oh-my-claude/.gitignore.sample .
 
@@ -98,13 +146,17 @@ cp /tmp/oh-my-claude/.gitignore.sample .
 rm -rf /tmp/oh-my-claude
 ```
 
-**Note:** This copies the following to your project:
-- `.claude/` - Agent and skill definitions, settings
-- `.sisyphus/` - State management directory
-- `hooks/` - Hook scripts
-- `mcp-servers/` - Custom MCP server implementations
+**What gets installed (both modes):**
+- `{dest}/agents/` - 17 specialized agent definitions
+- `{dest}/skills/` - autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
+- `{dest}/hooks/` - ralph-loop, todo-enforcer, debate-lock, delegation-guard, comment-checker, autopilot-gate, agent-limiter, post-compact
+- `{dest}/mcp-servers/` - chronos, lsp-tools, zai-glm
+- `{dest}/settings.json` - MCP permissions, hooks, teammate mode
+
+**Local only:**
+- `.sisyphus/` - Per-project state (plans, debates, autopilot state)
 - `CLAUDE.md` - Project instructions for Claude
-- `.gitignore.sample` - Template for .gitignore (copy to .gitignore in step 1.6)
+- `.gitignore.sample` - Template for .gitignore
 
 ### 1.2 Prerequisites Installation
 
@@ -158,74 +210,73 @@ command -v gemini >/dev/null || npm install -g @google/gemini-cli
 
 ### 1.3 Register MCP Servers
 
-> **Agent instruction:** Before running the commands below, ask the user:
->
-> ```
-> AskUserQuestion:
->   "How would you like to install the MCP servers?"
->   Options:
->     - "This project only (local)" — available only in this repository
->     - "All Claude Code sessions (global)" — available across all projects
-> ```
->
-> Then follow the corresponding section below.
-
-**Step 1 — Always project-local** (these reference project-relative paths and must be local):
+**If Global:**
 
 ```bash
-claude mcp add chronos -s project -- node ./mcp-servers/chronos/index.js
-claude mcp add lsp-tools -s project -- node ./mcp-servers/lsp-tools/index.js
-claude mcp add zai-glm -s project -- ./mcp-servers/zai-glm/.venv/bin/python ./mcp-servers/zai-glm/server.py
-```
+# Use absolute paths to ~/.claude/mcp-servers/
+claude mcp add chronos  -s user -- node ~/.claude/mcp-servers/chronos/index.js
+claude mcp add lsp-tools -s user -- node ~/.claude/mcp-servers/lsp-tools/index.js
+claude mcp add zai-glm  -s user -- ~/.claude/mcp-servers/zai-glm/.venv/bin/python ~/.claude/mcp-servers/zai-glm/server.py
 
-**Step 2a — If "local" (this project only):**
-
-```bash
-claude mcp add codex -s project -- codex mcp-server
-claude mcp add gemini -s project -- npx mcp-gemini-cli --allow-npx
-claude mcp add playwright -s project -- npx @playwright/mcp@latest
-claude mcp add context7 -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
-claude mcp add grep-app -s project --transport http https://grep.app/api/mcp
-```
-
-**Step 2b — If "global" (all Claude Code sessions):**
-
-```bash
-claude mcp add codex -s user -- codex mcp-server
-claude mcp add gemini -s user -- npx mcp-gemini-cli --allow-npx
+# External services (global)
+claude mcp add codex     -s user -- codex mcp-server
+claude mcp add gemini    -s user -- npx mcp-gemini-cli --allow-npx
 claude mcp add playwright -s user -- npx @playwright/mcp@latest
-claude mcp add context7 -s user --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
-claude mcp add grep-app -s user --transport http https://grep.app/api/mcp
+claude mcp add context7  -s user --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
+claude mcp add grep-app  -s user --transport http https://grep.app/api/mcp
 ```
 
-### 1.4 Install Local Dependencies
+**If Local:**
 
 ```bash
-# Install Chronos MCP server (Ralph Loop, Boulder, Debate, Ecomode, Autopilot)
-cd mcp-servers/chronos
-npm install
-cd ../..
+# Use project-relative paths to .claude/mcp-servers/
+claude mcp add chronos   -s project -- node .claude/mcp-servers/chronos/index.js
+claude mcp add lsp-tools -s project -- node .claude/mcp-servers/lsp-tools/index.js
+claude mcp add zai-glm   -s project -- .claude/mcp-servers/zai-glm/.venv/bin/python .claude/mcp-servers/zai-glm/server.py
 
-# Install LSP Tools MCP server
-cd mcp-servers/lsp-tools
-npm install
-cd ../..
-
-# Install Z.ai GLM MCP server dependencies (Python)
-cd mcp-servers/zai-glm
-uv sync
-cd ../..
+# External services (local)
+claude mcp add codex      -s project -- codex mcp-server
+claude mcp add gemini     -s project -- npx mcp-gemini-cli --allow-npx
+claude mcp add playwright -s project -- npx @playwright/mcp@latest
+claude mcp add context7   -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
+claude mcp add grep-app   -s project --transport http https://grep.app/api/mcp
 ```
 
-**Note:**
-- Chronos MCP provides state management (Ralph Loop, Boulder, Debate, Ecomode, Autopilot)
-- LSP Tools MCP provides Language Server Protocol and AST-Grep integration
-- Z.ai GLM MCP uses Python with `mcp` and `zai-sdk` packages
+### 1.4 Install MCP Server Dependencies
+
+**If Global:**
+
+```bash
+cd ~/.claude/mcp-servers/chronos  && npm install && cd -
+cd ~/.claude/mcp-servers/lsp-tools && npm install && cd -
+cd ~/.claude/mcp-servers/zai-glm  && uv sync && cd -
+```
+
+**If Local:**
+
+```bash
+cd .claude/mcp-servers/chronos  && npm install && cd -
+cd .claude/mcp-servers/lsp-tools && npm install && cd -
+cd .claude/mcp-servers/zai-glm  && uv sync && cd -
+```
+
+**What each server provides:**
+- `chronos` — Ralph Loop, Boulder, Debate, Ecomode, Autopilot, Workmode, Agent Limiter, UI Verification
+- `lsp-tools` — Language Server Protocol tools, AST-Grep search/replace
+- `zai-glm` — Z.ai GLM-4.7 (200K context) chat and code analysis
 
 ### 1.5 Make Hook Scripts Executable
 
+**If Global:**
+
 ```bash
-chmod +x hooks/*.sh
+chmod +x ~/.claude/hooks/*.sh
+```
+
+**If Local:**
+
+```bash
+chmod +x .claude/hooks/*.sh
 ```
 
 ### 1.5b Terminal Integration for Agent Teams (Optional)
@@ -280,8 +331,15 @@ npm install -g it2
 
 2. Enable Python API in iTerm2: **iTerm2 → Settings → General → Magic → Enable Python API**
 
-3. Update `.claude/settings.json` to `"tmux"` (Claude Code auto-detects iTerm2 vs tmux):
+3. Update `settings.json` to `"tmux"` (Claude Code auto-detects iTerm2 vs tmux):
 
+**If Global:**
+```bash
+tmp=$(mktemp)
+jq '.teammateMode = "tmux"' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json
+```
+
+**If Local:**
 ```bash
 tmp=$(mktemp)
 jq '.teammateMode = "tmux"' .claude/settings.json > "$tmp" && mv "$tmp" .claude/settings.json
@@ -298,19 +356,20 @@ tmux session.
 
 ---
 
-### 1.6 Configure .gitignore
+### 1.6 Configure .gitignore (Local only)
+
+> **Global install:** Skip this step — `~/.claude/` is not a git repository.
 
 Copy the sample `.gitignore` to prevent committing environment-specific files:
 
 ```bash
-# Copy .gitignore template
 cp .gitignore.sample .gitignore
 ```
 
 **What gets ignored:**
 - `.env` - API keys and secrets
 - `node_modules/` - Dependencies (reinstall with `npm install`)
-- `mcp-servers/zai-glm/.venv/` - Python virtual environment
+- `.claude/mcp-servers/zai-glm/.venv/` - Python virtual environment
 - `.sisyphus/boulder.json`, `.sisyphus/ralph-state.json` - Runtime state files
 - `.sisyphus/ecomode.json`, `.sisyphus/autopilot.json` - Runtime state files
 - `.sisyphus/active-agents.json` - Agent limiter state
@@ -324,7 +383,7 @@ cp .gitignore.sample .gitignore
 
 ### 1.7 MCP Permissions (Pre-configured)
 
-The `.claude/settings.json` file already includes all MCP tool permissions. These are pre-allowed so you don't need to approve each tool manually:
+The `settings.json` file (`~/.claude/settings.json` for global, `.claude/settings.json` for local) already includes all MCP tool permissions. These are pre-allowed so you don't need to approve each tool manually:
 
 **Chronos (State Management):**
 - `mcp__chronos__ralph_*` - Ralph Loop control
@@ -350,6 +409,34 @@ The `.claude/settings.json` file already includes all MCP tool permissions. Thes
 
 ### 1.8 Verify Installation
 
+**If Global:**
+
+```bash
+# Check prerequisites
+echo "=== Prerequisites ==="
+echo "Node.js: $(node --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
+
+# Check directory structure
+echo "=== Directory Structure ==="
+[ -d "$HOME/.claude/agents" ] && echo "Agents: OK" || echo "Agents: MISSING"
+[ -d "$HOME/.claude/skills" ] && echo "Skills: OK" || echo "Skills: MISSING"
+[ -d "$HOME/.claude/hooks" ] && echo "Hooks: OK" || echo "Hooks: MISSING"
+[ -d "$HOME/.claude/mcp-servers" ] && echo "MCP Servers: OK" || echo "MCP Servers: MISSING"
+
+# Check configuration files
+echo "=== Configuration Files ==="
+[ -f "$HOME/.claude/settings.json" ] && echo "settings.json: OK" || echo "settings.json: MISSING"
+
+# Check MCP registrations
+echo "=== MCP Servers ==="
+claude mcp list
+```
+
+**If Local:**
+
 ```bash
 # Check prerequisites
 echo "=== Prerequisites ==="
@@ -362,8 +449,9 @@ echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "=== Directory Structure ==="
 [ -d ".claude/agents" ] && echo "Agents: OK" || echo "Agents: MISSING"
 [ -d ".claude/skills" ] && echo "Skills: OK" || echo "Skills: MISSING"
-[ -d ".sisyphus" ] && echo "Sisyphus: OK" || echo "Sisyphus: MISSING"
-[ -d "hooks" ] && echo "Hooks: OK" || echo "Hooks: MISSING"
+[ -d ".claude/hooks" ] && echo "Hooks: OK" || echo "Hooks: MISSING"
+[ -d ".claude/mcp-servers" ] && echo "MCP Servers: OK" || echo "MCP Servers: MISSING"
+[ -d ".sisyphus" ] && echo "Sisyphus state: OK" || echo "Sisyphus state: MISSING"
 
 # Check configuration files
 echo "=== Configuration Files ==="
@@ -492,11 +580,17 @@ echo $Z_AI_API_KEY
 ### Hook Scripts Not Executing
 
 ```bash
-# Ensure scripts are executable
-chmod +x hooks/*.sh
+# Ensure scripts are executable (global)
+chmod +x ~/.claude/hooks/*.sh
 
-# Test hook script directly
-./hooks/ralph-loop.sh < /dev/null
+# Ensure scripts are executable (local)
+chmod +x .claude/hooks/*.sh
+
+# Test hook script directly (global)
+~/.claude/hooks/ralph-loop.sh < /dev/null
+
+# Test hook script directly (local)
+.claude/hooks/ralph-loop.sh < /dev/null
 ```
 
 ### Agent Teams Teammates Not Appearing in Split Panes
@@ -506,10 +600,17 @@ chmod +x hooks/*.sh
 which tmux
 tmux -V
 
-# Verify .claude/settings.json has teammateMode set to "tmux"
+# Verify settings.json has teammateMode set to "tmux" (global)
+jq '.teammateMode' ~/.claude/settings.json
+
+# Verify settings.json has teammateMode set to "tmux" (local)
 jq '.teammateMode' .claude/settings.json
 
-# Set it if missing
+# Set it if missing (global)
+tmp=$(mktemp)
+jq '.teammateMode = "tmux"' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json
+
+# Set it if missing (local)
 tmp=$(mktemp)
 jq '.teammateMode = "tmux"' .claude/settings.json > "$tmp" && mv "$tmp" .claude/settings.json
 ```
@@ -571,16 +672,18 @@ tmux kill-session -t <session-name>
 
 ### Hooks
 
+Installed to `.claude/hooks/` (local) or `~/.claude/hooks/` (global).
+
 | File | Event | Description |
 |------|-------|-------------|
-| `hooks/ralph-loop.sh` | Stop | Auto-continuation loop |
-| `hooks/todo-enforcer.sh` | Stop | Prevents stopping with incomplete tasks |
-| `hooks/comment-checker.sh` | PostToolUse | Warns about unnecessary comments |
-| `hooks/debate-lock.sh` | PreToolUse | Blocks code changes during debate |
-| `hooks/delegation-guard.sh` | PreToolUse | Prevents Atlas from direct code edits |
-| `hooks/autopilot-gate.sh` | PreToolUse (info only) | Displays autopilot phase status |
-| `hooks/post-compact.sh` | SessionStart | Restores context after compact |
-| `hooks/agent-limiter.sh` | PreToolUse (Task) | Limits concurrent agents (OOM prevention) |
+| `{dest}/hooks/ralph-loop.sh` | Stop | Auto-continuation loop |
+| `{dest}/hooks/todo-enforcer.sh` | Stop | Prevents stopping with incomplete tasks |
+| `{dest}/hooks/comment-checker.sh` | PostToolUse | Warns about unnecessary comments |
+| `{dest}/hooks/debate-lock.sh` | PreToolUse | Blocks code changes during debate |
+| `{dest}/hooks/delegation-guard.sh` | PreToolUse | Prevents Atlas from direct code edits |
+| `{dest}/hooks/autopilot-gate.sh` | PreToolUse (info only) | Displays autopilot phase status |
+| `{dest}/hooks/post-compact.sh` | SessionStart | Restores context after compact |
+| `{dest}/hooks/agent-limiter.sh` | PreToolUse (Task) | Limits concurrent agents (OOM prevention) |
 
 ### State Files
 
