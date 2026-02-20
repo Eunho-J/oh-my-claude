@@ -17,7 +17,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
   - Planning: Debate (Sonnet leader + Opus participant + 3 Haiku relays), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
   - Execution: Atlas (Sonnet), Sub-Atlas (Sonnet, domain sub-orchestrator), Junior (codex-spark primary), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
   - QA: QA-Orchestrator (Sonnet, parallel QA team leader)
-  - Variants: Oracle-low, Explore-high
+  - Variants: Explore-high
   - User-facing: Sisyphus (Sonnet)
 - **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
 - **External Model Integration**: gpt-5.3-codex + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro, GLM-4.7 via MCP
@@ -649,7 +649,6 @@ tmux kill-session -t <session-name>
 | `.claude/agents/prometheus/AGENT.md` | Strategic planner + research sub-team leader | **Opus-4.6** | - |
 | `.claude/agents/metis/AGENT.md` | Pre-planning + plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
 | `.claude/agents/oracle/AGENT.md` | Architecture advisor | Haiku (relay) | GPT-5.3-Codex |
-| `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
 | `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
 | `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
 | `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Haiku (relay) | Gemini |
@@ -845,7 +844,6 @@ claude --teammate-mode in-process
 /ecomode on
 
 # Effects:
-# - oracle → oracle-low (Haiku instead of Opus)
 # - Skip Debate planning phase (Phase 0)
 # - Shorter responses
 

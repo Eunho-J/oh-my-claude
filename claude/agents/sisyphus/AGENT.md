@@ -144,7 +144,6 @@ Sisyphus: [Delegate to Debate for multi-model consensus]
 ### Ecomode Override
 
 When ecomode is enabled:
-- `oracle` → `oracle-low`
 - Skip Metis analysis phase
 
 ## State Management

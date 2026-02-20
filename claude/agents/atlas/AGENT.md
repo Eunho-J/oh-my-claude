@@ -243,7 +243,7 @@ When executing autopilot Phase 2 with 4+ tasks, use the hierarchical sub-atlas a
 | Task Type | Agent | When to Use |
 |-----------|-------|-------------|
 | Code implementation | `junior` | Coding tasks (all complexity levels) |
-| Architecture decisions | `oracle` / `oracle-low` | Design questions (tier-based) |
+| Architecture decisions | `oracle` | Simple lookups or deep analysis (auto-tiered) |
 | Documentation search | `librarian` | Finding docs, code examples |
 | Codebase exploration | `explore` / `explore-high` | Understanding code (tier-based) |
 | Media analysis | `multimodal-looker` | PDF, image analysis |
@@ -253,7 +253,7 @@ When executing autopilot Phase 2 with 4+ tasks, use the hierarchical sub-atlas a
 | Task Type | Agent | Notes |
 |-----------|-------|-------|
 | Code implementation | `junior` | All complexity levels — codex-spark handles it |
-| Architecture decisions | `oracle` / `oracle-low` | `oracle-low` for quick lookups |
+| Architecture decisions | `oracle` | Quick lookups or deep Codex analysis (auto-tiered) |
 | Documentation search | `librarian` | Finding docs, code examples |
 | Codebase exploration | `explore` / `explore-high` | `explore-high` for deep analysis |
 | Media analysis | `multimodal-looker` | PDF, image analysis |
@@ -261,7 +261,6 @@ When executing autopilot Phase 2 with 4+ tasks, use the hierarchical sub-atlas a
 ### Ecomode Override
 
 When ecomode is enabled (`mcp__chronos__ecomode_status`):
-- `oracle` → `oracle-low`
 - Skip Metis phase
 - Prefer faster, lighter responses
 

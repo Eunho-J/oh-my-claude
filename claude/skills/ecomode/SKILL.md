@@ -27,7 +27,6 @@ When enabled, ecomode optimizes for resource efficiency:
 
 | Normal Mode | Ecomode |
 |-------------|---------|
-| oracle (Opus-4.6) | oracle-low (Haiku) |
 | Metis analysis | SKIPPED |
 | Verbose responses | Concise responses |
 
@@ -80,7 +79,7 @@ Skill:
 /ecomode on
 "Fix all typos in docs"
 
-Result: Uses oracle-low for quick lookups, skips Metis analysis
+Result: Skips Metis analysis, uses concise responses
 ```
 
 ### Important Features

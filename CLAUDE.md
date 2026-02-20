@@ -46,8 +46,7 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 | QA-Orchestrator | QA Team Leader (Phase 3) | **Sonnet** | - | - |
 | Prometheus | Strategic Planner | **Opus-4.6** | - | - |
 | Metis | Pre-planning + Plan Reviewer | Haiku | GPT-5.3-Codex | xhigh |
-| Oracle | Architecture Advisor | **Haiku** (relay) | GPT-5.3-Codex | - |
-| Oracle-Low | Quick Architecture Lookup | Haiku | - | - |
+| Oracle | Architecture Advisor | **Haiku** | GPT-5.3-Codex (complex) / direct (simple) | - |
 | Debate | Multi-model debate moderator (team leader) | **Sonnet** | - | - |
 | Debate-Participant | Opus reasoning for debate | **Opus-4.6** | - | - |
 | Debate-Relay | MCP relay (GPT/Gemini/GLM) | **Haiku** | gpt-5.3-codex / Gemini-3-Pro / GLM-4.7 | - |
@@ -441,7 +440,6 @@ Claude:
 ```
 User: /ecomode on
 Claude:
-- oracle → oracle-low (Haiku)
 - Skip Debate planning phase
 - Shorter responses
 
