@@ -2,7 +2,7 @@
 name: debate
 description: Multi-model debate moderator — Sonnet team leader + Opus participant + 3 Haiku relays (gpt-5.3-codex / Gemini-3-Pro / GLM-4.7)
 model: sonnet
-permissionMode: plan
+permissionMode: acceptEdits
 tools:
   - Read
   - Grep
