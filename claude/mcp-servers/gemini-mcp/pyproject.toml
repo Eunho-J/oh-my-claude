@@ -1,0 +1,8 @@
+[project]
+name = "gemini-mcp"
+version = "0.1.0"
+description = "Custom Gemini MCP server with session support (replaces mcp-gemini-cli)"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp[cli]>=1.0.0",
+]

@@ -123,7 +123,7 @@ When autopilot or similar workflows are active, **workmode** is enabled:
 | lsp-tools | LSP/AST-Grep tools | stdio | custom |
 | chronos | Ralph Loop, Boulder, Debate, Ecomode, Autopilot, Workmode, UI Verification, Model Router | stdio | custom |
 | codex | OpenAI Codex | stdio | `codex mcp-server` |
-| gemini | Google Gemini (chat, web search, image analysis) | stdio | `mcp-gemini-cli` (npm) |
+| gemini | Google Gemini (chat, web search, image analysis, sessions) | stdio | Python MCP (uv) |
 | zai-glm | Z.ai GLM-4.7 (200K context) | stdio | Python MCP (uv) |
 
 ### Authentication
@@ -135,7 +135,6 @@ codex auth login
 
 # Gemini (Google)
 npm install -g @google/gemini-cli
-npm install -g mcp-gemini-cli
 gemini auth login
 ```
 
@@ -145,13 +144,18 @@ export CONTEXT7_API_KEY="..."   # Context7 docs search
 export Z_AI_API_KEY="..."       # Z.ai GLM-4.7 MCP server
 ```
 
-### Gemini MCP Tools (choplin/mcp-gemini-cli)
+### Gemini MCP Tools (Custom Python Server)
 
 | Tool | Purpose |
 |------|---------|
-| `mcp__gemini__chat` | Gemini conversation |
+| `mcp__gemini__chat` | Gemini conversation (stateless) |
 | `mcp__gemini__googleSearch` | Web search (replaces Exa) |
 | `mcp__gemini__analyzeFile` | Image/PDF/text analysis |
+| `mcp__gemini__session_create` | Create persistent Gemini session (returns session_id) |
+| `mcp__gemini__session_chat` | Multi-turn chat within a session (maintains history) |
+| `mcp__gemini__session_list` | List active sessions with metadata |
+| `mcp__gemini__session_delete` | Delete session and its history |
+| `mcp__gemini__session_clear` | Clear session history (preserve system context) |
 
 **Supported files:** PNG, JPG, GIF, WEBP, SVG, BMP, PDF, text
 
@@ -605,7 +609,7 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 - **gpt-5.3-codex**: Used in Debate (via debate-relay teammate → mcp__codex__codex with threadId session)
 - **gpt-5.3-codex-spark**: Used in Junior agents for code generation (via Codex MCP)
 - **Gemini-3-Pro**: Used in Debate (via Gemini MCP `model: "gemini-3-pro"`)
-- **Gemini**: 60 req/min limit (free tier), OAuth auth, npm install (`mcp-gemini-cli`)
+- **Gemini**: 60 req/min limit (free tier), OAuth auth, custom Python MCP server (`mcp-servers/gemini-mcp/`), session support via `--resume`
 - **GLM-4.7**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`), also used in Debate
 
 ### uv Installation (for Z.ai GLM MCP)
@@ -616,9 +620,15 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 ### Gemini MCP Installation
 ```bash
+# Install Gemini CLI (OAuth auth)
 npm install -g @google/gemini-cli
-npm install -g mcp-gemini-cli
 gemini auth login
+
+# Install custom gemini-mcp Python server (global)
+cd ~/.claude/mcp-servers/gemini-mcp && uv sync && cd -
+
+# Register with Claude Code (global)
+claude mcp add gemini -s user -- ~/.claude/mcp-servers/gemini-mcp/.venv/bin/python ~/.claude/mcp-servers/gemini-mcp/server.py
 ```
 
 ## Development Guide

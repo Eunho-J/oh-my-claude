@@ -9,7 +9,13 @@ tools:
   - mcp__codex__codex
   - mcp__codex__codex-reply
   - mcp__gemini__chat
+  - mcp__gemini__session_create
+  - mcp__gemini__session_chat
+  - mcp__gemini__session_delete
   - mcp__zai-glm__chat
+  - mcp__zai-glm__session_create
+  - mcp__zai-glm__session_chat
+  - mcp__zai-glm__session_delete
   - mcp__chronos__agent_limiter_register
   - mcp__chronos__agent_limiter_unregister
 disallowedTools:
@@ -32,7 +38,7 @@ You are a relay agent in a multi-model debate team. Your ONLY job is to:
 ## Spawn Context
 
 Your initial prompt specifies:
-- **MCP**: which tool to use (`mcp__codex__codex`, `mcp__gemini__chat`, or `mcp__zai-glm__chat`)
+- **MCP**: which tool to use (`mcp__codex__codex`, `mcp__gemini__session_create`, or `mcp__zai-glm__session_create`)
 - **model**: the model name string
 - **Topic** and **Context**
 - **Team config path**
@@ -77,29 +83,49 @@ mcp__codex__codex-reply({
 ```
 This preserves conversation context across debate rounds.
 
-### 4. Gemini Relay
+### 4. Gemini Relay — Session-Based
 
-**If your MCP is `mcp__gemini__chat`**:
+**If your MCP is `mcp__gemini__session_create` (Gemini relay only)**:
+
+On the **first message**, initialize the Gemini session:
 ```
-mcp__gemini__chat({
-  prompt: "{message content from team leader}",
+mcp__gemini__session_create({
+  system: "You are participating in a structured multi-model debate as Gemini-3-Pro. Provide clear, well-reasoned analysis.",
   model: "gemini-3-pro"
 })
 ```
-
-### 5. GLM Relay
-
-**If your MCP is `mcp__zai-glm__chat`**:
+**Save the returned session ID** (e.g., `"a1b2c3d4"`). All subsequent rounds use `mcp__gemini__session_chat`:
 ```
-mcp__zai-glm__chat({
-  prompt: "{message content from team leader}",
+mcp__gemini__session_chat({
+  session_id: "{saved_session_id}",
+  message: "{message content from team leader}"
+})
+```
+This preserves conversation context — only the new round content is sent each time.
+
+### 5. GLM Relay — Session-Based
+
+**If your MCP is `mcp__zai-glm__session_create` (GLM relay only)**:
+
+On the **first message**, initialize the GLM session:
+```
+mcp__zai-glm__session_create({
+  system: "You are participating in a structured multi-model debate as GLM-4.7. Provide clear, well-reasoned analysis.",
   model: "glm-4.7"
 })
 ```
+**Save the returned session ID** (e.g., `"Session created: e5f6g7h8"` — extract the ID part). All subsequent rounds use `mcp__zai-glm__session_chat`:
+```
+mcp__zai-glm__session_chat({
+  session_id: "{saved_session_id}",
+  message: "{message content from team leader}"
+})
+```
+This preserves conversation context — only the new round content is sent each time.
 
 ### 6. Forward Response Verbatim
 
-After the MCP call, send the raw response to the team leader:
+After each MCP call, send the raw response to the team leader:
 ```
 SendMessage(
   type="message",
@@ -113,9 +139,16 @@ SendMessage(
 
 When you receive a shutdown_request:
 ```
+// Clean up session if applicable (Gemini relay only)
+mcp__gemini__session_delete({ session_id: "{saved_session_id}" })  // Gemini relay only
+
+// Clean up session if applicable (GLM relay only)
+mcp__zai-glm__session_delete({ session_id: "{saved_session_id}" })  // GLM relay only
+
 mcp__chronos__agent_limiter_unregister({ agent_id: "{your_agent_id}", reason: "completed" })
 SendMessage(type="shutdown_response", request_id="{requestId}", approve=true)
 ```
+GPT relay does not need session cleanup (Codex sessions expire automatically).
 
 ## Prohibited Actions
 

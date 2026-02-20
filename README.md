@@ -1,6 +1,6 @@
 # oh-my-claude
 
-Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https://github.com/anthropics/claude-code) features to Claude Code's native capabilities (MCP, Hooks, Skills, Agents).
+Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https://github.com/sisyphus-labs/oh-my-opencode) features to Claude Code's native capabilities (MCP, Hooks, Skills, Agents).
 
 > **⚠️ WARNING**
 >
@@ -56,10 +56,10 @@ After installation, the directory structure is identical in both cases:
 
 ```
 {.claude or ~/.claude}/
-├── agents/           # 17 specialized agents
+├── agents/           # 15 specialized agents
 ├── skills/           # autopilot, swarm, ecomode, git-master, ...
 ├── hooks/            # ralph-loop, todo-enforcer, delegation-guard, ...
-├── mcp-servers/      # chronos, lsp-tools, zai-glm
+├── mcp-servers/      # chronos, lsp-tools, zai-glm, gemini-mcp
 └── settings.json     # permissions, hooks, team mode
 ```
 
@@ -147,10 +147,10 @@ rm -rf /tmp/oh-my-claude
 ```
 
 **What gets installed (both modes):**
-- `{dest}/agents/` - 17 specialized agent definitions
+- `{dest}/agents/` - 15 specialized agent definitions
 - `{dest}/skills/` - autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
 - `{dest}/hooks/` - ralph-loop, todo-enforcer, debate-lock, delegation-guard, comment-checker, autopilot-gate, agent-limiter, post-compact
-- `{dest}/mcp-servers/` - chronos, lsp-tools, zai-glm
+- `{dest}/mcp-servers/` - chronos, lsp-tools, zai-glm, gemini-mcp
 - `{dest}/settings.json` - MCP permissions, hooks, teammate mode
 
 **Local only:**
@@ -180,7 +180,7 @@ gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
 
 **Install only if not present:**
 ```bash
-# Install uv (required for Z.ai GLM MCP)
+# Install uv (required for Python MCP servers: Z.ai GLM + Gemini)
 command -v uv >/dev/null || curl -LsSf https://astral.sh/uv/install.sh | sh
 
 # Install jq (required for hook scripts JSON processing)
@@ -220,7 +220,7 @@ claude mcp add zai-glm  -s user -- ~/.claude/mcp-servers/zai-glm/.venv/bin/pytho
 
 # External services (global)
 claude mcp add codex     -s user -- codex mcp-server
-claude mcp add gemini    -s user -- npx mcp-gemini-cli --allow-npx
+claude mcp add gemini    -s user -- ~/.claude/mcp-servers/gemini-mcp/.venv/bin/python ~/.claude/mcp-servers/gemini-mcp/server.py
 claude mcp add playwright -s user -- npx @playwright/mcp@latest
 claude mcp add context7  -s user --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
 claude mcp add grep-app  -s user --transport http https://grep.app/api/mcp
@@ -236,7 +236,7 @@ claude mcp add zai-glm   -s project -- .claude/mcp-servers/zai-glm/.venv/bin/pyt
 
 # External services (local)
 claude mcp add codex      -s project -- codex mcp-server
-claude mcp add gemini     -s project -- npx mcp-gemini-cli --allow-npx
+claude mcp add gemini     -s project -- .claude/mcp-servers/gemini-mcp/.venv/bin/python .claude/mcp-servers/gemini-mcp/server.py
 claude mcp add playwright -s project -- npx @playwright/mcp@latest
 claude mcp add context7   -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
 claude mcp add grep-app   -s project --transport http https://grep.app/api/mcp
@@ -247,23 +247,26 @@ claude mcp add grep-app   -s project --transport http https://grep.app/api/mcp
 **If Global:**
 
 ```bash
-cd ~/.claude/mcp-servers/chronos  && npm install && cd -
-cd ~/.claude/mcp-servers/lsp-tools && npm install && cd -
-cd ~/.claude/mcp-servers/zai-glm  && uv sync && cd -
+cd ~/.claude/mcp-servers/chronos   && npm install && cd -
+cd ~/.claude/mcp-servers/lsp-tools  && npm install && cd -
+cd ~/.claude/mcp-servers/zai-glm    && uv sync && cd -
+cd ~/.claude/mcp-servers/gemini-mcp && uv sync && cd -
 ```
 
 **If Local:**
 
 ```bash
-cd .claude/mcp-servers/chronos  && npm install && cd -
-cd .claude/mcp-servers/lsp-tools && npm install && cd -
-cd .claude/mcp-servers/zai-glm  && uv sync && cd -
+cd .claude/mcp-servers/chronos   && npm install && cd -
+cd .claude/mcp-servers/lsp-tools  && npm install && cd -
+cd .claude/mcp-servers/zai-glm    && uv sync && cd -
+cd .claude/mcp-servers/gemini-mcp && uv sync && cd -
 ```
 
 **What each server provides:**
 - `chronos` — Ralph Loop, Boulder, Debate, Ecomode, Autopilot, Workmode, Agent Limiter, UI Verification
 - `lsp-tools` — Language Server Protocol tools, AST-Grep search/replace
 - `zai-glm` — Z.ai GLM-4.7 (200K context) chat and code analysis
+- `gemini-mcp` — Google Gemini (chat, search, file analysis, session management)
 
 ### 1.5 Make Hook Scripts Executable
 
@@ -369,7 +372,8 @@ cp .gitignore.sample .gitignore
 **What gets ignored:**
 - `.env` - API keys and secrets
 - `node_modules/` - Dependencies (reinstall with `npm install`)
-- `.claude/mcp-servers/zai-glm/.venv/` - Python virtual environment
+- `.claude/mcp-servers/zai-glm/.venv/` - Python virtual environment (Z.ai GLM)
+- `.claude/mcp-servers/gemini-mcp/.venv/` - Python virtual environment (Gemini)
 - `.sisyphus/boulder.json`, `.sisyphus/ralph-state.json` - Runtime state files
 - `.sisyphus/ecomode.json`, `.sisyphus/autopilot.json` - Runtime state files
 - `.sisyphus/active-agents.json` - Agent limiter state
@@ -396,7 +400,8 @@ The `settings.json` file (`~/.claude/settings.json` for global, `.claude/setting
 
 **External Models:**
 - `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI GPT-5.3-Codex
-- `mcp__gemini__chat`, `mcp__gemini__googleSearch`, `mcp__gemini__analyzeFile` - Google Gemini
+- `mcp__gemini__chat`, `mcp__gemini__googleSearch`, `mcp__gemini__analyzeFile` - Google Gemini (stateless)
+- `mcp__gemini__session_create`, `mcp__gemini__session_chat`, `mcp__gemini__session_list`, `mcp__gemini__session_delete`, `mcp__gemini__session_clear` - Google Gemini (multi-turn sessions)
 - `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-4.7 (single-turn)
 - `mcp__zai-glm__session_create`, `mcp__zai-glm__session_chat`, `mcp__zai-glm__session_list`, `mcp__zai-glm__session_delete`, `mcp__zai-glm__session_clear` - Z.ai GLM-4.7 (multi-turn sessions)
 

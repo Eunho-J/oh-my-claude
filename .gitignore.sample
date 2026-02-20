@@ -25,10 +25,12 @@ node_modules/
 .claude/mcp-servers/*/node_modules/
 
 # ===========================================
-# Python (Z.ai GLM MCP Server)
+# Python (MCP Servers: Z.ai GLM + Gemini)
 # ===========================================
 .claude/mcp-servers/zai-glm/.venv/
 .claude/mcp-servers/zai-glm/__pycache__/
+.claude/mcp-servers/gemini-mcp/.venv/
+.claude/mcp-servers/gemini-mcp/__pycache__/
 *.pyc
 *.pyo
 
