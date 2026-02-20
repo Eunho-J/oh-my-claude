@@ -87,11 +87,14 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 ### Phase 0: Debate Planning
 
 ```markdown
-1. Create phase team:
+1. Start debate in chronos (Sisyphus manages state — debate agent has no MCP):
+   mcp__chronos__debate_start({ topic: request, context: codebase_context, max_rounds: 20 })
+
+2. Create phase team:
    ts = Date.now()
    TeamCreate(team_name="ap-p0-{ts}")
 
-2. Spawn debate agent in phase team:
+3. Spawn debate agent in phase team:
    Task(
      team_name="ap-p0-{ts}",
      name="debate",
@@ -103,22 +106,19 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
      Purpose: Phase 0 planning — 4 models analyze the request and reach consensus on implementation approach.
 
      Leader name: sisyphus
-     When complete, report via SendMessage to sisyphus with:
-     - The debate conclusion / decision
-     - Key agreed-upon implementation points
-     - Any strong dissenting views to consider"
+     When complete, send DEBATE_RESULT via SendMessage to sisyphus with structured JSON between DEBATE_RESULT_START/END markers."
    )
 
 The debate agent will:
-1. mcp__chronos__debate_start(...)
-2. TeamCreate("debate-{ts}") → spawn opus-participant + gpt-relay + gemini-relay + glm-relay
-3. Run independent analysis → debate rounds → consensus/voting
-4. mcp__chronos__debate_conclude(...)
-5. TeamDelete() → SendMessage(recipient="sisyphus", content="Debate complete...", summary="Phase 0 complete")
+1. TeamCreate("debate-{ts}") → spawn opus-participant + gpt-relay + gemini-relay + glm-relay
+2. Run independent analysis → debate rounds → consensus/voting
+3. TeamDelete() → SendMessage(recipient="sisyphus", content="DEBATE_RESULT_START {...} DEBATE_RESULT_END", summary="Phase 0 complete")
 
-3. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
+4. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
 
-4. After receiving debate results:
+5. After receiving debate results:
+   Parse DEBATE_RESULT JSON from message.
+   mcp__chronos__debate_conclude({ summary, decision, method, details })
    TeamDelete("ap-p0-{ts}")
    mcp__chronos__autopilot_set_output(0, debate_id)
    mcp__chronos__autopilot_advance()
@@ -309,11 +309,14 @@ Skip if: --no-validation
    - Key changed files content
    - Playwright screenshots path (if --ui)
 
-2. Create phase team:
+2. Start debate in chronos (Sisyphus manages state — debate agent has no MCP):
+   mcp__chronos__debate_start({ topic: "Code review: {name}", context: diff_content, max_rounds: 20 })
+
+3. Create phase team:
    ts = Date.now()
    TeamCreate(team_name="ap-p4-{ts}")
 
-3. Spawn debate agent for code review in phase team:
+4. Spawn debate agent for code review in phase team:
    Task(
      team_name="ap-p4-{ts}",
      name="debate",
@@ -328,23 +331,20 @@ Skip if: --no-validation
      Each model should evaluate: correctness, security, patterns, edge cases, test coverage.
 
      Leader name: sisyphus
-     When complete, report via SendMessage to sisyphus with:
-     - Final verdict: APPROVED or REJECTED
-     - If REJECTED: specific issues that must be fixed (detailed list)
-     - Individual model positions"
+     When complete, send DEBATE_RESULT via SendMessage to sisyphus with structured JSON between DEBATE_RESULT_START/END markers."
    )
 
 The debate agent will:
-1. mcp__chronos__debate_start(...)
-2. TeamCreate("debate-{ts}") → spawn opus-participant + gpt-relay + gemini-relay + glm-relay
-3. Each model reviews and votes APPROVED/REJECTED
-4. Reach 3/4 consensus or majority vote
-5. mcp__chronos__debate_conclude(...)
-6. TeamDelete() → SendMessage(recipient="sisyphus", content="Code review verdict: APPROVED/REJECTED...", summary="Code review done")
+1. TeamCreate("debate-{ts}") → spawn opus-participant + gpt-relay + gemini-relay + glm-relay
+2. Each model reviews and votes APPROVED/REJECTED
+3. Reach 3/4 consensus or majority vote
+4. TeamDelete() → SendMessage(recipient="sisyphus", content="DEBATE_RESULT_START {...} DEBATE_RESULT_END", summary="Code review done")
 
-4. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
+5. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
 
-5. After receiving debate verdict:
+6. After receiving debate verdict:
+   Parse DEBATE_RESULT JSON from message.
+   mcp__chronos__debate_conclude({ summary, decision, method, details })
    TeamDelete("ap-p4-{ts}")
 
    If APPROVED (3/4 agree):

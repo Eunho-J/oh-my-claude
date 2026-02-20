@@ -472,7 +472,7 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 | Multimodal-looker | whitelist | - | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Librarian | whitelist | ralph, status | ❌ | ❌ | ✅ | ✅ | ✅ |
 | Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Debate | whitelist | debate, ralph, status, agent_limiter | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Debate | whitelist | ❌ (parent handles chronos) | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Debate-Participant | whitelist | agent_limiter | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Debate-Relay | whitelist | agent_limiter | ✅ (gpt-5.3-codex) | ✅ (Gemini-3-Pro) | **✅ (GLM-4.7)** | ❌ | ❌ |
 
