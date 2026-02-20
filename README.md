@@ -13,7 +13,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
   - Phase 1: Planning Team (Prometheus leads Explore × 2 research sub-team → Metis review loop)
   - Phase 2: Execution Team (Atlas → sub-atlas × domains → Junior × N per domain)
   - Phase 3: QA Team (qa-orchestrator → parallel build/lint/test/ui workers)
-- **Multi-Agent Orchestration**: 17 specialized agents with clear role separation
+- **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
   - Planning: Debate (Sonnet leader + Opus participant + 3 Haiku relays), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
   - Execution: Atlas (Sonnet), Sub-Atlas (Sonnet, domain sub-orchestrator), Junior (codex-spark primary), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
   - QA: QA-Orchestrator (Sonnet, parallel QA team leader)
@@ -35,7 +35,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 - **Ecomode**: Resource-efficient mode (skip debate planning phase, skip research sub-team)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
 - **Planning/Execution Separation**: Clean context management
-- **Skill System**: autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
+- **Skill System**: autopilot, autopilot-fast (ulw), swarm, ecomode, git-master, frontend-ui-ux, playwright
 
 # Setup Guide
 
@@ -397,7 +397,8 @@ The `settings.json` file (`~/.claude/settings.json` for global, `.claude/setting
 **External Models:**
 - `mcp__codex__codex`, `mcp__codex__codex-reply` - OpenAI GPT-5.3-Codex
 - `mcp__gemini__chat`, `mcp__gemini__googleSearch`, `mcp__gemini__analyzeFile` - Google Gemini
-- `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-4.7
+- `mcp__zai-glm__chat`, `mcp__zai-glm__analyze_code` - Z.ai GLM-4.7 (single-turn)
+- `mcp__zai-glm__session_create`, `mcp__zai-glm__session_chat`, `mcp__zai-glm__session_list`, `mcp__zai-glm__session_delete`, `mcp__zai-glm__session_clear` - Z.ai GLM-4.7 (multi-turn sessions)
 
 **Documentation & Code Search:**
 - `mcp__context7__resolve-library-id`, `mcp__context7__query-docs` - Context7
@@ -662,7 +663,8 @@ tmux kill-session -t <session-name>
 
 | File | Description |
 |------|-------------|
-| `.claude/skills/autopilot/SKILL.md` | **Unified 5-phase workflow** (replaces ultrawork) - `--fast`, `--swarm`, `--ui` options |
+| `.claude/skills/autopilot/SKILL.md` | **Full 5-phase debate-first workflow** - `--fast`, `--swarm`, `--ui`, `--no-qa`, `--no-validation` options |
+| `.claude/skills/autopilot-fast/SKILL.md` | **Fast workflow** (Plan + Execute only, no Debate/Code Review) - aliases: `ulw`, `ultrawork` |
 | `.claude/skills/swarm/SKILL.md` | Parallel execution via Claude Code's native Agent Teams |
 | `.claude/skills/ecomode/SKILL.md` | Resource-efficient operation mode |
 | `.claude/skills/git-master/SKILL.md` | Git expert |
