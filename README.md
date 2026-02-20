@@ -8,14 +8,14 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 
 ## Features
 
-- **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7)
-- **Multi-Agent Orchestration**: 13 specialized agents with clear role separation
-  - Planning: Debate (4 models), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
+- **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro-Preview + GLM-4.7)
+- **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
+  - Planning: Debate (Sonnet leader + Opus participant + 3 Haiku relays), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
   - Execution: Atlas (Sonnet), Junior (codex-spark primary), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
   - Variants: Oracle-low, Explore-high
-  - User-facing: Sisyphus (Sonnet), Debate
+  - User-facing: Sisyphus (Sonnet)
 - **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
-- **External Model Integration**: GPT-5.2 + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro-Preview, GLM-4.7 via MCP
+- **External Model Integration**: gpt-5.3-codex + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro-Preview, GLM-4.7 via MCP
 - **Prometheus+Metis Loop**: Prometheus creates plan, Metis (GPT-5.3-Codex xhigh) reviews until approved
 - **Debate Code Review**: Phase 4 uses 4-model debate to APPROVE or loop back to execution
 - **Ralph Loop**: Auto-continuation until task completion
@@ -538,14 +538,16 @@ tmux kill-session -t <session-name>
 | `.claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
 | `.claude/agents/prometheus/AGENT.md` | Strategic planner | **Opus-4.6** | - |
 | `.claude/agents/metis/AGENT.md` | Pre-planning + plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
-| `.claude/agents/oracle/AGENT.md` | Architecture advisor | **Opus-4.6** | GPT-5.3-Codex |
+| `.claude/agents/oracle/AGENT.md` | Architecture advisor | Haiku (relay) | GPT-5.3-Codex |
 | `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
 | `.claude/agents/explore/AGENT.md` | Fast codebase exploration | Haiku | - |
 | `.claude/agents/explore-high/AGENT.md` | Deep codebase analysis | **Sonnet-4.6** | - |
-| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | **Sonnet-4.6** | Gemini |
+| `.claude/agents/multimodal-looker/AGENT.md` | Media analyzer | Haiku (relay) | Gemini |
 | `.claude/agents/librarian/AGENT.md` | Documentation search | **Sonnet** | GLM-4.7 |
 | `.claude/agents/junior/AGENT.md` | Task executor | Haiku (shell) | **gpt-5.3-codex-spark** |
-| `.claude/agents/debate/AGENT.md` | Multi-model debate (4 models) | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** |
+| `.claude/agents/debate/AGENT.md` | Multi-model debate moderator (team leader) | Sonnet | - |
+| `.claude/agents/debate-participant/AGENT.md` | Opus direct reasoning for debate | **Opus-4.6** | - |
+| `.claude/agents/debate-relay/AGENT.md` | MCP relay (GPT/Gemini/GLM) | Haiku | gpt-5.3-codex / Gemini-3-Pro-Preview / GLM-4.7 |
 
 ### Skills
 
@@ -743,8 +745,8 @@ claude --teammate-mode in-process
 ```
 Autopilot (Debate-First, 5 Phases):
 
-Phase 0 ──► DEBATE PLANNING
-            Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7
+Phase 0 ──► DEBATE PLANNING (Agent Teams)
+            Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro-Preview + GLM-4.7
             → 4 models analyze request & reach 3/4 consensus plan
 
 Phase 1 ──► STRUCTURING (Prometheus + Metis Loop)
@@ -787,8 +789,8 @@ User Request
     Phase 0▼                      ▼
 ┌─────────────────────┐    ┌─────────────┐
 │  Debate (Planning)  │    │   Atlas     │
-│ Opus-4.6 + GPT-5.2  │    │  (Sonnet)   │
-│ + Gemini + GLM-4.7    │    └──────┬──────┘
+│ Sonnet leader +     │    │  (Sonnet)   │
+│ Opus + 3 relays     │    └──────┬──────┘
 └──────────┬──────────┘           │
     Phase 1▼               ┌──────┼──────────┐
 ┌─────────────────────┐    ▼      ▼          ▼
@@ -823,7 +825,9 @@ User Request
 | **Prometheus** | **Opus-4.6** | - | - |
 | **Metis** | Haiku | GPT-5.3-Codex | **xhigh** |
 | Oracle | Haiku (relay) | GPT-5.3-Codex | default |
-| **Debate** | **Opus-4.6** | **GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7** | - |
+| **Debate** (leader) | Sonnet | - | - |
+| Debate-Participant | **Opus-4.6** | - | - |
+| Debate-Relay | Haiku | gpt-5.3-codex / Gemini-3-Pro-Preview / GLM-4.7 | - |
 | Explore | Haiku | - | - |
 | Multimodal-looker | Haiku (relay) | Gemini | - |
 | **Librarian** | **Sonnet** (relay + sub-team) | GLM-4.7 | - |
