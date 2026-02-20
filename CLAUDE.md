@@ -76,12 +76,15 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 
 ### Available Skills
 
-- `/autopilot` - **Unified autonomous workflow** (Debate-First)
-  - `--fast` / `ulw` - Fast mode (skip Debate planning)
+- `/autopilot` - **Full autonomous workflow** (Debate-First, all 5 phases)
   - `--swarm N` - Parallel execution with N agents
   - `--ui` - UI verification with Playwright + Gemini
   - `--no-qa` - Skip QA phase
   - `--no-validation` - Skip Debate code review
+- `/autopilot-fast` - **Fast workflow** (Plan + Execute only, no Debate/Code Review)
+  - Aliases: `ulw`, `ultrawork`
+  - `--swarm N` - Parallel execution with N agents
+  - `--qa` - Enable QA phase (skipped by default)
 - `/swarm N` - Parallel execution via Agent Teams
 - `/ecomode` - Resource-efficient operation mode
 - `/git-master` - Git expert (commit, rebase, history)
@@ -92,7 +95,7 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 
 These keywords automatically activate corresponding features:
 
-- `ultrawork`, `ulw` → `/autopilot --fast` (Fast mode)
+- `ultrawork`, `ulw` → `/autopilot-fast` (Fast mode — Plan + Execute only)
 - `@plan` → Prometheus planner
 - `@oracle` → Oracle architecture advisor
 - `@debate` → Multi-model debate agent

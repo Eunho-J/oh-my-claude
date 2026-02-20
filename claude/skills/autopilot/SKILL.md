@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Unified autonomous workflow from spec to validated code (Debate-First)
+description: Unified autonomous workflow from spec to validated code (Debate-First, all 5 phases)
 invocation: user
 allowed_tools:
   - Task
@@ -26,32 +26,22 @@ allowed_tools:
   - mcp__chronos__chronos_status
 ---
 
-# Autopilot - Unified Autonomous Workflow (Debate-First)
+# Autopilot - Unified Autonomous Workflow (Debate-First, Full 5 Phases)
 
-Execute a complete workflow from initial request to validated code. Uses a debate-first approach where 4 AI models collaboratively plan before execution.
+Execute a complete workflow from initial request to validated code.
+Uses a debate-first approach where 4 AI models collaboratively plan before execution.
+
+**For quick tasks (bug fixes, simple changes):** use `/autopilot-fast` (alias: `ulw`, `ultrawork`) instead.
 
 ## Invocation
 
 ```
 /autopilot "Add user authentication with JWT"
-/autopilot --fast "Fix all TypeScript errors"      # Fast mode (ulw alias)
-/autopilot --swarm 5 "Implement all API endpoints" # Parallel execution
-/autopilot --ui "Build dashboard page"             # With UI verification
+/autopilot --swarm 5 "Implement all API endpoints"   # Parallel execution
+/autopilot --ui "Build dashboard page"               # With UI verification
+/autopilot --no-qa "Quick prototype"                 # Skip QA
+/autopilot --no-validation "Hotfix"                  # Skip code review
 ```
-
-## Aliases
-
-- `ulw` - Alias for `/autopilot --fast`
-- `ultrawork` - Alias for `/autopilot --fast`
-
-## Modes
-
-| Mode | Phases | Use Case |
-|------|--------|----------|
-| **Full** (default) | 0-4 | Complex features, new systems |
-| **Fast** (`--fast`) | 1-2 only | Bug fixes, simple changes |
-| **Agent Teams** (`--swarm N`) | Parallel execution via Agent Teams | Multiple independent tasks |
-| **UI** (`--ui`) | + UI verification | Frontend development |
 
 ## 5 Phases
 
@@ -67,7 +57,6 @@ Execute a complete workflow from initial request to validated code. Uses a debat
 
 | Flag | Description |
 |------|-------------|
-| `--fast` | Skip Debate planning, simplified Metis review (equivalent to `ulw`) |
 | `--swarm N` | Use N parallel agents in execution |
 | `--ui` | Enable Playwright + Gemini UI verification in QA |
 | `--no-qa` | Skip QA phase |
@@ -98,8 +87,6 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 ### Phase 0: Debate Planning
 
 ```markdown
-Skip if: --fast
-
 Delegate to the debate agent — it handles team creation and all MCP calls internally:
 
 Task(
@@ -137,22 +124,21 @@ After debate agent returns:
      prompt="Lead the planning phase for: {request}.
 
      Debate conclusions: {debate_conclusions}
-     Fast mode: {fast_flag}
 
      Steps:
-     1. If NOT fast: Create research sub-team (plan-{ts}) with explore-impl + explore-test workers
+     1. Create research sub-team (plan-{ts}) with explore-impl + explore-test workers
         → Gather codebase context in parallel before writing plan
         → Clean up research team after
-     2. If fast: Skip research, plan directly from debate conclusions
+     2. Write plan using debate conclusions + research findings
      3. Write plan to .sisyphus/plans/{name}.md
-     4. Submit to Metis for review (skip if fast and plan has <3 tasks)
+     4. Submit to Metis for review
      5. Iterate until APPROVED
 
      Output: .sisyphus/plans/{name}.md (approved)"
    )
 
 2. Prometheus internal workflow:
-   a. [Non-fast] Research sub-team:
+   a. Research sub-team:
       - TeamCreate("plan-{ts}")
       - Spawn explore-impl + explore-test (+ optional librarian) in parallel
       - Wait for research reports via SendMessage
@@ -161,7 +147,7 @@ After debate agent returns:
    c. Metis review loop:
       - Prometheus submits plan to Metis (GPT-5.3-Codex xhigh)
       - If NEEDS REVISION → revise plan
-      - Repeat until APPROVED (skip if fast + <3 tasks)
+      - Repeat until APPROVED
 
 3. Set output and advance:
    mcp__chronos__autopilot_set_output(1, plan_path)
@@ -302,7 +288,7 @@ The debate agent will:
 5. mcp__chronos__debate_conclude(...)
 6. TeamDelete() and report verdict
 
-3. After debate agent returns:
+After debate agent returns:
 
    If APPROVED (3/4 agree):
      mcp__chronos__autopilot_update_progress(4, { approved: true })
@@ -363,8 +349,6 @@ State file: `.sisyphus/autopilot.json`
 | Junior* | gpt-5.3-codex-spark | Code generation |
 | Atlas | Claude Sonnet-4.6 | Orchestration |
 
-Junior routing: all complexity levels → `junior` (codex-spark primary)
-
 ## Examples
 
 ### Full Run (Default)
@@ -377,16 +361,6 @@ Phase 1: Prometheus structures plan, Metis reviews until approved
 Phase 2: Atlas → Junior/codex-spark (parallel tasks)
 Phase 3: Build/Lint/Tests pass
 Phase 4: 4 models review code → APPROVED
-```
-
-### Fast Mode (ulw alias)
-
-```
-ulw "Fix login button styling"
-
-Phase 1: Prometheus → quick plan (Metis review skipped)
-Phase 2: Junior/codex-spark executes
-→ Complete (QA/Code Review skipped by default in fast mode)
 ```
 
 ### Parallel Agent Teams
@@ -444,4 +418,5 @@ If phase fails:
 - `/autopilot on "task"` - Start autopilot (same as `/autopilot "task"`)
 - `/autopilot off` - Stop and clear autopilot, disable workmode
 - `/autopilot status` - Show current autopilot state
+- `/autopilot-fast "task"` - Fast mode (no debate, no code review); aliases: `ulw`, `ultrawork`
 - `/ecomode on` - Enable resource-efficient mode
