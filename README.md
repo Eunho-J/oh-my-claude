@@ -8,7 +8,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 
 ## Features
 
-- **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro + GLM-4.7)
+- **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + gpt-5.3-codex + Gemini + GLM-4.7)
 - **3-Level Nested Team Hierarchy**: Each autopilot phase uses purpose-built nested teams
   - Phase 1: Planning Team (Prometheus leads Explore × 2 research sub-team → Metis review loop)
   - Phase 2: Execution Team (Atlas → sub-atlas × domains → Junior × N per domain)
@@ -20,7 +20,7 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
   - Variants: Explore-high
   - User-facing: Sisyphus (Sonnet)
 - **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
-- **External Model Integration**: gpt-5.3-codex + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro, GLM-4.7 via MCP
+- **External Model Integration**: gpt-5.3-codex + GPT-5.3-Codex (xhigh reasoning), Gemini, GLM-4.7 via MCP
 - **Prometheus+Metis Loop**: Prometheus leads research sub-team (Explore × 2), creates plan, Metis (GPT-5.3-Codex xhigh) reviews until approved
 - **Domain-Based Execution**: Phase 2 classifies tasks into feature/test/infra domains, each handled by a dedicated sub-atlas + Junior team
 - **Parallel QA**: Phase 3 qa-orchestrator runs build → lint + test + ui in parallel (autonomous UI decision based on project type)
@@ -785,7 +785,7 @@ rm -f  .gitignore.sample
 | `.claude/agents/junior/AGENT.md` | Task executor | Haiku (shell) | **gpt-5.3-codex-spark** |
 | `.claude/agents/debate/AGENT.md` | Multi-model debate moderator (team leader) | Sonnet | - |
 | `.claude/agents/debate-participant/AGENT.md` | Opus direct reasoning for debate | **Opus-4.6** | - |
-| `.claude/agents/debate-relay/AGENT.md` | MCP relay (GPT/Gemini/GLM) | Haiku | gpt-5.3-codex / Gemini-3-Pro / GLM-4.7 |
+| `.claude/agents/debate-relay/AGENT.md` | MCP relay (GPT/Gemini/GLM) | Haiku | gpt-5.3-codex / Gemini / GLM-4.7 |
 
 ### Skills
 
@@ -989,7 +989,7 @@ claude --teammate-mode in-process
 Autopilot (Debate-First, 5 Phases, 3-Level Team Hierarchy):
 
 Phase 0 ──► DEBATE PLANNING (Debate Agent Team)
-            Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro + GLM-4.7
+            Opus-4.6 + gpt-5.3-codex + Gemini + GLM-4.7
             → 4 models analyze request & reach 3/4 consensus plan
 
 Phase 1 ──► STRUCTURING (Planning Team: plan-{ts})
@@ -1093,11 +1093,11 @@ User Request
 | Oracle | Haiku (relay) | GPT-5.3-Codex | default | Architecture advice |
 | **Debate** (leader) | Sonnet | - | - | Phase 0/4 debate moderator |
 | Debate-Participant | **Opus-4.6** | - | - | Phase 0/4 Opus analysis |
-| Debate-Relay | Haiku | gpt-5.3-codex / Gemini-3-Pro / GLM-4.7 | - | Phase 0/4 external model relay |
+| Debate-Relay | Haiku | gpt-5.3-codex / Gemini / GLM-4.7 | - | Phase 0/4 external model relay |
 | Explore | Haiku | - | - | Phase 1 research + general exploration |
 | Multimodal-looker | Haiku (relay) | Gemini | - | Media analysis |
 | **Librarian** | **Sonnet** (relay + sub-team) | GLM-4.7 | - | Documentation search |
-| Junior | Haiku (shell) | **gpt-5.3-codex-spark** | - | Phase 2 code execution |
+| Junior | Haiku (relay) | **gpt-5.3-codex-spark** | - | Phase 2 code execution (pure relay) |
 
 ---
 

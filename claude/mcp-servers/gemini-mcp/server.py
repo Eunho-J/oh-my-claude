@@ -87,17 +87,19 @@ def _parse_stream_json(output: str) -> tuple[str, Optional[str]]:
 
 
 @mcp.tool()
-def chat(prompt: str, model: str = "gemini-3-pro", system: str = None, yolo: bool = True) -> str:
+def chat(prompt: str, model: str = None, system: str = None, yolo: bool = True) -> str:
     """
     Chat with Gemini (stateless single call).
 
     Args:
         prompt: The prompt to send
-        model: Model name (default: gemini-3-pro)
+        model: Optional model name override
         system: Optional system prompt (prepended to prompt)
         yolo: Auto-accept all actions (default: True)
     """
-    args = ["--output-format", "json", "-m", model]
+    args = ["--output-format", "json"]
+    if model:
+        args += ["-m", model]
     if yolo:
         args.append("--yolo")
 
@@ -110,17 +112,19 @@ def chat(prompt: str, model: str = "gemini-3-pro", system: str = None, yolo: boo
 
 
 @mcp.tool()
-def googleSearch(query: str, model: str = "gemini-3-pro", limit: int = None, raw: bool = False) -> str:
+def googleSearch(query: str, model: str = None, limit: int = None, raw: bool = False) -> str:
     """
     Search the web via Gemini's Google Search grounding.
 
     Args:
         query: Search query
-        model: Model name (default: gemini-3-pro)
+        model: Optional model name override
         limit: Maximum number of results (optional)
         raw: Return raw results with URLs and snippets (optional)
     """
-    args = ["--output-format", "json", "-m", model, "--yolo"]
+    args = ["--output-format", "json", "--yolo"]
+    if model:
+        args += ["-m", model]
     prompt = f"Search: {query}"
     if limit:
         prompt += f" (limit to {limit} results)"
@@ -133,7 +137,7 @@ def googleSearch(query: str, model: str = "gemini-3-pro", limit: int = None, raw
 
 
 @mcp.tool()
-def analyzeFile(file_path: str, prompt: str = "", model: str = "gemini-3-pro") -> str:
+def analyzeFile(file_path: str, prompt: str = "", model: str = None) -> str:
     """
     Analyze an image, PDF, or text file with Gemini.
     Supported file types: PNG, JPG, GIF, WEBP, SVG, BMP, PDF, text (.txt, .md)
@@ -141,9 +145,11 @@ def analyzeFile(file_path: str, prompt: str = "", model: str = "gemini-3-pro") -
     Args:
         file_path: Absolute path to the file to analyze
         prompt: Analysis instructions (optional)
-        model: Model name (default: gemini-3-pro)
+        model: Optional model name override
     """
-    args = ["--output-format", "json", "-m", model, "--yolo"]
+    args = ["--output-format", "json", "--yolo"]
+    if model:
+        args += ["-m", model]
     analysis_prompt = prompt or "Analyze this file and provide a detailed description."
 
     # Try passing file as CLI argument (gemini supports file paths as positional args)
@@ -162,7 +168,7 @@ def analyzeFile(file_path: str, prompt: str = "", model: str = "gemini-3-pro") -
 
 
 @mcp.tool()
-def session_create(session_id: str = None, system: str = None, model: str = "gemini-3-pro") -> str:
+def session_create(session_id: str = None, system: str = None, model: str = None) -> str:
     """
     Start a new Gemini session with persistent conversation history.
     Uses gemini CLI's native --resume session management when available;
@@ -171,7 +177,7 @@ def session_create(session_id: str = None, system: str = None, model: str = "gem
     Args:
         session_id: Optional custom session ID. Auto-generated (8-char UUID) if not provided.
         system: Optional system context/instructions for this session
-        model: Model name (default: gemini-3-pro)
+        model: Optional model name override
 
     Returns:
         Confirmation string with session ID
@@ -180,7 +186,9 @@ def session_create(session_id: str = None, system: str = None, model: str = "gem
 
     # Initialize with stream-json to capture the native gemini session_id
     init_prompt = system or "Session initialized. Acknowledge briefly."
-    args = ["--output-format", "stream-json", "-m", model, "--yolo"]
+    args = ["--output-format", "stream-json", "--yolo"]
+    if model:
+        args += ["-m", model]
 
     result = _run_gemini(args, input_text=init_prompt)
 
@@ -239,10 +247,11 @@ def session_chat(session_id: str, message: str) -> str:
     if session.get("gemini_session_id"):
         args = [
             "--output-format", "json",
-            "-m", session["model"],
             "--resume", session["gemini_session_id"],
             "--yolo",
         ]
+        if session.get("model"):
+            args += ["-m", session["model"]]
         result = _run_gemini(args, input_text=message)
 
         if result.returncode == 0:
@@ -268,7 +277,9 @@ def session_chat(session_id: str, message: str) -> str:
         context_parts.append(f"Human: {message}")
         full_prompt = "\n\n".join(context_parts)
 
-        args = ["--output-format", "json", "-m", session["model"], "--yolo"]
+        args = ["--output-format", "json", "--yolo"]
+        if session.get("model"):
+            args += ["-m", session["model"]]
         result = _run_gemini(args, input_text=full_prompt)
 
         if result.returncode == 0:

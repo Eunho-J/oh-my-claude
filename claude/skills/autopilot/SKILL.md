@@ -400,7 +400,7 @@ State file: `.sisyphus/autopilot.json`
 
 | Agent | Primary Model | Purpose |
 |-------|---------------|---------|
-| Debate | Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro + GLM-4.7 | Planning & code review |
+| Debate | Opus-4.6 + gpt-5.3-codex + Gemini + GLM-4.7 | Planning & code review |
 | Prometheus | Claude Opus-4.6 | Plan structuring |
 | Metis | GPT-5.3-Codex (xhigh) | Plan review |
 | Junior* | gpt-5.3-codex-spark | Code generation |

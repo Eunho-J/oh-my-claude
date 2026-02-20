@@ -6,7 +6,7 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 
 ```
 Autopilot (Debate-First, 3-Level Hierarchy):
-Phase 0: Debate Planning → 4 models (Opus-4.6, gpt-5.3-codex, Gemini-3-Pro, GLM-4.7) analyze & plan
+Phase 0: Debate Planning → 4 models (Opus-4.6, gpt-5.3-codex, Gemini, GLM-4.7) analyze & plan
 Phase 1: Planning Team → Prometheus leads [Explore×2 research sub-team] → Metis reviews in loop
 Phase 2: Execution Team → Atlas → [sub-atlas-feature/test/infra × domains → Junior × N]
 Phase 3: QA Team → qa-orchestrator → [build → lint + test + ui (parallel)]
@@ -22,9 +22,9 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 ```
 
 ### External Model Integration
-- **Debate Phase 0/4**: Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro + GLM-4.7 (planning & code review, via Agent Teams)
+- **Debate Phase 0/4**: Opus-4.6 + gpt-5.3-codex + Gemini + GLM-4.7 (planning & code review, via Agent Teams)
 - **Metis**: GPT-5.3-Codex with xhigh reasoning effort (plan review in Prometheus+Metis loop)
-- **Junior**: gpt-5.3-codex-spark via Codex MCP (code generation coordinator)
+- **Junior**: gpt-5.3-codex-spark via Codex MCP (pure relay)
 - **Oracle**: GPT-5.3-Codex (architecture consultation, @oracle direct calls)
 - **Multimodal-looker**: Gemini (media analysis)
 - **Librarian**: GLM-4.7 (documentation search)
@@ -49,12 +49,12 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 | Oracle | Architecture Advisor | **Haiku** | GPT-5.3-Codex (complex) / direct (simple) | - |
 | Debate | Multi-model debate moderator (team leader) | **Sonnet** | - | - |
 | Debate-Participant | Opus reasoning for debate | **Opus-4.6** | - | - |
-| Debate-Relay | MCP relay (GPT/Gemini/GLM) | **Haiku** | gpt-5.3-codex / Gemini-3-Pro / GLM-4.7 | - |
+| Debate-Relay | MCP relay (GPT/Gemini/GLM) | **Haiku** | gpt-5.3-codex / Gemini / GLM-4.7 | - |
 | Explore | Fast Contextual Grep | Haiku | - | - |
 | Explore-High | Deep Codebase Analysis | **Sonnet-4.6** | - | - |
 | Multimodal-looker | Media Analyzer | **Haiku** (relay) | Gemini | - |
 | Librarian | Documentation/Code Search | **Sonnet** (relay, sub-team leader) | GLM-4.7 | - |
-| Junior | Task Executor | Haiku (shell) | **gpt-5.3-codex-spark** | - |
+| Junior | Codex Relay | Haiku (relay) | **gpt-5.3-codex-spark** | - |
 
 ### Invocation
 
@@ -433,7 +433,7 @@ Claude:
 ```
 User: @debate JWT vs Session-based authentication for our microservices
 Claude:
-1. Phase 1: Independent analysis (Opus-4.6 direct + gpt-5.3-codex/Gemini-3-Pro/GLM-4.7 via relays)
+1. Phase 1: Independent analysis (Opus-4.6 direct + gpt-5.3-codex/Gemini/GLM-4.7 via relays)
 2. Phase 2: Share analyses across all 4 models
 3. Phase 3: Structured debate rounds (max 20)
 4. Phase 4: 3/4 consensus or majority vote conclusion
@@ -471,10 +471,10 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 | Explore | whitelist | - | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Multimodal-looker | whitelist | - | ❌ | ✅ | ❌ | ❌ | ❌ |
 | Librarian | whitelist | ralph, status | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Junior | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Junior | whitelist | agent_limiter | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Debate | whitelist | ❌ (parent handles chronos) | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Debate-Participant | whitelist | agent_limiter | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Debate-Relay | whitelist | agent_limiter | ✅ (gpt-5.3-codex) | ✅ (Gemini-3-Pro) | **✅ (GLM-4.7)** | ❌ | ❌ |
+| Debate-Relay | whitelist | agent_limiter | ✅ (gpt-5.3-codex) | ✅ (Gemini) | **✅ (GLM-4.7)** | ❌ | ❌ |
 
 ### Skill MCP Tool Access
 
@@ -530,9 +530,9 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 
 | Agent | Primary Model | Fallback | Purpose |
 |-------|---------------|----------|---------|
-| Debate (Phase 0/4) | Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro + GLM-4.7 | - | Planning & code review (Agent Teams) |
+| Debate (Phase 0/4) | Opus-4.6 + gpt-5.3-codex + Gemini + GLM-4.7 | - | Planning & code review (Agent Teams) |
 | Metis | GPT-5.3-Codex (xhigh) | Claude Sonnet | Plan review in Prometheus+Metis loop |
-| Junior | gpt-5.3-codex-spark (primary) | direct Edit (trivial only) | Code generation & execution |
+| Junior | gpt-5.3-codex-spark (primary) | - (pure relay) | Code generation via relay |
 | Oracle | GPT-5.3-Codex | - (Haiku relay only) | Architecture advice |
 | Multimodal-looker | Gemini | - (Haiku relay only) | Image/PDF analysis |
 | Librarian | GLM-4.7 (+ sub-team) | Claude Sonnet (large context) | Documentation search |
@@ -608,7 +608,7 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 - **GPT-5.3-Codex**: Session management via `threadId`, OAuth auth, supports reasoning effort (xhigh/high/medium/low)
 - **gpt-5.3-codex**: Used in Debate (via debate-relay teammate → mcp__codex__codex with threadId session)
 - **gpt-5.3-codex-spark**: Used in Junior agents for code generation (via Codex MCP)
-- **Gemini-3-Pro**: Used in Debate (via Gemini MCP `model: "gemini-3-pro"`)
+- **Gemini**: Used in Debate (via Gemini MCP, default model)
 - **Gemini**: 60 req/min limit (free tier), OAuth auth, custom Python MCP server (`mcp-servers/gemini-mcp/`), session support via `--resume`
 - **GLM-4.7**: 200K context support, API key auth (`Z_AI_API_KEY`), Python MCP server (`mcp-servers/zai-glm/`), also used in Debate
 

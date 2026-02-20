@@ -90,8 +90,7 @@ This preserves conversation context across debate rounds.
 On the **first message**, initialize the Gemini session:
 ```
 mcp__gemini__session_create({
-  system: "You are participating in a structured multi-model debate as Gemini-3-Pro. Provide clear, well-reasoned analysis.",
-  model: "gemini-3-pro"
+  system: "You are participating in a structured multi-model debate as Gemini. Provide clear, well-reasoned analysis."
 })
 ```
 **Save the returned session ID** (e.g., `"a1b2c3d4"`). All subsequent rounds use `mcp__gemini__session_chat`:

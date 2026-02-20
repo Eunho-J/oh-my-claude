@@ -274,7 +274,7 @@ export function getAgentModel(agentName, ecomode = false) {
       model: MODELS.CLAUDE_OPUS,
       external: true,
       tier: null,
-      description: "Multi-model debate (Opus-4.6 + GPT-5.2 + Gemini-3-Pro-Preview + GLM-4.7)",
+      description: "Multi-model debate (Opus-4.6 + GPT-5.2 + Gemini + GLM-4.7)",
     },
   };
 
@@ -339,13 +339,12 @@ export function generateToolCall(model, prompt, options = {}) {
           params: {
             filePath: options.filePath,
             prompt,
-            model: "gemini-3-pro-preview",
           },
         };
       }
       return {
         tool: "mcp__gemini__chat",
-        params: { prompt, model: "gemini-3-pro-preview" },
+        params: { prompt },
       };
 
     case MODELS.GLM:

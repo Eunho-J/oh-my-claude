@@ -2,7 +2,7 @@
  * Debate State Management
  *
  * Manages multi-model debate sessions for critical decision making.
- * Four AI models (Opus-4.6, GPT-5.2, Gemini-3-Pro-Preview, GLM-4.7) debate topics and reach consensus.
+ * Four AI models (Opus-4.6, GPT-5.2, Gemini, GLM-4.7) debate topics and reach consensus.
  */
 
 import {
