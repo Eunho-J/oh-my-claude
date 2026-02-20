@@ -9,23 +9,30 @@ Multi-agent orchestration system for Claude Code, porting [oh-my-opencode](https
 ## Features
 
 - **Debate-First Autopilot**: 4-model consensus planning before execution (Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro-Preview + GLM-4.7)
-- **Multi-Agent Orchestration**: 15 specialized agents with clear role separation
+- **3-Level Nested Team Hierarchy**: Each autopilot phase uses purpose-built nested teams
+  - Phase 1: Planning Team (Prometheus leads Explore × 2 research sub-team → Metis review loop)
+  - Phase 2: Execution Team (Atlas → sub-atlas × domains → Junior × N per domain)
+  - Phase 3: QA Team (qa-orchestrator → parallel build/lint/test/ui workers)
+- **Multi-Agent Orchestration**: 17 specialized agents with clear role separation
   - Planning: Debate (Sonnet leader + Opus participant + 3 Haiku relays), Prometheus (Opus-4.6), Metis (GPT-5.3-Codex xhigh)
-  - Execution: Atlas (Sonnet), Junior (codex-spark primary), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
+  - Execution: Atlas (Sonnet), Sub-Atlas (Sonnet, domain sub-orchestrator), Junior (codex-spark primary), Oracle (Haiku relay), Explore, Multimodal-looker (Haiku relay), Librarian (Sonnet relay + sub-team)
+  - QA: QA-Orchestrator (Sonnet, parallel QA team leader)
   - Variants: Oracle-low, Explore-high
   - User-facing: Sisyphus (Sonnet)
 - **codex-spark Code Generation**: Junior agents use `gpt-5.3-codex-spark` via Codex MCP for all code generation
 - **External Model Integration**: gpt-5.3-codex + GPT-5.3-Codex (xhigh reasoning), Gemini-3-Pro-Preview, GLM-4.7 via MCP
-- **Prometheus+Metis Loop**: Prometheus creates plan, Metis (GPT-5.3-Codex xhigh) reviews until approved
+- **Prometheus+Metis Loop**: Prometheus leads research sub-team (Explore × 2), creates plan, Metis (GPT-5.3-Codex xhigh) reviews until approved
+- **Domain-Based Execution**: Phase 2 classifies tasks into feature/test/infra domains, each handled by a dedicated sub-atlas + Junior team
+- **Parallel QA**: Phase 3 qa-orchestrator runs build → lint + test + ui in parallel (autonomous UI decision based on project type)
 - **Debate Code Review**: Phase 4 uses 4-model debate to APPROVE or loop back to execution
 - **Ralph Loop**: Auto-continuation until task completion
 - **Unified Autopilot**: 5-phase debate-first workflow (`--fast`, `--swarm`, `--ui`, `--no-qa`, `--no-validation`)
 - **Workmode**: Blocks direct code modification when autopilot is active
-- **UI Verification**: Playwright + Gemini for visual QA (with `--ui` flag)
+- **UI Verification**: Playwright + Gemini for visual QA (with `--ui` flag or autonomous decision)
 - **Smart Model Routing**: Automatic external model selection to reduce Claude API costs
 - **Agent Teams**: Native Claude Code parallel execution with optional **split pane mode** (tmux / iTerm2)
-- **Agent Limiter**: OOM prevention by limiting concurrent background agents (default: 5)
-- **Ecomode**: Resource-efficient mode (skip debate planning phase)
+- **Agent Limiter**: OOM prevention — auto-raises to 10 during nested team phases, default 5 otherwise
+- **Ecomode**: Resource-efficient mode (skip debate planning phase, skip research sub-team)
 - **Todo Enforcer**: Prevents stopping with incomplete tasks
 - **Planning/Execution Separation**: Clean context management
 - **Skill System**: autopilot, swarm, ecomode, git-master, frontend-ui-ux, playwright
@@ -536,7 +543,9 @@ tmux kill-session -t <session-name>
 |------|-------------|-------|----------------|
 | `.claude/agents/sisyphus/AGENT.md` | Primary AI (user-facing) | **Sonnet** | - |
 | `.claude/agents/atlas/AGENT.md` | Master orchestrator | Sonnet | - |
-| `.claude/agents/prometheus/AGENT.md` | Strategic planner | **Opus-4.6** | - |
+| `.claude/agents/sub-atlas/AGENT.md` | Domain sub-orchestrator (Phase 2) | **Sonnet** | - |
+| `.claude/agents/qa-orchestrator/AGENT.md` | QA team leader (Phase 3, parallel build/lint/test/ui) | **Sonnet** | - |
+| `.claude/agents/prometheus/AGENT.md` | Strategic planner + research sub-team leader | **Opus-4.6** | - |
 | `.claude/agents/metis/AGENT.md` | Pre-planning + plan reviewer | Haiku | GPT-5.3-Codex (xhigh) |
 | `.claude/agents/oracle/AGENT.md` | Architecture advisor | Haiku (relay) | GPT-5.3-Codex |
 | `.claude/agents/oracle-low/AGENT.md` | Quick architecture lookup | Haiku | - |
@@ -644,9 +653,12 @@ ulw "Fix login button styling"
 # This will:
 # 1. Enable workmode (blocks Sisyphus from direct code modification)
 # 2. Phase 0: 4 models debate and agree on implementation approach (skip if --fast)
-# 3. Phase 1: Prometheus creates plan, Metis reviews in loop until approved
-# 4. Phase 2: Atlas → Junior/codex-spark execute tasks (or Swarm for parallel)
-# 5. Phase 3: QA - build, lint, tests (+ UI if --ui)
+# 3. Phase 1: Planning Team — Prometheus leads Explore×2 research sub-team (skip if --fast)
+#             then writes plan, Metis (GPT xhigh) reviews until approved
+# 4. Phase 2: Execution Team — Atlas → sub-atlas × domains → Junior × N per domain
+#             (domain classification: feature/test/infra; fallback to flat if <4 tasks)
+# 5. Phase 3: QA Team — qa-orchestrator: build → lint + test + ui (parallel)
+#             (ui-worker spawned autonomously if UI framework + UI file changes detected)
 # 6. Phase 4: 4 models code review → APPROVED or loop back to Phase 2
 # 7. Disable workmode on completion
 ```
@@ -743,30 +755,39 @@ claude --teammate-mode in-process
 ## Architecture
 
 ```
-Autopilot (Debate-First, 5 Phases):
+Autopilot (Debate-First, 5 Phases, 3-Level Team Hierarchy):
 
-Phase 0 ──► DEBATE PLANNING (Agent Teams)
+Phase 0 ──► DEBATE PLANNING (Debate Agent Team)
             Opus-4.6 + gpt-5.3-codex + Gemini-3-Pro-Preview + GLM-4.7
             → 4 models analyze request & reach 3/4 consensus plan
 
-Phase 1 ──► STRUCTURING (Prometheus + Metis Loop)
-            Prometheus (Opus-4.6) creates structured execution plan
-            Metis (GPT-5.3-Codex xhigh) reviews against debate conclusions
-            → Repeat until APPROVED
+Phase 1 ──► STRUCTURING (Planning Team: plan-{ts})
+            Prometheus (Opus-4.6) leads:
+              └── Research Sub-Team: explore-impl + explore-test (parallel)
+                  → Gather codebase context before planning
+            Prometheus writes plan from research + debate conclusions
+            Metis (GPT-5.3-Codex xhigh) reviews → repeat until APPROVED
+            [--fast: skip research sub-team]
 
-Phase 2 ──► EXECUTION
-            Atlas (Sonnet) orchestrates
-            → Junior agents (Haiku coordinator + gpt-5.3-codex-spark)
-            → Or Agent Teams (native parallel execution)
+Phase 2 ──► EXECUTION (Execution Team: exec-{ts})
+            Atlas (Sonnet) leads outer team:
+              ├── sub-atlas-feature → Inner Team (feat-{ts}): Junior × N
+              ├── sub-atlas-test    → Inner Team (test-{ts}): Junior × N (blocked by feature)
+              └── sub-atlas-infra   → Inner Team (infra-{ts}): Junior × N (independent)
+            [Fallback to flat Atlas → Junior × N if <4 tasks or single domain]
+            [--swarm N: N flat Junior workers in single exec team]
 
-Phase 3 ──► QA
-            Build / Lint / Tests
-            + UI verification (Playwright + Gemini) if --ui
+Phase 3 ──► QA (QA Team: qa-{ts})
+            qa-orchestrator leads:
+              build-worker  (sequential first)
+              lint-worker   (parallel after build)
+              test-worker   (parallel after build)
+              ui-worker     (parallel, only if UI framework + UI file changes detected)
 
-Phase 4 ──► DEBATE CODE REVIEW
+Phase 4 ──► DEBATE CODE REVIEW (Debate Agent Team)
             4 models review git diff + key files
             APPROVED → Complete
-            REJECTED → Loop back to Phase 2 (with fix plan)
+            REJECTED → Prometheus creates fix plan → Loop back to Phase 2
 ```
 
 ```
@@ -794,20 +815,32 @@ User Request
 └──────────┬──────────┘           │
     Phase 1▼               ┌──────┼──────────┐
 ┌─────────────────────┐    ▼      ▼          ▼
-│  Prometheus (Opus)  │ ┌──────────────┐ ┌──────────┐
-│  + Metis (GPT xhigh)│ │Junior (Haiku)│ │ Oracle   │
-│  review loop        │ │+ codex-spark │ │ (Sonnet  │
-└──────────┬──────────┘ └──────────────┘ │ +GPT-5.3)│
-    Phase 2▼                              └──────────┘
-┌─────────────────────┐
-│  Atlas → Junior     │
-│  (codex-spark)      │
+│ Planning Team        │ ┌──────────────┐ ┌──────────┐
+│ Prometheus (Opus)   │ │Junior (Haiku)│ │ Oracle   │
+│ ├─explore-impl      │ │+ codex-spark │ │ (Haiku + │
+│ └─explore-test      │ └──────────────┘ │ GPT-5.3) │
+│ + Metis review loop │                  └──────────┘
 └──────────┬──────────┘
+    Phase 2▼
+┌──────────────────────────────────┐
+│  Execution Team (exec-{ts})      │
+│  Atlas (Sonnet)                  │
+│  ├── sub-atlas-feature           │
+│  │   └── feat-{ts}: Junior × N  │
+│  ├── sub-atlas-test              │
+│  │   └── test-{ts}: Junior × N  │
+│  └── sub-atlas-infra (opt.)      │
+│      └── infra-{ts}: Junior × N │
+└──────────┬───────────────────────┘
     Phase 3▼
-┌─────────────────────┐
-│  QA (Build/Lint/    │
-│  Tests + UI opt.)   │
-└──────────┬──────────┘
+┌──────────────────────────────────┐
+│  QA Team (qa-{ts})               │
+│  qa-orchestrator                 │
+│  ├── build-worker (sequential)   │
+│  ├── lint-worker  (parallel)     │
+│  ├── test-worker  (parallel)     │
+│  └── ui-worker    (conditional)  │
+└──────────┬───────────────────────┘
     Phase 4▼
 ┌─────────────────────┐
 │  Debate Code Review │
@@ -818,20 +851,22 @@ User Request
 
 ### Agent Model Summary
 
-| Agent | Base | External | Reasoning |
-|-------|------|----------|-----------|
-| **Sisyphus** | **Sonnet-4.6** | - | - |
-| Atlas | Sonnet | - | - |
-| **Prometheus** | **Opus-4.6** | - | - |
-| **Metis** | Haiku | GPT-5.3-Codex | **xhigh** |
-| Oracle | Haiku (relay) | GPT-5.3-Codex | default |
-| **Debate** (leader) | Sonnet | - | - |
-| Debate-Participant | **Opus-4.6** | - | - |
-| Debate-Relay | Haiku | gpt-5.3-codex / Gemini-3-Pro-Preview / GLM-4.7 | - |
-| Explore | Haiku | - | - |
-| Multimodal-looker | Haiku (relay) | Gemini | - |
-| **Librarian** | **Sonnet** (relay + sub-team) | GLM-4.7 | - |
-| Junior | Haiku (shell) | **gpt-5.3-codex-spark** | - |
+| Agent | Base | External | Reasoning | Phase Role |
+|-------|------|----------|-----------|------------|
+| **Sisyphus** | **Sonnet-4.6** | - | - | Primary AI |
+| Atlas | Sonnet | - | - | Phase 2 outer team leader |
+| **Sub-Atlas** | **Sonnet** | - | - | Phase 2 domain sub-orchestrator |
+| **QA-Orchestrator** | **Sonnet** | - | - | Phase 3 QA team leader |
+| **Prometheus** | **Opus-4.6** | - | - | Phase 1 planning + research team leader |
+| **Metis** | Haiku | GPT-5.3-Codex | **xhigh** | Phase 1 plan reviewer |
+| Oracle | Haiku (relay) | GPT-5.3-Codex | default | Architecture advice |
+| **Debate** (leader) | Sonnet | - | - | Phase 0/4 debate moderator |
+| Debate-Participant | **Opus-4.6** | - | - | Phase 0/4 Opus analysis |
+| Debate-Relay | Haiku | gpt-5.3-codex / Gemini-3-Pro-Preview / GLM-4.7 | - | Phase 0/4 external model relay |
+| Explore | Haiku | - | - | Phase 1 research + general exploration |
+| Multimodal-looker | Haiku (relay) | Gemini | - | Media analysis |
+| **Librarian** | **Sonnet** (relay + sub-team) | GLM-4.7 | - | Documentation search |
+| Junior | Haiku (shell) | **gpt-5.3-codex-spark** | - | Phase 2 code execution |
 
 ---
 

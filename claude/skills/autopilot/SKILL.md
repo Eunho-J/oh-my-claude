@@ -58,9 +58,9 @@ Execute a complete workflow from initial request to validated code. Uses a debat
 | Phase | Name | Agent | Gate Criteria |
 |-------|------|-------|---------------|
 | 0 | Debate Planning | Debate (4 models) | debate concluded with plan |
-| 1 | Structuring | Prometheus → Metis loop | plan approved by Metis |
-| 2 | Execution | Atlas → Junior/codex-spark | all tasks done |
-| 3 | QA | Junior | build + lint + tests (+ ui) pass |
+| 1 | Structuring | Planning Team: Prometheus + [Explore×2 research sub-team] → Metis loop | plan approved by Metis |
+| 2 | Execution | Atlas → [sub-atlas × domains → Junior × N] OR flat Junior × N | all tasks done |
+| 3 | QA | qa-orchestrator → [build → lint + test + ui in parallel] | build + lint + tests (+ ui) pass |
 | 4 | Code Review | Debate (4 models) | debate APPROVED |
 
 ## Options
@@ -124,82 +124,141 @@ Skip if: --fast
 7. Advance: mcp__chronos__autopilot_advance()
 ```
 
-### Phase 1: Structuring (Prometheus + Metis Loop)
+### Phase 1: Structuring (Planning Team — Prometheus + Research Sub-Team + Metis Loop)
 
 ```markdown
-1. Delegate to Prometheus with debate conclusions
-   - Prometheus creates: .sisyphus/plans/{name}.md
-   - Uses debate consensus as planning input
+1. Delegate to Prometheus (as team leader of plan-{ts}):
+   Task(
+     subagent_type="prometheus",
+     prompt="Lead the planning phase for: {request}.
 
-2. Prometheus+Metis review loop:
-   a. Prometheus submits plan to Metis for review
-   b. Metis reviews plan against debate conclusions (GPT-5.3-Codex xhigh)
-   c. If NEEDS REVISION → Prometheus revises plan
-   d. Repeat until Metis returns APPROVED
+     Debate conclusions: {debate_conclusions}
+     Fast mode: {fast_flag}
 
-3. Set output and advance
+     Steps:
+     1. If NOT fast: Create research sub-team (plan-{ts}) with explore-impl + explore-test workers
+        → Gather codebase context in parallel before writing plan
+        → Clean up research team after
+     2. If fast: Skip research, plan directly from debate conclusions
+     3. Write plan to .sisyphus/plans/{name}.md
+     4. Submit to Metis for review (skip if fast and plan has <3 tasks)
+     5. Iterate until APPROVED
+
+     Output: .sisyphus/plans/{name}.md (approved)"
+   )
+
+2. Prometheus internal workflow:
+   a. [Non-fast] Research sub-team:
+      - TeamCreate("plan-{ts}")
+      - Spawn explore-impl + explore-test (+ optional librarian) in parallel
+      - Wait for research reports via SendMessage
+      - TeamDelete("plan-{ts}")
+   b. Write plan using debate conclusions + research findings
+   c. Metis review loop:
+      - Prometheus submits plan to Metis (GPT-5.3-Codex xhigh)
+      - If NEEDS REVISION → revise plan
+      - Repeat until APPROVED (skip if fast + <3 tasks)
+
+3. Set output and advance:
+   mcp__chronos__autopilot_set_output(1, plan_path)
+   mcp__chronos__autopilot_advance()
 ```
 
-### Phase 2: Execution (Atlas or Agent Teams)
+### Phase 2: Execution (Atlas with Hierarchical Domain Teams)
 
 ```markdown
-If --swarm N:
-  1. Parse plan into independent tasks via TaskCreate (one per subtask)
+Delegate to Atlas with the approved plan:
+Task(
+  subagent_type="atlas",
+  prompt="Execute Phase 2 of autopilot. Plan: {plan_path}
 
-  2. Check agent limiter capacity:
-     mcp__chronos__agent_limiter_can_spawn()
-     → If blocked, reduce N to available slots or fall back to sequential
+  Use hierarchical domain execution when the plan has 4+ tasks:
+  1. Classify tasks into domains (feature/test/infra)
+  2. Check fallback conditions (60%+ in one domain → flat execution)
+  3. Check agent limiter (increase limit to 10 if needed)
+  4. Create outer exec team (exec-{ts}) with sub-atlas workers
+  5. sub-atlas workers create inner domain teams and delegate to Junior
+  6. Cross-domain dependency: test tasks blocked by feature tasks
 
-  3. Create team:
-     TeamCreate(team_name="autopilot-{name}-{Date.now()}")
+  For --swarm N (override): use N flat Junior workers in single exec team.
 
-  4. Assign each task to a named worker:
-     TaskUpdate(taskId="...", owner="worker-1")
-     TaskUpdate(taskId="...", owner="worker-2")
-     ...
+  Use flat Junior execution (fallback) when:
+  - Fewer than 4 tasks
+  - Domain classification produces only 1 domain
+  - Agent limiter cannot accommodate hierarchical structure
 
-  5. Spawn N teammates (single message, all Task calls in parallel):
-     Task(
-       team_name="autopilot-{name}-{timestamp}",
-       name="worker-N",
-       subagent_type="junior",
-       prompt="You are a teammate in team autopilot-{name}-{timestamp}.
-       Check TaskList for tasks with owner='worker-N', execute them,
-       mark completed via TaskUpdate, then report via SendMessage.
-       Team config: ~/.claude/teams/autopilot-{name}-{timestamp}/config.json"
-     )
+  Report completion when all tasks done."
+)
 
-  6. Wait for completion messages from all teammates (auto-delivered)
+Atlas internal workflow:
+  [Hierarchical — 4+ tasks, multiple domains]:
+    1. Parse plan → classify tasks by domain
+    2. Check fallback conditions
+    3. mcp__chronos__agent_limiter_set_limit(10)  # Raise limit for nested teams
+    4. TeamCreate("exec-{ts}")
+    5. Spawn sub-atlas-feature + sub-atlas-test + sub-atlas-infra (in parallel)
+    6. Each sub-atlas creates inner team → spawns Junior workers
+    7. Wait for sub-atlas completion messages
+    8. Shutdown sub-atlas workers + TeamDelete("exec-{ts}")
 
-  7. Cleanup:
-     SendMessage(type="shutdown_request", recipient="worker-N", content="done") × N
-     TeamDelete()
+  [Flat — <4 tasks, single domain, or fallback]:
+    1. TeamCreate("atlas-{ts}") (if 2+ parallel tasks)
+    2. Spawn Junior workers directly
+    3. Wait for completion
+    4. TeamDelete()
 
-Else:
-  1. Delegate to Atlas
-  2. Atlas creates todos and delegates to Junior
-     (Junior uses codex-spark for code generation)
-  3. Monitor via TaskList
+  [--swarm N]:
+    1. TeamCreate("autopilot-{name}-{ts}")
+    2. Assign tasks to worker-1..worker-N
+    3. Spawn N Junior workers
+    4. Wait + cleanup
 
 Update progress: mcp__chronos__autopilot_update_progress(2, {done, total})
 ```
 
-### Phase 3: QA
+### Phase 3: QA (Parallel QA Team)
 
 ```markdown
-Standard checks:
-1. Build: npm run build / tsc
-2. Lint: npm run lint
-3. Tests: npm test
+Spawn QA Orchestrator as team leader:
+Task(
+  subagent_type="qa-orchestrator",
+  prompt="Run QA for autopilot phase 3.
 
-If --ui enabled:
-4. Playwright screenshot capture
-5. Gemini analyzes screenshot
-6. Compare against expectations
+  Leader name: {your_name_or_sisyphus}
+  UI flag: {ui_flag}
+  Plan path: {plan_path}
+  Changed files: {list_of_changed_files_from_git}
+
+  Steps:
+  1. Analyze project for UI verification need (if ui_flag=true OR autonomous judgment)
+  2. Create QA team (qa-{ts})
+  3. Run build-worker first (sequential)
+  4. If build fails: report QA_FAILED immediately
+  5. If build passes: spawn lint-worker + test-worker in parallel
+     (+ ui-worker if UI check conditions met)
+  6. Collect results
+  7. Report QA_PASSED or QA_FAILED to this leader
+
+  Report via SendMessage when complete."
+)
+
+QA Orchestrator internal workflow:
+  1. Pre-analysis: read package.json, check UI frameworks + changed file paths
+  2. TeamCreate("qa-{ts}")
+  3. Spawn build-worker → wait
+  4. If BUILD_FAILED: cleanup + report failure
+  5. If BUILD_SUCCESS: spawn lint-worker + test-worker (+ ui-worker if needed) in parallel
+  6. Collect all results → compile report
+  7. TeamDelete()
+  8. SendMessage to leader with QA_PASSED or QA_FAILED
 
 Update: mcp__chronos__autopilot_update_progress(3, {build, lint, tests, ui})
 
-All must pass to advance.
+All checks must pass (or SKIPPED) to advance to Phase 4.
+
+UI verification is triggered by:
+- --ui flag explicitly provided, OR
+- qa-orchestrator autonomous judgment: project has UI framework AND changed files include UI paths
 ```
 
 ### Phase 4: Code Review (Debate)

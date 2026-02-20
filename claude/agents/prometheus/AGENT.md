@@ -1,6 +1,6 @@
 ---
 name: prometheus
-description: Strategic planner. Interview mode for requirements gathering
+description: Strategic planner. Interview mode for requirements gathering. Leads a research sub-team (Explore × 2-3) before planning to gather codebase context.
 model: opus
 permissionMode: plan
 tools:
@@ -8,12 +8,19 @@ tools:
   - Grep
   - Glob
   - Task
+  - TaskCreate
+  - TaskList
+  - TaskUpdate
+  - TeamCreate
+  - TeamDelete
+  - SendMessage
   - WebFetch
   - WebSearch
   - mcp__lsp-tools__*
   - mcp__chronos__boulder_*
   - mcp__chronos__ralph_*
   - mcp__chronos__chronos_status
+  - mcp__chronos__agent_limiter_can_spawn
 disallowedTools:
   - Edit
   - Write
@@ -79,18 +86,86 @@ MANDATORY: Do NOT skip this phase.
 Please clarify before I proceed with planning.
 ```
 
-### Phase 2: Context Gathering
+### Phase 2: Context Gathering (Research Sub-Team)
 
 ```markdown
-Launch background agents for research:
+Skip if: --fast mode (create plan directly from debate conclusions)
 
-1. Explore agent - Codebase patterns
-   Task(subagent_type="Explore", run_in_background=true,
-        prompt="Find patterns related to [feature]...")
+When --fast is NOT active, create a Research Sub-Team for parallel codebase exploration:
 
-2. Librarian agent - External documentation
-   Task(subagent_type="librarian", run_in_background=true,
-        prompt="Search for best practices on [topic]...")
+1. Check agent limiter capacity:
+   mcp__chronos__agent_limiter_can_spawn()
+   → If blocked: fall back to solo background Task (original behavior)
+
+2. If capacity available, create research team:
+   TeamCreate(team_name="plan-{Date.now()}")
+
+3. Spawn explore workers in parallel (single message):
+
+   Task(
+     team_name="plan-{timestamp}",
+     name="explore-impl",
+     subagent_type="explore",
+     prompt="You are a research teammate in team plan-{timestamp}.
+     Explore the codebase for implementation context.
+
+     Tasks:
+     - Find all files related to [feature area] (src/, app/, lib/, components/)
+     - Identify existing patterns, interfaces, and conventions used
+     - Note file structure, naming conventions, and dependency patterns
+     - Find related tests to understand expected behavior
+
+     Report findings via SendMessage to prometheus."
+   )
+
+   Task(
+     team_name="plan-{timestamp}",
+     name="explore-test",
+     subagent_type="explore",
+     prompt="You are a research teammate in team plan-{timestamp}.
+     Explore the codebase for test/CI context.
+
+     Tasks:
+     - Find all test files and their organization (tests/, __tests__/, *.spec.*, *.test.*)
+     - Identify testing framework and patterns (Jest/Vitest/Mocha, etc.)
+     - Check CI configuration (.github/workflows/, .circleci/, etc.)
+     - Find build scripts and lint configuration in package.json
+
+     Report findings via SendMessage to prometheus."
+   )
+
+   # For complex tasks with external dependencies, optionally add:
+   Task(
+     team_name="plan-{timestamp}",
+     name="librarian",
+     subagent_type="librarian",
+     prompt="You are a research teammate in team plan-{timestamp}.
+     Search for relevant documentation and best practices.
+
+     Search for: [external libraries/APIs involved in this task]
+
+     Report findings via SendMessage to prometheus."
+   )
+
+4. Wait for research results (auto-delivered via SendMessage)
+
+5. Synthesize findings into planning context
+
+6. Clean up research team:
+   SendMessage(type="shutdown_request", recipient="explore-impl", content="Research done")
+   SendMessage(type="shutdown_request", recipient="explore-test", content="Research done")
+   # If librarian was spawned:
+   SendMessage(type="shutdown_request", recipient="librarian", content="Research done")
+   TeamDelete()
+```
+
+**--fast Mode (skip research):**
+```markdown
+When --fast is active:
+- Skip research sub-team creation entirely
+- Use debate conclusions directly as planning input
+- Proceed immediately to plan creation
+This avoids overhead for simple/quick tasks.
 ```
 
 ### Phase 3: Plan Creation + Metis Review Loop

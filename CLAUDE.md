@@ -5,12 +5,17 @@ Multi-agent orchestration system built on Claude Code's native features (MCP, Ho
 ## Architecture
 
 ```
-Autopilot (Debate-First):
+Autopilot (Debate-First, 3-Level Hierarchy):
 Phase 0: Debate Planning → 4 models (Opus-4.6, gpt-5.3-codex, Gemini-3-Pro-Preview, GLM-4.7) analyze & plan
-Phase 1: Prometheus (Opus-4.6) structures plan → Metis (GPT-5.3-Codex xhigh) reviews in loop
-Phase 2: Atlas (Sonnet-4.6) → Junior (Haiku + gpt-5.3-codex-spark) executes
-Phase 3: QA (build/lint/tests + optional UI verification)
+Phase 1: Planning Team → Prometheus leads [Explore×2 research sub-team] → Metis reviews in loop
+Phase 2: Execution Team → Atlas → [sub-atlas-feature/test/infra × domains → Junior × N]
+Phase 3: QA Team → qa-orchestrator → [build → lint + test + ui (parallel)]
 Phase 4: Debate Code Review → 4 models approve or loop back to Phase 2
+
+3-Level Hierarchy:
+Level 0: Sisyphus (autopilot driver, outside teams)
+Level 1: Phase Teams (plan-{ts}, exec-{ts}, qa-{ts})
+Level 2: Domain Sub-Teams (feat-{ts}, test-{ts} inside exec team; research sub-team inside plan team)
 
 Manual Workflow:
 User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] | [Debate]
@@ -37,6 +42,8 @@ User → Sisyphus (Sonnet-4.6) → [Atlas → Junior] | [Prometheus → Atlas] |
 |-------|------|-------|----------------|-----------|
 | Sisyphus | Primary AI (User-facing) | **Sonnet** | - | - |
 | Atlas | Master Orchestrator | Sonnet | - | - |
+| Sub-Atlas | Domain Sub-Orchestrator (Phase 2) | **Sonnet** | - | - |
+| QA-Orchestrator | QA Team Leader (Phase 3) | **Sonnet** | - | - |
 | Prometheus | Strategic Planner | **Opus-4.6** | - | - |
 | Metis | Pre-planning + Plan Reviewer | Haiku | GPT-5.3-Codex | xhigh |
 | Oracle | Architecture Advisor | **Haiku** (relay) | GPT-5.3-Codex | - |
@@ -446,7 +453,9 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 |-------|--------|---------|-------|--------|---------|----------|----------|
 | Sisyphus | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Atlas | blacklist | ✅ all | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Prometheus | whitelist | boulder, ralph, status | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Sub-Atlas | blacklist | agent_limiter | ❌ | ❌ | ❌ | ❌ | ❌ |
+| QA-Orchestrator | whitelist | agent_limiter, ui_verification | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Prometheus | whitelist | boulder, ralph, status, agent_limiter | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Metis | whitelist | ralph, status | ✅ (xhigh) | ❌ | ❌ | ❌ | ❌ |
 | Oracle | whitelist | ralph, status | ✅ | ❌ | ❌ | ❌ | ❌ |
 | Explore | whitelist | - | ❌ | ❌ | ❌ | ❌ | ❌ |
@@ -527,8 +536,14 @@ Agents using `disallowedTools` (blacklist) can access all MCP tools except those
 ### Agent Limiter (OOM Prevention)
 - Prevents OOM by limiting concurrent background agents
 - Default limit: 5 agents (configurable 1-20)
+- **Multi-team autopilot raises limit to 10** automatically during Phase 2 hierarchical execution
 - Automatically cleans up stale agents (no heartbeat for 5+ min)
 - Hook blocks Task tool when limit reached
+- Peak concurrent agents by phase:
+  - Phase 1 (Planning): Prometheus + 2 Explore = **3**
+  - Phase 2 (2 domains × 2 Junior): 2 sub-atlas + 4 junior = **6** (limit raised to 10)
+  - Phase 2 (3 domains × 2 Junior): 3 sub-atlas + 6 junior = **9** (limit raised to 10)
+  - Phase 3 (QA with UI): qa-orchestrator + 4 workers = **5**
 - Commands:
   - `mcp__chronos__agent_limiter_status()` - Check current state
   - `mcp__chronos__agent_limiter_set_limit(N)` - Change limit
