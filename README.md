@@ -165,7 +165,10 @@ rm -rf /tmp/oh-my-claude
 # Check Node.js (v18+ required)
 node --version 2>/dev/null || echo "Node.js: NOT INSTALLED"
 
-# Check uv
+# Check Python (3.11+ required for Python MCP servers: zai-glm, gemini-mcp)
+python3 --version 2>/dev/null || echo "Python: NOT INSTALLED"
+
+# Check uv (Python package manager — creates .venv and installs deps via uv sync)
 uv --version 2>/dev/null || echo "uv: NOT INSTALLED"
 
 # Check jq (required for hook scripts)
@@ -213,36 +216,38 @@ command -v gemini >/dev/null || npm install -g @google/gemini-cli
 **If Global:**
 
 ```bash
-# Use absolute paths to ~/.claude/mcp-servers/
-claude mcp add chronos  -s user -- node ~/.claude/mcp-servers/chronos/index.js
-claude mcp add lsp-tools -s user -- node ~/.claude/mcp-servers/lsp-tools/index.js
-claude mcp add zai-glm  -s user -- ~/.claude/mcp-servers/zai-glm/.venv/bin/python ~/.claude/mcp-servers/zai-glm/server.py
+# Local MCP servers (absolute paths to ~/.claude/mcp-servers/)
+claude mcp add chronos    -s user -- node ~/.claude/mcp-servers/chronos/index.js
+claude mcp add lsp-tools  -s user -- node ~/.claude/mcp-servers/lsp-tools/index.js
+claude mcp add zai-glm    -s user -- ~/.claude/mcp-servers/zai-glm/.venv/bin/python ~/.claude/mcp-servers/zai-glm/server.py
+claude mcp add gemini     -s user -- ~/.claude/mcp-servers/gemini-mcp/.venv/bin/python ~/.claude/mcp-servers/gemini-mcp/server.py
 
 # External services (global)
-claude mcp add codex     -s user -- codex mcp-server
-claude mcp add gemini    -s user -- ~/.claude/mcp-servers/gemini-mcp/.venv/bin/python ~/.claude/mcp-servers/gemini-mcp/server.py
+claude mcp add codex      -s user -- codex mcp-server
 claude mcp add playwright -s user -- npx @playwright/mcp@latest
-claude mcp add context7  -s user --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
-claude mcp add grep-app  -s user --transport http https://grep.app/api/mcp
+claude mcp add context7   -s user --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
+claude mcp add grep-app   -s user --transport http https://grep.app/api/mcp
 ```
 
 **If Local:**
 
 ```bash
-# Use project-relative paths to .claude/mcp-servers/
-claude mcp add chronos   -s project -- node .claude/mcp-servers/chronos/index.js
-claude mcp add lsp-tools -s project -- node .claude/mcp-servers/lsp-tools/index.js
-claude mcp add zai-glm   -s project -- .claude/mcp-servers/zai-glm/.venv/bin/python .claude/mcp-servers/zai-glm/server.py
+# Local MCP servers (project-relative paths to .claude/mcp-servers/)
+claude mcp add chronos    -s project -- node .claude/mcp-servers/chronos/index.js
+claude mcp add lsp-tools  -s project -- node .claude/mcp-servers/lsp-tools/index.js
+claude mcp add zai-glm    -s project -- .claude/mcp-servers/zai-glm/.venv/bin/python .claude/mcp-servers/zai-glm/server.py
+claude mcp add gemini     -s project -- .claude/mcp-servers/gemini-mcp/.venv/bin/python .claude/mcp-servers/gemini-mcp/server.py
 
 # External services (local)
 claude mcp add codex      -s project -- codex mcp-server
-claude mcp add gemini     -s project -- .claude/mcp-servers/gemini-mcp/.venv/bin/python .claude/mcp-servers/gemini-mcp/server.py
 claude mcp add playwright -s project -- npx @playwright/mcp@latest
 claude mcp add context7   -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
 claude mcp add grep-app   -s project --transport http https://grep.app/api/mcp
 ```
 
 ### 1.4 Install MCP Server Dependencies
+
+> **Note:** `uv sync` automatically creates a `.venv/` virtual environment, resolves dependencies from `pyproject.toml`, and installs them. No manual `python -m venv` or `pip install` is needed.
 
 **If Global:**
 
