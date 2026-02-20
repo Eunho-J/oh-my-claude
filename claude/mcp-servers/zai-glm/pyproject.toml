@@ -1,10 +1,10 @@
 [project]
 name = "zai-glm-mcp"
 version = "1.0.0"
-description = "Z.ai GLM MCP server wrapper"
+description = "Z.ai GLM MCP server (OpenAI-compatible, Coding Plan API)"
 requires-python = ">=3.11"
 dependencies = [
     "mcp>=1.2.0",
-    "zai-sdk>=0.2.0",
+    "openai>=1.0",
     "sniffio>=1.3.0",
 ]

@@ -1,18 +1,24 @@
 #!/usr/bin/env python3
 """
 Z.ai GLM MCP Server
-Wraps Z.ai API as MCP tools with session management
+OpenAI-compatible client targeting Z.ai Coding Plan API endpoint.
 """
 import os
 import uuid
 import time
 import json
 from mcp.server.fastmcp import FastMCP
-from zai import ZaiClient
+from openai import OpenAI
 
-# Initialize
+# Z.ai Coding Plan endpoint (required for GLM Coding Plan subscribers)
+# General API: https://api.z.ai/api/paas/v4/
+CODING_API_URL = "https://api.z.ai/api/coding/paas/v4"
+
+# Supports both env var names
+api_key = os.environ.get("Z_AI_API_KEY") or os.environ.get("ZAI_API_KEY")
+
 mcp = FastMCP("zai-glm")
-client = ZaiClient(api_key=os.environ.get("Z_AI_API_KEY"))
+client = OpenAI(api_key=api_key, base_url=CODING_API_URL)
 
 # Session storage: session_id -> {messages, model, created_at, last_used}
 sessions: dict = {}
