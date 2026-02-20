@@ -100,28 +100,32 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 ```markdown
 Skip if: --fast
 
-1. Start debate for planning:
-   mcp__chronos__debate_start({ topic: request, context: codebase_context })
+Delegate to the debate agent — it handles team creation and all MCP calls internally:
 
-2. Each model provides planning analysis:
-   - Opus (native): Analyze request and propose implementation approach
-   - gpt-5.3-codex: Relayed via debate-relay teammate (model: "gpt-5.3-codex")
-   - Gemini-3-Pro: Independent analysis via mcp__gemini__chat (model: "gemini-3-pro")
-   - GLM-4.7: Independent analysis via mcp__zai-glm__chat (model: "glm-4.7")
+Task(
+  subagent_type="debate",
+  prompt="Run a planning debate for the following autopilot request.
 
-3. Record each model's analysis:
-   mcp__chronos__debate_add_analysis({ model: "opus", summary: "...", position: "..." })
-   mcp__chronos__debate_add_analysis({ model: "gpt52", summary: "...", position: "..." })
-   mcp__chronos__debate_add_analysis({ model: "gemini", summary: "...", position: "..." })
-   mcp__chronos__debate_add_analysis({ model: "glm", summary: "...", position: "..." })
+  Topic: {request}
+  Context: {codebase_context}
+  Purpose: Phase 0 planning — 4 models analyze the request and reach consensus on implementation approach.
 
-4. Conduct debate rounds until 3/4 consensus
+  After concluding, report back with:
+  - The debate conclusion / decision
+  - Key agreed-upon implementation points
+  - Any strong dissenting views to consider"
+)
 
-5. Conclude with implementation plan:
-   mcp__chronos__debate_conclude({ decision: "Implementation plan...", method: "consensus" })
+The debate agent will:
+1. mcp__chronos__debate_start(...)
+2. TeamCreate("debate-{ts}") → spawn opus-participant + gpt-relay + gemini-relay + glm-relay
+3. Run independent analysis → debate rounds → consensus/voting
+4. mcp__chronos__debate_conclude(...)
+5. TeamDelete() and report result
 
-6. Set output: mcp__chronos__autopilot_set_output(0, debate_id)
-7. Advance: mcp__chronos__autopilot_advance()
+After debate agent returns:
+  mcp__chronos__autopilot_set_output(0, debate_id)
+  mcp__chronos__autopilot_advance()
 ```
 
 ### Phase 1: Structuring (Planning Team — Prometheus + Research Sub-Team + Metis Loop)
@@ -266,38 +270,49 @@ UI verification is triggered by:
 ```markdown
 Skip if: --no-validation
 
-1. Gather code changes:
+1. Gather code changes first (before spawning debate agent):
    - git diff summary
    - Key changed files content
-   - Playwright screenshots (if --ui)
+   - Playwright screenshots path (if --ui)
 
-2. Start code review debate:
-   mcp__chronos__debate_start({ topic: "Code review for: " + name, context: diff_content })
+2. Delegate to the debate agent — it handles team creation and all MCP calls internally:
 
-3. Each model reviews the changes:
-   - Opus (native): Review implementation quality, patterns, edge cases
-   - gpt-5.3-codex: Security and correctness review (relayed via debate-relay teammate)
-   - Gemini-3-Pro: UI/UX and user experience review via mcp__gemini__chat (model: "gemini-3-pro")
-   - GLM-4.7: Documentation and completeness review via mcp__zai-glm__chat (model: "glm-4.7")
+Task(
+  subagent_type="debate",
+  prompt="Run a code review debate for the following changes.
 
-4. Record all reviews:
-   mcp__chronos__debate_add_analysis({ model: "opus", summary: "...", position: "APPROVED|REJECTED" })
-   mcp__chronos__debate_add_analysis({ model: "gpt52", summary: "...", position: "APPROVED|REJECTED" })
-   mcp__chronos__debate_add_analysis({ model: "gemini", summary: "...", position: "APPROVED|REJECTED" })
-   mcp__chronos__debate_add_analysis({ model: "glm", summary: "...", position: "APPROVED|REJECTED" })
+  Topic: Code review for autopilot task: {name}
+  Context (git diff + key files):
+  {diff_content}
 
-5. Debate until 3/4 consensus on APPROVED or REJECTED
+  Purpose: Phase 4 code review — each model reviews implementation quality and votes APPROVED or REJECTED.
+  Each model should evaluate: correctness, security, patterns, edge cases, test coverage.
 
-5a. If APPROVED (3/4 agree):
-    mcp__chronos__autopilot_update_progress(4, { approved: true })
-    → Advance to completion
+  After concluding, report back with:
+  - Final verdict: APPROVED or REJECTED
+  - If REJECTED: specific issues that must be fixed (detailed list)
+  - Individual model positions"
+)
 
-5b. If REJECTED:
-    mcp__chronos__debate_conclude({ decision: "REJECTED: [reasons]" })
-    → Prometheus creates fix plan based on rejection reasons
-    → Loop back to Phase 2:
-       mcp__chronos__autopilot_loop_back({ target_phase: 2, reason: "rejection reasons" })
-    → Continue execution with fix plan (unlimited loops)
+The debate agent will:
+1. mcp__chronos__debate_start(...)
+2. TeamCreate("debate-{ts}") → spawn opus-participant + gpt-relay + gemini-relay + glm-relay
+3. Each model reviews and votes APPROVED/REJECTED
+4. Reach 3/4 consensus or majority vote
+5. mcp__chronos__debate_conclude(...)
+6. TeamDelete() and report verdict
+
+3. After debate agent returns:
+
+   If APPROVED (3/4 agree):
+     mcp__chronos__autopilot_update_progress(4, { approved: true })
+     → Advance to completion
+
+   If REJECTED:
+     → Prometheus creates fix plan based on rejection reasons
+     → Loop back to Phase 2:
+        mcp__chronos__autopilot_loop_back({ target_phase: 2, reason: "rejection reasons from debate" })
+     → Continue execution with fix plan (unlimited loops)
 ```
 
 ### Completion
