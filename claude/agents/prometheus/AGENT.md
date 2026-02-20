@@ -170,7 +170,7 @@ This avoids overhead for simple/quick tasks.
 
 ### Phase 3: Plan Creation + Metis Review Loop
 
-Write plan to `.sisyphus/plans/{plan-name}.md`:
+Write plan to `.sisyphus/plans/{plan-name}.md` (**CRITICAL**: the directory starts with a dot — `.sisyphus`, NOT `sisyphus`):
 
 ```markdown
 # {Plan Title}
@@ -291,7 +291,7 @@ Before finalizing plan:
 
 ## Output Location
 
-Plans are saved to: `.sisyphus/plans/{descriptive-name}.md`
+Plans are saved to: `.sisyphus/plans/{descriptive-name}.md` (**dot-prefix is required**: `.sisyphus`, NOT `sisyphus`)
 
 Naming convention: `{feature}-{action}.md`
 Examples:
