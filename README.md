@@ -124,12 +124,23 @@ git clone https://github.com/Eunho-J/oh-my-claude.git /tmp/oh-my-claude
 **If Global:**
 
 ```bash
+# ⚠️ Back up existing settings.json if you have custom settings
+[ -f ~/.claude/settings.json ] && cp ~/.claude/settings.json ~/.claude/settings.json.backup
+
 # Copy everything to ~/.claude (agents, skills, hooks, mcp-servers, settings)
 cp -r /tmp/oh-my-claude/claude/. ~/.claude/
+
+# Copy CLAUDE.md (required — tells Claude Code about the agent system in all projects)
+cp /tmp/oh-my-claude/CLAUDE.md ~/.claude/CLAUDE.md
+
+# Copy state directory template (plans, debates, notepads directory structure)
+cp -r /tmp/oh-my-claude/sisyphus ~/.claude/sisyphus
 
 # Clean up
 rm -rf /tmp/oh-my-claude
 ```
+
+> **Note:** `settings.json` will be overwritten. If you had a backup, merge your custom settings after installation (e.g., custom hooks or permissions).
 
 **If Local:**
 
@@ -152,10 +163,15 @@ rm -rf /tmp/oh-my-claude
 - `{dest}/hooks/` - ralph-loop, todo-enforcer, debate-lock, delegation-guard, comment-checker, autopilot-gate, agent-limiter, post-compact
 - `{dest}/mcp-servers/` - chronos, lsp-tools, zai-glm, gemini-mcp
 - `{dest}/settings.json` - MCP permissions, hooks, teammate mode
+- `{dest}/settings.local.json` - Project-level MCP auto-enable, bash permissions
+- `{dest}/CLAUDE.md` - Agent system instructions (tells Claude about agents, skills, workflows)
+
+**Global only:**
+- `~/.claude/sisyphus/` - State directory template (plans, debates, notepads)
 
 **Local only:**
 - `.sisyphus/` - Per-project state (plans, debates, autopilot state)
-- `CLAUDE.md` - Project instructions for Claude
+- `CLAUDE.md` - Project instructions (also at `.claude/CLAUDE.md`)
 - `.gitignore.sample` - Template for .gitignore
 
 ### 1.2 Prerequisites Installation
@@ -244,6 +260,8 @@ claude mcp add playwright -s project -- npx @playwright/mcp@latest
 claude mcp add context7   -s project --transport http https://mcp.context7.com/mcp --header "Authorization: Bearer ${CONTEXT7_API_KEY}"
 claude mcp add grep-app   -s project --transport http https://grep.app/api/mcp
 ```
+
+> **Note:** This creates `.mcp.json` at the project root with all MCP server configurations. The `settings.local.json` (copied in step 1.1) auto-enables these servers via `enableAllProjectMcpServers: true`.
 
 ### 1.4 Install MCP Server Dependencies
 
@@ -364,9 +382,18 @@ tmux session.
 
 ---
 
-### 1.6 Configure .gitignore (Local only)
+### 1.6 Configure .gitignore
 
-> **Global install:** Skip this step — `~/.claude/` is not a git repository.
+**If Global:**
+
+When using global install, oh-my-claude creates `.sisyphus/` state directories in each project where you run Claude Code. Add this to your project's `.gitignore` to prevent committing runtime state:
+
+```bash
+# Add to your project's .gitignore
+echo '.sisyphus/' >> .gitignore
+```
+
+**If Local:**
 
 Copy the sample `.gitignore` to prevent committing environment-specific files:
 
@@ -374,7 +401,7 @@ Copy the sample `.gitignore` to prevent committing environment-specific files:
 cp .gitignore.sample .gitignore
 ```
 
-**What gets ignored:**
+**What gets ignored (local):**
 - `.env` - API keys and secrets
 - `node_modules/` - Dependencies (reinstall with `npm install`)
 - `.claude/mcp-servers/zai-glm/.venv/` - Python virtual environment (Z.ai GLM)
@@ -385,7 +412,7 @@ cp .gitignore.sample .gitignore
 - `.sisyphus/debates/` - Debate state and history
 - `.sisyphus/autopilot-history/` - Archived autopilot sessions
 
-**What is preserved:**
+**What is preserved (local):**
 - `.sisyphus/plans/` - Prometheus plan files (user content)
 - `.sisyphus/specs/` - Autopilot spec files (user content)
 - `.sisyphus/notepads/` - Sisyphus learning records (user content)
@@ -426,6 +453,7 @@ The `settings.json` file (`~/.claude/settings.json` for global, `.claude/setting
 # Check prerequisites
 echo "=== Prerequisites ==="
 echo "Node.js: $(node --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "Python: $(python3 --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
@@ -436,10 +464,19 @@ echo "=== Directory Structure ==="
 [ -d "$HOME/.claude/skills" ] && echo "Skills: OK" || echo "Skills: MISSING"
 [ -d "$HOME/.claude/hooks" ] && echo "Hooks: OK" || echo "Hooks: MISSING"
 [ -d "$HOME/.claude/mcp-servers" ] && echo "MCP Servers: OK" || echo "MCP Servers: MISSING"
+[ -d "$HOME/.claude/sisyphus" ] && echo "Sisyphus template: OK" || echo "Sisyphus template: MISSING"
 
 # Check configuration files
 echo "=== Configuration Files ==="
 [ -f "$HOME/.claude/settings.json" ] && echo "settings.json: OK" || echo "settings.json: MISSING"
+[ -f "$HOME/.claude/CLAUDE.md" ] && echo "CLAUDE.md: OK" || echo "CLAUDE.md: MISSING"
+
+# Check MCP server dependencies
+echo "=== MCP Dependencies ==="
+[ -d "$HOME/.claude/mcp-servers/chronos/node_modules" ] && echo "chronos deps: OK" || echo "chronos deps: MISSING"
+[ -d "$HOME/.claude/mcp-servers/lsp-tools/node_modules" ] && echo "lsp-tools deps: OK" || echo "lsp-tools deps: MISSING"
+[ -d "$HOME/.claude/mcp-servers/zai-glm/.venv" ] && echo "zai-glm deps: OK" || echo "zai-glm deps: MISSING"
+[ -d "$HOME/.claude/mcp-servers/gemini-mcp/.venv" ] && echo "gemini-mcp deps: OK" || echo "gemini-mcp deps: MISSING"
 
 # Check MCP registrations
 echo "=== MCP Servers ==="
@@ -452,6 +489,7 @@ claude mcp list
 # Check prerequisites
 echo "=== Prerequisites ==="
 echo "Node.js: $(node --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "Python: $(python3 --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
@@ -467,7 +505,16 @@ echo "=== Directory Structure ==="
 # Check configuration files
 echo "=== Configuration Files ==="
 [ -f ".claude/settings.json" ] && echo "settings.json: OK" || echo "settings.json: MISSING"
+[ -f ".claude/settings.local.json" ] && echo "settings.local.json: OK" || echo "settings.local.json: MISSING"
 [ -f "CLAUDE.md" ] && echo "CLAUDE.md: OK" || echo "CLAUDE.md: MISSING"
+[ -f ".mcp.json" ] && echo ".mcp.json: OK" || echo ".mcp.json: MISSING (run Step 1.3)"
+
+# Check MCP server dependencies
+echo "=== MCP Dependencies ==="
+[ -d ".claude/mcp-servers/chronos/node_modules" ] && echo "chronos deps: OK" || echo "chronos deps: MISSING"
+[ -d ".claude/mcp-servers/lsp-tools/node_modules" ] && echo "lsp-tools deps: OK" || echo "lsp-tools deps: MISSING"
+[ -d ".claude/mcp-servers/zai-glm/.venv" ] && echo "zai-glm deps: OK" || echo "zai-glm deps: MISSING"
+[ -d ".claude/mcp-servers/gemini-mcp/.venv" ] && echo "gemini-mcp deps: OK" || echo "gemini-mcp deps: MISSING"
 
 # Check MCP registrations
 echo "=== MCP Servers ==="
@@ -643,6 +690,77 @@ tmux ls
 
 # Kill sessions left by Agent Teams
 tmux kill-session -t <session-name>
+```
+
+### Stale Agent Teams After Failed Runs
+
+If you see `Error: Already leading team "..."`, a previous Agent Team wasn't cleaned up:
+
+```bash
+# List stale team directories
+ls ~/.claude/teams/
+
+# Remove stale teams
+rm -rf ~/.claude/teams/*
+rm -rf ~/.claude/tasks/*
+```
+
+### MCP Tools "No such tool available" in Agents
+
+If agents report `Error: No such tool available: mcp__chronos__*`:
+
+1. **Verify MCP server is running:**
+```bash
+claude mcp list
+# All servers should show "✓ Connected"
+```
+
+2. **Check MCP server dependencies are installed:**
+```bash
+# Node.js servers
+ls ~/.claude/mcp-servers/chronos/node_modules/ >/dev/null 2>&1 && echo "chronos: OK" || echo "chronos: MISSING — run: cd ~/.claude/mcp-servers/chronos && npm install"
+ls ~/.claude/mcp-servers/lsp-tools/node_modules/ >/dev/null 2>&1 && echo "lsp-tools: OK" || echo "lsp-tools: MISSING — run: cd ~/.claude/mcp-servers/lsp-tools && npm install"
+
+# Python servers
+ls ~/.claude/mcp-servers/zai-glm/.venv/ >/dev/null 2>&1 && echo "zai-glm: OK" || echo "zai-glm: MISSING — run: cd ~/.claude/mcp-servers/zai-glm && uv sync"
+ls ~/.claude/mcp-servers/gemini-mcp/.venv/ >/dev/null 2>&1 && echo "gemini-mcp: OK" || echo "gemini-mcp: MISSING — run: cd ~/.claude/mcp-servers/gemini-mcp && uv sync"
+```
+
+3. **Restart Claude Code** — MCP servers connect on session start. If a server was broken during startup, restart.
+
+### Uninstall oh-my-claude
+
+**If Global:**
+
+```bash
+# Remove oh-my-claude components from ~/.claude/
+rm -rf ~/.claude/agents
+rm -rf ~/.claude/skills
+rm -rf ~/.claude/hooks
+rm -rf ~/.claude/mcp-servers
+rm -rf ~/.claude/sisyphus
+rm -f  ~/.claude/settings.json
+rm -f  ~/.claude/CLAUDE.md
+
+# Remove MCP server registrations
+claude mcp remove chronos
+claude mcp remove lsp-tools
+claude mcp remove zai-glm
+claude mcp remove gemini
+claude mcp remove codex
+claude mcp remove playwright
+claude mcp remove context7
+claude mcp remove grep-app
+```
+
+**If Local:**
+
+```bash
+# Remove from project directory
+rm -rf .claude
+rm -rf .sisyphus
+rm -f  CLAUDE.md
+rm -f  .gitignore.sample
 ```
 
 ---

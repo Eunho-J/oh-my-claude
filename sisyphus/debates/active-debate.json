@@ -1,15 +1,1 @@
-{
-  "id": "debate-2026-02-19T13-20-04-connectivity-test-rest-vs-grap",
-  "topic": "Connectivity test: REST vs GraphQL",
-  "context": "Quick test to verify all 4 debate models respond",
-  "status": "analyzing",
-  "phase": "Independent Analysis",
-  "round": 0,
-  "max_rounds": 6,
-  "analyses": {},
-  "debate_log": [],
-  "votes": {},
-  "conclusion": null,
-  "created_at": "2026-02-19T13:20:04.780Z",
-  "updated_at": "2026-02-19T13:20:04.780Z"
-}
+null

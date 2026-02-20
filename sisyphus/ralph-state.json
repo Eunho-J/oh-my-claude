@@ -1,9 +1,9 @@
 {
   "active": false,
-  "iteration": 1,
-  "max_iterations": 5,
-  "started_at": "2026-01-30T15:51:09.276Z",
-  "last_continue": "2026-01-30T15:51:14.157Z",
-  "completed_at": "2026-01-30T15:51:26.297Z",
-  "reason": "test_done"
+  "iteration": 0,
+  "max_iterations": 50,
+  "started_at": null,
+  "last_continue": null,
+  "completed_at": null,
+  "reason": null
 }

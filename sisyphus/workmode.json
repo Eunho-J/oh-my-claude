@@ -1,11 +1,7 @@
 {
-  "active": true,
-  "mode": "autopilot",
-  "started_at": "2026-02-12T07:00:34.148Z",
-  "updated_at": "2026-02-12T07:00:34.148Z",
-  "options": {
-    "fast": true,
-    "swarm": null,
-    "ui": false
-  }
+  "active": false,
+  "mode": null,
+  "started_at": null,
+  "updated_at": null,
+  "options": {}
 }
