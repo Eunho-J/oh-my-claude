@@ -87,39 +87,54 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 ### Phase 0: Debate Planning
 
 ```markdown
-Delegate to the debate agent — it handles team creation and all MCP calls internally:
+1. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p0-{ts}")
 
-Task(
-  subagent_type="debate",
-  prompt="Run a planning debate for the following autopilot request.
+2. Spawn debate agent in phase team:
+   Task(
+     team_name="ap-p0-{ts}",
+     name="debate",
+     subagent_type="debate",
+     prompt="Run a planning debate for the following autopilot request.
 
-  Topic: {request}
-  Context: {codebase_context}
-  Purpose: Phase 0 planning — 4 models analyze the request and reach consensus on implementation approach.
+     Topic: {request}
+     Context: {codebase_context}
+     Purpose: Phase 0 planning — 4 models analyze the request and reach consensus on implementation approach.
 
-  After concluding, report back with:
-  - The debate conclusion / decision
-  - Key agreed-upon implementation points
-  - Any strong dissenting views to consider"
-)
+     Leader name: sisyphus
+     When complete, report via SendMessage to sisyphus with:
+     - The debate conclusion / decision
+     - Key agreed-upon implementation points
+     - Any strong dissenting views to consider"
+   )
 
 The debate agent will:
 1. mcp__chronos__debate_start(...)
 2. TeamCreate("debate-{ts}") → spawn opus-participant + gpt-relay + gemini-relay + glm-relay
 3. Run independent analysis → debate rounds → consensus/voting
 4. mcp__chronos__debate_conclude(...)
-5. TeamDelete() and report result
+5. TeamDelete() → SendMessage(recipient="sisyphus", content="Debate complete...", summary="Phase 0 complete")
 
-After debate agent returns:
-  mcp__chronos__autopilot_set_output(0, debate_id)
-  mcp__chronos__autopilot_advance()
+3. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
+
+4. After receiving debate results:
+   TeamDelete("ap-p0-{ts}")
+   mcp__chronos__autopilot_set_output(0, debate_id)
+   mcp__chronos__autopilot_advance()
 ```
 
 ### Phase 1: Structuring (Planning Team — Prometheus + Research Sub-Team + Metis Loop)
 
 ```markdown
-1. Delegate to Prometheus (as team leader of plan-{ts}):
+1. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p1-{ts}")
+
+2. Spawn Prometheus in phase team:
    Task(
+     team_name="ap-p1-{ts}",
+     name="prometheus",
      subagent_type="prometheus",
      prompt="Lead the planning phase for: {request}.
 
@@ -134,10 +149,14 @@ After debate agent returns:
      4. Submit to Metis for review
      5. Iterate until APPROVED
 
-     Output: .sisyphus/plans/{name}.md (approved)"
+     Leader name: sisyphus
+     When complete, report via SendMessage to sisyphus with:
+     - Plan path (.sisyphus/plans/{name}.md)
+     - Task count
+     - Brief plan summary"
    )
 
-2. Prometheus internal workflow:
+Prometheus internal workflow:
    a. Research sub-team:
       - TeamCreate("plan-{ts}")
       - Spawn explore-impl + explore-test (+ optional librarian) in parallel
@@ -148,8 +167,12 @@ After debate agent returns:
       - Prometheus submits plan to Metis (GPT-5.3-Codex xhigh)
       - If NEEDS REVISION → revise plan
       - Repeat until APPROVED
+   d. SendMessage(recipient="sisyphus", content="Plan approved...", summary="Plan approved by Metis")
 
-3. Set output and advance:
+3. Wait for SendMessage from Prometheus (auto-delivered to sisyphus).
+
+4. After receiving plan results:
+   TeamDelete("ap-p1-{ts}")
    mcp__chronos__autopilot_set_output(1, plan_path)
    mcp__chronos__autopilot_advance()
 ```
@@ -157,28 +180,37 @@ After debate agent returns:
 ### Phase 2: Execution (Atlas with Hierarchical Domain Teams)
 
 ```markdown
-Delegate to Atlas with the approved plan:
-Task(
-  subagent_type="atlas",
-  prompt="Execute Phase 2 of autopilot. Plan: {plan_path}
+1. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p2-{ts}")
 
-  Use hierarchical domain execution when the plan has 4+ tasks:
-  1. Classify tasks into domains (feature/test/infra)
-  2. Check fallback conditions (60%+ in one domain → flat execution)
-  3. Check agent limiter (increase limit to 10 if needed)
-  4. Create outer exec team (exec-{ts}) with sub-atlas workers
-  5. sub-atlas workers create inner domain teams and delegate to Junior
-  6. Cross-domain dependency: test tasks blocked by feature tasks
+2. Spawn Atlas in phase team:
+   Task(
+     team_name="ap-p2-{ts}",
+     name="atlas",
+     subagent_type="atlas",
+     prompt="Execute Phase 2 of autopilot. Plan: {plan_path}
 
-  For --swarm N (override): use N flat Junior workers in single exec team.
+     Use hierarchical domain execution when the plan has 4+ tasks:
+     1. Classify tasks into domains (feature/test/infra)
+     2. Check fallback conditions (60%+ in one domain → flat execution)
+     3. Check agent limiter (increase limit to 10 if needed)
+     4. Create outer exec team (exec-{ts}) with sub-atlas workers
+     5. sub-atlas workers create inner domain teams and delegate to Junior
+     6. Cross-domain dependency: test tasks blocked by feature tasks
 
-  Use flat Junior execution (fallback) when:
-  - Fewer than 4 tasks
-  - Domain classification produces only 1 domain
-  - Agent limiter cannot accommodate hierarchical structure
+     For --swarm N (override): use N flat Junior workers in single exec team.
 
-  Report completion when all tasks done."
-)
+     Use flat Junior execution (fallback) when:
+     - Fewer than 4 tasks
+     - Domain classification produces only 1 domain
+     - Agent limiter cannot accommodate hierarchical structure
+
+     Leader name: sisyphus
+     When complete, report via SendMessage to sisyphus with:
+     - Number of tasks completed
+     - Summary of changed files"
+   )
 
 Atlas internal workflow:
   [Hierarchical — 4+ tasks, multiple domains]:
@@ -190,47 +222,59 @@ Atlas internal workflow:
     6. Each sub-atlas creates inner team → spawns Junior workers
     7. Wait for sub-atlas completion messages
     8. Shutdown sub-atlas workers + TeamDelete("exec-{ts}")
+    9. SendMessage(recipient="sisyphus", content="Execution complete...", summary="All tasks completed")
 
   [Flat — <4 tasks, single domain, or fallback]:
     1. TeamCreate("atlas-{ts}") (if 2+ parallel tasks)
     2. Spawn Junior workers directly
     3. Wait for completion
     4. TeamDelete()
+    5. SendMessage(recipient="sisyphus", content="Execution complete...", summary="All tasks completed")
 
   [--swarm N]:
     1. TeamCreate("autopilot-{name}-{ts}")
     2. Assign tasks to worker-1..worker-N
     3. Spawn N Junior workers
     4. Wait + cleanup
+    5. SendMessage(recipient="sisyphus", content="Execution complete...", summary="All tasks completed")
 
-Update progress: mcp__chronos__autopilot_update_progress(2, {done, total})
+3. Wait for SendMessage from Atlas (auto-delivered to sisyphus).
+
+4. After receiving completion:
+   TeamDelete("ap-p2-{ts}")
+   mcp__chronos__autopilot_update_progress(2, {done, total})
+   mcp__chronos__autopilot_advance()
 ```
 
 ### Phase 3: QA (Parallel QA Team)
 
 ```markdown
-Spawn QA Orchestrator as team leader:
-Task(
-  subagent_type="qa-orchestrator",
-  prompt="Run QA for autopilot phase 3.
+1. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p3-{ts}")
 
-  Leader name: {your_name_or_sisyphus}
-  UI flag: {ui_flag}
-  Plan path: {plan_path}
-  Changed files: {list_of_changed_files_from_git}
+2. Spawn QA Orchestrator in phase team:
+   Task(
+     team_name="ap-p3-{ts}",
+     name="qa-orchestrator",
+     subagent_type="qa-orchestrator",
+     prompt="Run QA for autopilot phase 3.
 
-  Steps:
-  1. Analyze project for UI verification need (if ui_flag=true OR autonomous judgment)
-  2. Create QA team (qa-{ts})
-  3. Run build-worker first (sequential)
-  4. If build fails: report QA_FAILED immediately
-  5. If build passes: spawn lint-worker + test-worker in parallel
-     (+ ui-worker if UI check conditions met)
-  6. Collect results
-  7. Report QA_PASSED or QA_FAILED to this leader
+     Leader name: sisyphus
+     UI flag: {ui_flag}
+     Plan path: {plan_path}
+     Changed files: {list_of_changed_files_from_git}
 
-  Report via SendMessage when complete."
-)
+     Steps:
+     1. Analyze project for UI verification need (if ui_flag=true OR autonomous judgment)
+     2. Create QA team (qa-{ts})
+     3. Run build-worker first (sequential)
+     4. If build fails: report QA_FAILED immediately
+     5. If build passes: spawn lint-worker + test-worker in parallel
+        (+ ui-worker if UI check conditions met)
+     6. Collect results
+     7. Report QA_PASSED or QA_FAILED to sisyphus via SendMessage"
+   )
 
 QA Orchestrator internal workflow:
   1. Pre-analysis: read package.json, check UI frameworks + changed file paths
@@ -240,9 +284,13 @@ QA Orchestrator internal workflow:
   5. If BUILD_SUCCESS: spawn lint-worker + test-worker (+ ui-worker if needed) in parallel
   6. Collect all results → compile report
   7. TeamDelete()
-  8. SendMessage to leader with QA_PASSED or QA_FAILED
+  8. SendMessage(recipient="sisyphus", content="QA_PASSED/FAILED...", summary="QA result")
 
-Update: mcp__chronos__autopilot_update_progress(3, {build, lint, tests, ui})
+3. Wait for SendMessage from QA Orchestrator (auto-delivered to sisyphus).
+
+4. After receiving QA results:
+   TeamDelete("ap-p3-{ts}")
+   mcp__chronos__autopilot_update_progress(3, {build, lint, tests, ui})
 
 All checks must pass (or SKIPPED) to advance to Phase 4.
 
@@ -261,24 +309,30 @@ Skip if: --no-validation
    - Key changed files content
    - Playwright screenshots path (if --ui)
 
-2. Delegate to the debate agent — it handles team creation and all MCP calls internally:
+2. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p4-{ts}")
 
-Task(
-  subagent_type="debate",
-  prompt="Run a code review debate for the following changes.
+3. Spawn debate agent for code review in phase team:
+   Task(
+     team_name="ap-p4-{ts}",
+     name="debate",
+     subagent_type="debate",
+     prompt="Run a code review debate for the following changes.
 
-  Topic: Code review for autopilot task: {name}
-  Context (git diff + key files):
-  {diff_content}
+     Topic: Code review for autopilot task: {name}
+     Context (git diff + key files):
+     {diff_content}
 
-  Purpose: Phase 4 code review — each model reviews implementation quality and votes APPROVED or REJECTED.
-  Each model should evaluate: correctness, security, patterns, edge cases, test coverage.
+     Purpose: Phase 4 code review — each model reviews implementation quality and votes APPROVED or REJECTED.
+     Each model should evaluate: correctness, security, patterns, edge cases, test coverage.
 
-  After concluding, report back with:
-  - Final verdict: APPROVED or REJECTED
-  - If REJECTED: specific issues that must be fixed (detailed list)
-  - Individual model positions"
-)
+     Leader name: sisyphus
+     When complete, report via SendMessage to sisyphus with:
+     - Final verdict: APPROVED or REJECTED
+     - If REJECTED: specific issues that must be fixed (detailed list)
+     - Individual model positions"
+   )
 
 The debate agent will:
 1. mcp__chronos__debate_start(...)
@@ -286,9 +340,12 @@ The debate agent will:
 3. Each model reviews and votes APPROVED/REJECTED
 4. Reach 3/4 consensus or majority vote
 5. mcp__chronos__debate_conclude(...)
-6. TeamDelete() and report verdict
+6. TeamDelete() → SendMessage(recipient="sisyphus", content="Code review verdict: APPROVED/REJECTED...", summary="Code review done")
 
-After debate agent returns:
+4. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
+
+5. After receiving debate verdict:
+   TeamDelete("ap-p4-{ts}")
 
    If APPROVED (3/4 agree):
      mcp__chronos__autopilot_update_progress(4, { approved: true })

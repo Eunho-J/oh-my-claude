@@ -214,6 +214,15 @@ SendMessage(type="shutdown_request", recipient="glm-relay",        content="Deba
 
 // Wait for shutdown confirmations, then:
 TeamDelete()
+
+// If spawned by autopilot (check prompt for "Leader name: {name}" field):
+// Report results to leader via SendMessage
+SendMessage(
+  type="message",
+  recipient="{leader_name_from_prompt}",
+  content="Debate complete.\n\nConclusion: {summary}\nDecision: {decision}\nMethod: {method}\n\nModel positions:\n- Opus: {opus_position}\n- GPT: {gpt_position}\n- Gemini: {gemini_position}\n- GLM: {glm_position}\n\nKey recommendations: {recommendations}",
+  summary="Debate concluded: {method}"
+)
 ```
 
 ## Response Format

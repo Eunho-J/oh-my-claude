@@ -77,52 +77,75 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 ### Phase 1: Structuring (Prometheus — Direct, Lightweight)
 
 ```markdown
-Delegate to Prometheus with fast mode flag:
-Task(
-  subagent_type="prometheus",
-  prompt="Lead the planning phase for: {request}.
+1. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p1-{ts}")
 
-  Fast mode: TRUE — apply all fast-mode rules:
-  1. SKIP research sub-team entirely (no TeamCreate, no explore workers)
-  2. Write plan directly from the request
-  3. Skip Metis review if plan has fewer than 3 tasks
-  4. Keep plan concise — only the necessary tasks
+2. Spawn Prometheus in phase team:
+   Task(
+     team_name="ap-p1-{ts}",
+     name="prometheus",
+     subagent_type="prometheus",
+     prompt="Lead the planning phase for: {request}.
 
-  Write plan to .sisyphus/plans/{name}.md
-  (CRITICAL: directory starts with a dot — .sisyphus, NOT sisyphus)
+     Fast mode: TRUE — apply all fast-mode rules:
+     1. SKIP research sub-team entirely (no TeamCreate, no explore workers)
+     2. Write plan directly from the request
+     3. Skip Metis review if plan has fewer than 3 tasks
+     4. Keep plan concise — only the necessary tasks
 
-  Output: .sisyphus/plans/{name}.md"
-)
+     Write plan to .sisyphus/plans/{name}.md
+     (CRITICAL: directory starts with a dot — .sisyphus, NOT sisyphus)
 
-After Prometheus returns:
-  mcp__chronos__autopilot_set_output(1, plan_path)
-  mcp__chronos__autopilot_advance()
+     Leader name: sisyphus
+     When complete, report via SendMessage to sisyphus with:
+     - Plan path (.sisyphus/plans/{name}.md)
+     - Task count"
+   )
+
+3. Wait for SendMessage from Prometheus (auto-delivered to sisyphus).
+
+4. After receiving plan results:
+   TeamDelete("ap-p1-{ts}")
+   mcp__chronos__autopilot_set_output(1, plan_path)
+   mcp__chronos__autopilot_advance()
 ```
 
 ### Phase 2: Execution (Atlas — Flat Junior Workers)
 
 ```markdown
-Delegate to Atlas with flat execution mode:
-Task(
-  subagent_type="atlas",
-  prompt="Execute the plan: {plan_path}
+1. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p2-{ts}")
 
-  Use FLAT execution (no hierarchical sub-atlas, no domain classification):
-  1. Parse plan → task list
-  2. If 1 task: run single Junior directly
-  3. If 2+ tasks and --swarm N given: TeamCreate('atlas-{ts}') → spawn N Junior workers
-  4. If 2+ tasks without swarm: TeamCreate('atlas-{ts}') → spawn Junior per task (up to 5)
-  5. Wait for all tasks, TeamDelete
+2. Spawn Atlas in phase team:
+   Task(
+     team_name="ap-p2-{ts}",
+     name="atlas",
+     subagent_type="atlas",
+     prompt="Execute the plan: {plan_path}
 
-  Do NOT create sub-atlas workers. Flat Junior only.
+     Use FLAT execution (no hierarchical sub-atlas, no domain classification):
+     1. Parse plan → task list
+     2. If 1 task: run single Junior directly
+     3. If 2+ tasks and --swarm N given: TeamCreate('atlas-{ts}') → spawn N Junior workers
+     4. If 2+ tasks without swarm: TeamCreate('atlas-{ts}') → spawn Junior per task (up to 5)
+     5. Wait for all tasks, TeamDelete
 
-  Report completion when all tasks done."
-)
+     Do NOT create sub-atlas workers. Flat Junior only.
 
-Update progress: mcp__chronos__autopilot_update_progress(2, {done, total})
+     Leader name: sisyphus
+     When complete, report via SendMessage to sisyphus with:
+     - Number of tasks completed
+     - Summary of changed files"
+   )
 
-After Atlas returns:
-  mcp__chronos__autopilot_advance()
+3. Wait for SendMessage from Atlas (auto-delivered to sisyphus).
+
+4. After receiving completion:
+   TeamDelete("ap-p2-{ts}")
+   mcp__chronos__autopilot_update_progress(2, {done, total})
+   mcp__chronos__autopilot_advance()
 ```
 
 ### Phase 3: QA (Optional — only if --qa flag)
@@ -131,27 +154,36 @@ After Atlas returns:
 Skip unless --qa was explicitly provided.
 
 If --qa:
-Task(
-  subagent_type="qa-orchestrator",
-  prompt="Run QA for autopilot-fast.
+1. Create phase team:
+   ts = Date.now()
+   TeamCreate(team_name="ap-p3-{ts}")
 
-  Leader name: {your_name}
-  UI flag: false
-  Plan path: {plan_path}
-  Changed files: {list_of_changed_files_from_git}
+2. Spawn QA Orchestrator in phase team:
+   Task(
+     team_name="ap-p3-{ts}",
+     name="qa-orchestrator",
+     subagent_type="qa-orchestrator",
+     prompt="Run QA for autopilot-fast.
 
-  Steps:
-  1. Create QA team (qa-{ts})
-  2. Run build-worker first (sequential)
-  3. If build fails: report QA_FAILED immediately
-  4. If build passes: spawn lint-worker + test-worker in parallel
-  5. Collect results
-  6. Report QA_PASSED or QA_FAILED
+     Leader name: sisyphus
+     UI flag: false
+     Plan path: {plan_path}
+     Changed files: {list_of_changed_files_from_git}
 
-  Report via SendMessage when complete."
-)
+     Steps:
+     1. Create QA team (qa-{ts})
+     2. Run build-worker first (sequential)
+     3. If build fails: report QA_FAILED immediately
+     4. If build passes: spawn lint-worker + test-worker in parallel
+     5. Collect results
+     6. Report QA_PASSED or QA_FAILED to sisyphus via SendMessage"
+   )
 
-Update: mcp__chronos__autopilot_update_progress(3, {build, lint, tests})
+3. Wait for SendMessage from QA Orchestrator (auto-delivered to sisyphus).
+
+4. After receiving QA results:
+   TeamDelete("ap-p3-{ts}")
+   mcp__chronos__autopilot_update_progress(3, {build, lint, tests})
 ```
 
 ### Completion

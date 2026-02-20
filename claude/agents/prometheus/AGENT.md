@@ -259,6 +259,13 @@ After creating the plan, submit it to Metis for review:
 
 3. If Metis returns APPROVED:
    - Plan is finalized and ready for execution
+   - If spawned by autopilot (check prompt for "Leader name: {name}" field):
+     SendMessage(
+       type="message",
+       recipient="{leader_name_from_prompt}",
+       content="Plan approved by Metis.\n\nPlan path: .sisyphus/plans/{name}.md\nTask count: {N}\n\n{brief_plan_summary}",
+       summary="Plan approved by Metis"
+     )
 ```
 
 **IMPORTANT**: Only call Metis for review when:

@@ -400,3 +400,14 @@ Task is complete when:
 3. LSP diagnostics clean (no errors)
 4. Acceptance criteria met
 5. Summary provided to user
+
+If spawned by autopilot (check prompt for "Leader name: {name}" field), report results to leader:
+
+```
+SendMessage(
+  type="message",
+  recipient="{leader_name_from_prompt}",
+  content="Execution complete.\n\nAll {N} tasks done.\nChanged files: {list_of_changed_files}",
+  summary="All tasks completed"
+)
+```
