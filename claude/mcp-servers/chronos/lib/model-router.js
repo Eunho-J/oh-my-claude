@@ -204,13 +204,6 @@ export function getAgentModel(agentName, ecomode = false) {
       tier: ecomode ? "low" : null,
       description: "Opus-4.6 + GPT-5.3-Codex for architecture advice (Haiku in ecomode)",
     },
-    "oracle-low": {
-      model: MODELS.CLAUDE_HAIKU,
-      external: false,
-      tier: "low",
-      description: "Quick architecture lookups",
-    },
-
     // Search agents - prefer external models
     librarian: {
       model: MODELS.GLM,

@@ -113,7 +113,7 @@ export function getRecommendedTier(directory, taskType) {
   // Ecomode tiers (prefer lower models)
   const ecoTiers = {
     junior: "haiku",
-    oracle: "haiku", // oracle → oracle-low
+    oracle: "haiku",
     explore: "haiku",
     librarian: "haiku",
   };
