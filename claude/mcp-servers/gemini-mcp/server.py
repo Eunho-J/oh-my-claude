@@ -2,8 +2,6 @@
 """
 Gemini MCP Server
 Custom Python FastMCP server for Google Gemini with session support.
-Replaces mcp-gemini-cli npm package with native session management.
-
 Uses the gemini CLI (from @google/gemini-cli) via subprocess.
 Authentication: gemini auth login (OAuth, credentials in ~/.gemini/)
 """
@@ -83,7 +81,7 @@ def _parse_stream_json(output: str) -> tuple[str, Optional[str]]:
     return "".join(content_parts), session_id
 
 
-# ─── Stateless tools (backward compatible with mcp-gemini-cli) ──────────────
+# ─── Stateless tools ────────────────────────────────────────────────────────
 
 
 @mcp.tool()
