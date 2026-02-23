@@ -71,6 +71,42 @@ When autopilot starts, **workmode** is automatically enabled:
 
 To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 
+## Team Lifecycle Rules
+
+**MANDATORY for all phase teams and inner teams.**
+
+### Teammate Termination — Tool Calling ONLY
+
+**NEVER terminate teammates via process-level commands:**
+- `tmux kill-session` — FORBIDDEN
+- `tmux kill-pane` / `tmux kill-window` — FORBIDDEN
+- `kill`, `kill -9`, `pkill` — FORBIDDEN
+- Any Bash command that terminates agent processes — FORBIDDEN
+
+**ALWAYS use tool calling to manage teammate lifecycle:**
+```
+1. SendMessage(type="shutdown_request", recipient="{agent-name}", content="Done")
+2. Wait for shutdown_response (or reasonable timeout)
+3. TeamDelete()
+```
+
+Process-level killing leaves agents in a dirty state: agent limiter slots are not freed, chronos state is not cleaned up, and orphaned teams persist. Tool calling ensures proper cleanup.
+
+### Phase Transition Cleanup
+
+**Before advancing to the next phase, the CURRENT phase team MUST be fully cleaned up:**
+
+```
+Phase N complete → cleanup sequence:
+1. Verify inner agent reported completion via SendMessage
+2. TeamDelete("ap-pN-{ts}")         ← Delete phase team
+3. mcp__chronos__autopilot_*()      ← Update progress / set output
+4. mcp__chronos__autopilot_advance() ← ONLY after cleanup is done
+```
+
+**NEVER call `autopilot_advance()` before `TeamDelete()`.**
+**NEVER skip `TeamDelete()` — orphaned teams cause resource leaks and OOM.**
+
 ## Workflow
 
 ### Initialization
@@ -116,12 +152,12 @@ The debate agent will:
 
 4. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
 
-5. After receiving debate results:
+5. After receiving debate results (cleanup → advance):
    Parse DEBATE_RESULT JSON from message.
    mcp__chronos__debate_conclude({ summary, decision, method, details })
-   TeamDelete("ap-p0-{ts}")
+   TeamDelete("ap-p0-{ts}")                    ← CLEANUP FIRST
    mcp__chronos__autopilot_set_output(0, debate_id)
-   mcp__chronos__autopilot_advance()
+   mcp__chronos__autopilot_advance()            ← ADVANCE AFTER CLEANUP
 ```
 
 ### Phase 1: Structuring (Planning Team — Prometheus + Research Sub-Team + Metis Loop)
@@ -171,10 +207,10 @@ Prometheus internal workflow:
 
 3. Wait for SendMessage from Prometheus (auto-delivered to sisyphus).
 
-4. After receiving plan results:
-   TeamDelete("ap-p1-{ts}")
+4. After receiving plan results (cleanup → advance):
+   TeamDelete("ap-p1-{ts}")                    ← CLEANUP FIRST
    mcp__chronos__autopilot_set_output(1, plan_path)
-   mcp__chronos__autopilot_advance()
+   mcp__chronos__autopilot_advance()            ← ADVANCE AFTER CLEANUP
 ```
 
 ### Phase 2: Execution (Atlas with Hierarchical Domain Teams)
@@ -240,10 +276,10 @@ Atlas internal workflow:
 
 3. Wait for SendMessage from Atlas (auto-delivered to sisyphus).
 
-4. After receiving completion:
-   TeamDelete("ap-p2-{ts}")
+4. After receiving completion (cleanup → advance):
+   TeamDelete("ap-p2-{ts}")                    ← CLEANUP FIRST
    mcp__chronos__autopilot_update_progress(2, {done, total})
-   mcp__chronos__autopilot_advance()
+   mcp__chronos__autopilot_advance()            ← ADVANCE AFTER CLEANUP
 ```
 
 ### Phase 3: QA (Parallel QA Team)
@@ -288,8 +324,8 @@ QA Orchestrator internal workflow:
 
 3. Wait for SendMessage from QA Orchestrator (auto-delivered to sisyphus).
 
-4. After receiving QA results:
-   TeamDelete("ap-p3-{ts}")
+4. After receiving QA results (cleanup → advance):
+   TeamDelete("ap-p3-{ts}")                    ← CLEANUP FIRST
    mcp__chronos__autopilot_update_progress(3, {build, lint, tests, ui})
 
 All checks must pass (or SKIPPED) to advance to Phase 4.
@@ -342,10 +378,10 @@ The debate agent will:
 
 5. Wait for SendMessage from debate agent (auto-delivered to sisyphus).
 
-6. After receiving debate verdict:
+6. After receiving debate verdict (cleanup → advance):
    Parse DEBATE_RESULT JSON from message.
    mcp__chronos__debate_conclude({ summary, decision, method, details })
-   TeamDelete("ap-p4-{ts}")
+   TeamDelete("ap-p4-{ts}")                    ← CLEANUP FIRST
 
    If APPROVED (3/4 agree):
      mcp__chronos__autopilot_update_progress(4, { approved: true })
@@ -463,12 +499,15 @@ Phase 4: Debate APPROVES → Complete
 If phase fails:
 
 ```markdown
-1. mcp__chronos__autopilot_fail(error="Description")
-2. Status becomes "failed"
-3. Workmode remains active
-4. Report to user with details
-5. User can fix and retry with /autopilot --resume
+1. TeamDelete() for any active phase team  ← CLEANUP EVEN ON FAILURE
+2. mcp__chronos__autopilot_fail(error="Description")
+3. Status becomes "failed"
+4. Workmode remains active
+5. Report to user with details
+6. User can fix and retry with /autopilot --resume
 ```
+
+**On failure, always clean up the phase team BEFORE marking as failed.** Never leave orphaned teams.
 
 ## Related Commands
 

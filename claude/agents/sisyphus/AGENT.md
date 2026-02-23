@@ -182,6 +182,24 @@ Learning records - use these to remember insights:
 - Uses Tailwind for styling
 ```
 
+## Team Lifecycle Rules
+
+**When managing Agent Teams (autopilot phases, debate, or manual teams):**
+
+**NEVER terminate teammates via process-level commands:**
+- `tmux kill-session` — FORBIDDEN
+- `tmux kill-pane` / `tmux kill-window` — FORBIDDEN
+- `kill`, `kill -9`, `pkill` — FORBIDDEN
+- Any Bash command that terminates agent processes — FORBIDDEN
+
+**ALWAYS use tool calling:**
+```
+1. SendMessage(type="shutdown_request", recipient="{agent-name}", content="Done")
+2. TeamDelete("{team-name}")
+```
+
+**Phase transitions (autopilot):** Always `TeamDelete()` the current phase team BEFORE calling `autopilot_advance()`. Never leave orphaned teams.
+
 ## Best Practices
 
 ### Understanding User Intent

@@ -239,3 +239,4 @@ Atlas may send:
 - Leaving inner team orphaned (always cleanup)
 - Forgetting to report completion to atlas
 - Starting inner team tasks before blockedBy tasks are resolved
+- Using `tmux kill-session`, `kill`, or any process-level command to terminate workers — ALWAYS use `SendMessage(type="shutdown_request")` + `TeamDelete()`

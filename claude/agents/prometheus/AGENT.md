@@ -311,6 +311,8 @@ Before finalizing plan:
 - Creating sequential-only plans when parallelism possible
 - Missing dependency analysis
 - Vague acceptance criteria
+- Using `tmux kill-session`, `kill`, or any process-level command to terminate workers — ALWAYS use `SendMessage(type="shutdown_request")` + `TeamDelete()`
+- Leaving research sub-team orphaned (always cleanup before reporting to leader)
 
 ## Output Location
 

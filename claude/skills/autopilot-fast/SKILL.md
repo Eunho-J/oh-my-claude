@@ -62,6 +62,42 @@ Workmode is automatically enabled on start. All code changes go through Atlas �
 
 To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 
+## Team Lifecycle Rules
+
+**MANDATORY for all phase teams and inner teams.**
+
+### Teammate Termination — Tool Calling ONLY
+
+**NEVER terminate teammates via process-level commands:**
+- `tmux kill-session` — FORBIDDEN
+- `tmux kill-pane` / `tmux kill-window` — FORBIDDEN
+- `kill`, `kill -9`, `pkill` — FORBIDDEN
+- Any Bash command that terminates agent processes — FORBIDDEN
+
+**ALWAYS use tool calling to manage teammate lifecycle:**
+```
+1. SendMessage(type="shutdown_request", recipient="{agent-name}", content="Done")
+2. Wait for shutdown_response (or reasonable timeout)
+3. TeamDelete()
+```
+
+Process-level killing leaves agents in a dirty state: agent limiter slots are not freed, chronos state is not cleaned up, and orphaned teams persist. Tool calling ensures proper cleanup.
+
+### Phase Transition Cleanup
+
+**Before advancing to the next phase, the CURRENT phase team MUST be fully cleaned up:**
+
+```
+Phase N complete → cleanup sequence:
+1. Verify inner agent reported completion via SendMessage
+2. TeamDelete("ap-pN-{ts}")         ← Delete phase team
+3. mcp__chronos__autopilot_*()      ← Update progress / set output
+4. mcp__chronos__autopilot_advance() ← ONLY after cleanup is done
+```
+
+**NEVER call `autopilot_advance()` before `TeamDelete()`.**
+**NEVER skip `TeamDelete()` — orphaned teams cause resource leaks and OOM.**
+
 ## Workflow
 
 ### Initialization
@@ -105,10 +141,10 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 
 3. Wait for SendMessage from Prometheus (auto-delivered to sisyphus).
 
-4. After receiving plan results:
-   TeamDelete("ap-p1-{ts}")
+4. After receiving plan results (cleanup → advance):
+   TeamDelete("ap-p1-{ts}")                    ← CLEANUP FIRST
    mcp__chronos__autopilot_set_output(1, plan_path)
-   mcp__chronos__autopilot_advance()
+   mcp__chronos__autopilot_advance()            ← ADVANCE AFTER CLEANUP
 ```
 
 ### Phase 2: Execution (Atlas — Flat Junior Workers)
@@ -142,10 +178,10 @@ To stop: `/autopilot off` or `mcp__chronos__workmode_disable()`
 
 3. Wait for SendMessage from Atlas (auto-delivered to sisyphus).
 
-4. After receiving completion:
-   TeamDelete("ap-p2-{ts}")
+4. After receiving completion (cleanup → advance):
+   TeamDelete("ap-p2-{ts}")                    ← CLEANUP FIRST
    mcp__chronos__autopilot_update_progress(2, {done, total})
-   mcp__chronos__autopilot_advance()
+   mcp__chronos__autopilot_advance()            ← ADVANCE AFTER CLEANUP
 ```
 
 ### Phase 3: QA (Optional — only if --qa flag)
@@ -181,8 +217,8 @@ If --qa:
 
 3. Wait for SendMessage from QA Orchestrator (auto-delivered to sisyphus).
 
-4. After receiving QA results:
-   TeamDelete("ap-p3-{ts}")
+4. After receiving QA results (cleanup → advance):
+   TeamDelete("ap-p3-{ts}")                    ← CLEANUP FIRST
    mcp__chronos__autopilot_update_progress(3, {build, lint, tests})
 ```
 

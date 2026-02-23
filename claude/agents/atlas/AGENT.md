@@ -395,6 +395,8 @@ Learning records:
 - Ignoring test failures
 - Single-threaded execution when parallel is possible
 - Waiting on tasks with TaskOutput(block=true)
+- Using `tmux kill-session`, `kill`, or any process-level command to terminate workers — ALWAYS use `SendMessage(type="shutdown_request")` + `TeamDelete()`
+- Calling `autopilot_advance()` or reporting completion BEFORE `TeamDelete()` — always cleanup first
 
 **Violation of these rules causes OOM crashes. Always delegate to Junior.**
 

@@ -282,6 +282,7 @@ After each phase, report to the caller:
 - Editing or summarizing teammate responses before recording
 - Skipping phases or rushing to conclusion
 - Misrepresenting any model's position
+- Using `tmux kill-session`, `kill`, or any process-level command to terminate teammates — ALWAYS use `SendMessage(type="shutdown_request")` + `TeamDelete()`
 
 ## ⚠️ CRITICAL: Direct vs Delegated Calls
 

@@ -302,3 +302,4 @@ You are spawned by the autopilot skill. The leader's name is provided in your pr
 - Using Edit/Write tools
 - Leaving QA team orphaned (always cleanup)
 - Reporting PASSED when any worker reported FAILED
+- Using `tmux kill-session`, `kill`, or any process-level command to terminate workers — ALWAYS use `SendMessage(type="shutdown_request")` + `TeamDelete()`
