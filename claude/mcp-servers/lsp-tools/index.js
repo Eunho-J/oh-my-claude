@@ -60,26 +60,40 @@ async function getLanguageServer(filePath) {
     if (config.extensions.includes(ext)) {
       if (!activeServers.has(name)) {
         try {
-          const process = spawn(config.command, config.args, {
+          const proc = spawn(config.command, config.args, {
             stdio: ["pipe", "pipe", "pipe"],
           });
 
-          activeServers.set(name, {
-            process,
+          const entry = {
+            process: proc,
             name,
             initialized: false,
-          });
+          };
 
-          process.on("error", (err) => {
+          activeServers.set(name, entry);
+
+          proc.on("error", (err) => {
             console.error(`Language server ${name} error:`, err);
             activeServers.delete(name);
           });
 
-          process.on("exit", () => {
+          proc.on("exit", () => {
             activeServers.delete(name);
           });
+
+          // Initialize LSP handshake
+          const initResult = await sendLspRequest(entry, "initialize", {
+            processId: null,
+            capabilities: {},
+            rootUri: null,
+          });
+          // Send initialized notification (no response expected)
+          const notif = JSON.stringify({ jsonrpc: "2.0", method: "initialized", params: {} });
+          proc.stdin.write(`Content-Length: ${Buffer.byteLength(notif)}\r\n\r\n${notif}`);
+          entry.initialized = true;
         } catch (err) {
           console.error(`Failed to start ${name} language server:`, err);
+          activeServers.delete(name);
           return null;
         }
       }
@@ -295,19 +309,39 @@ server.tool(
       return { content: [{ type: "text", text: `No language server available for ${file_path}` }] };
     }
 
-    const content = await readFile(file_path, "utf-8");
-    await sendLspRequest(ls, "textDocument/didOpen", {
-      textDocument: {
-        uri: `file://${file_path}`,
-        languageId: getLanguageId(file_path),
-        version: 1,
-        text: content,
+    const fileContent = await readFile(file_path, "utf-8");
+
+    // didOpen is a notification (no id, no response expected)
+    const notif = JSON.stringify({
+      jsonrpc: "2.0",
+      method: "textDocument/didOpen",
+      params: {
+        textDocument: {
+          uri: `file://${file_path}`,
+          languageId: getLanguageId(file_path),
+          version: 1,
+          text: fileContent,
+        },
       },
     });
+    ls.process.stdin.write(`Content-Length: ${Buffer.byteLength(notif)}\r\n\r\n${notif}`);
 
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Wait for diagnostics to be computed
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    return { content: [{ type: "text", text: "Diagnostics published. Check the language server output." }] };
+    // Request diagnostics via pull model (3.17+), fall back to message
+    try {
+      const result = await sendLspRequest(ls, "textDocument/diagnostic", {
+        textDocument: { uri: `file://${file_path}` },
+      });
+      const items = result?.items || [];
+      if (items.length === 0) {
+        return { content: [{ type: "text", text: "No diagnostics found." }] };
+      }
+      return { content: [{ type: "text", text: JSON.stringify(items, null, 2) }] };
+    } catch {
+      return { content: [{ type: "text", text: "Diagnostics published via push notifications. Server does not support pull diagnostics." }] };
+    }
   }
 );
 

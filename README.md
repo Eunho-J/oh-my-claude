@@ -127,8 +127,8 @@ git clone https://github.com/Eunho-J/oh-my-claude.git /tmp/oh-my-claude
 # ⚠️ Back up existing settings.json if you have custom settings
 [ -f ~/.claude/settings.json ] && cp ~/.claude/settings.json ~/.claude/settings.json.backup
 
-# Copy everything to ~/.claude (agents, skills, hooks, mcp-servers, settings)
-cp -r /tmp/oh-my-claude/claude/. ~/.claude/
+# Copy everything to ~/.claude (exclude .venv/node_modules — step 1.4 rebuilds them)
+rsync -a --exclude '.venv' --exclude 'node_modules' /tmp/oh-my-claude/claude/ ~/.claude/
 
 # Copy CLAUDE.md (required — tells Claude Code about the agent system in all projects)
 cp /tmp/oh-my-claude/CLAUDE.md ~/.claude/CLAUDE.md
@@ -145,8 +145,8 @@ rm -rf /tmp/oh-my-claude
 **If Local:**
 
 ```bash
-# Copy everything to .claude/ in your project
-cp -r /tmp/oh-my-claude/claude .claude
+# Copy everything to .claude/ (exclude .venv/node_modules — step 1.4 rebuilds them)
+rsync -a --exclude '.venv' --exclude 'node_modules' /tmp/oh-my-claude/claude/ .claude/
 
 # Copy state directory and project files
 cp -r /tmp/oh-my-claude/sisyphus .sisyphus
@@ -198,6 +198,9 @@ gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
 
 # Check tmux (required for Agent Teams split pane mode)
 tmux -V 2>/dev/null || echo "tmux: NOT INSTALLED"
+
+# Check ast-grep (required for lsp-tools AST search/replace)
+ast-grep --version 2>/dev/null || echo "ast-grep: NOT INSTALLED"
 ```
 
 **Install only if not present:**
@@ -233,6 +236,12 @@ command -v tmux >/dev/null || brew install tmux
 # command -v tmux >/dev/null || sudo apt install tmux
 # Linux (Fedora/RHEL)
 # command -v tmux >/dev/null || sudo dnf install tmux
+
+# Install ast-grep (required for lsp-tools AST search/replace)
+# macOS
+command -v ast-grep >/dev/null || brew install ast-grep
+# Or via cargo: cargo install ast-grep
+# Or via npm: npm i -g @ast-grep/cli
 ```
 
 > **⚠️ After installation, OAuth login is required for both Codex and Gemini CLI.**
@@ -411,6 +420,7 @@ echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "tmux: $(tmux -V 2>/dev/null || echo 'NOT INSTALLED')"
+echo "ast-grep: $(ast-grep --version 2>/dev/null || echo 'NOT INSTALLED')"
 
 # Check directory structure
 echo "=== Directory Structure ==="
@@ -448,6 +458,7 @@ echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "tmux: $(tmux -V 2>/dev/null || echo 'NOT INSTALLED')"
+echo "ast-grep: $(ast-grep --version 2>/dev/null || echo 'NOT INSTALLED')"
 
 # Check directory structure
 echo "=== Directory Structure ==="
@@ -685,34 +696,48 @@ ls ~/.claude/mcp-servers/gemini-mcp/.venv/ >/dev/null 2>&1 && echo "gemini-mcp: 
 
 ### Uninstall oh-my-claude
 
+Reverse of Install steps 1.5 → 1.1:
+
 **If Global:**
 
 ```bash
-# Remove oh-my-claude components from ~/.claude/
+# Reverse step 1.3: Remove MCP server registrations
+claude mcp remove chronos    -s user
+claude mcp remove lsp-tools  -s user
+claude mcp remove zai-glm    -s user
+claude mcp remove gemini     -s user
+claude mcp remove codex      -s user
+claude mcp remove playwright -s user
+claude mcp remove context7   -s user
+claude mcp remove grep-app   -s user
+
+# Reverse step 1.1: Remove copied files and directories
 rm -rf ~/.claude/agents
 rm -rf ~/.claude/skills
 rm -rf ~/.claude/hooks
-rm -rf ~/.claude/mcp-servers
+rm -rf ~/.claude/mcp-servers      # includes node_modules/, .venv/ from step 1.4
 rm -rf ~/.claude/sisyphus
 rm -f  ~/.claude/settings.json
+rm -f  ~/.claude/settings.local.json
 rm -f  ~/.claude/CLAUDE.md
-
-# Remove MCP server registrations
-claude mcp remove chronos
-claude mcp remove lsp-tools
-claude mcp remove zai-glm
-claude mcp remove gemini
-claude mcp remove codex
-claude mcp remove playwright
-claude mcp remove context7
-claude mcp remove grep-app
 ```
 
 **If Local:**
 
 ```bash
-# Remove from project directory
-rm -rf .claude
+# Reverse step 1.3: Remove MCP server registrations and .mcp.json
+claude mcp remove chronos    -s project
+claude mcp remove lsp-tools  -s project
+claude mcp remove zai-glm    -s project
+claude mcp remove gemini     -s project
+claude mcp remove codex      -s project
+claude mcp remove playwright -s project
+claude mcp remove context7   -s project
+claude mcp remove grep-app   -s project
+rm -f .mcp.json
+
+# Reverse step 1.1: Remove copied files and directories
+rm -rf .claude                    # includes node_modules/, .venv/ from step 1.4
 rm -rf .sisyphus
 rm -f  CLAUDE.md
 rm -f  .gitignore.sample
