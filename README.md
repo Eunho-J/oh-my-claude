@@ -195,6 +195,9 @@ codex --version 2>/dev/null || echo "Codex CLI: NOT INSTALLED"
 
 # Check Gemini CLI
 gemini --version 2>/dev/null || echo "Gemini CLI: NOT INSTALLED"
+
+# Check tmux (required for Agent Teams split pane mode)
+tmux -V 2>/dev/null || echo "tmux: NOT INSTALLED"
 ```
 
 **Install only if not present:**
@@ -222,6 +225,14 @@ fi
 
 # Install Gemini CLI (for Google OAuth auth)
 command -v gemini >/dev/null || npm install -g @google/gemini-cli
+
+# Install tmux (required — settings.json sets teammateMode to "tmux")
+# macOS
+command -v tmux >/dev/null || brew install tmux
+# Linux (Debian/Ubuntu)
+# command -v tmux >/dev/null || sudo apt install tmux
+# Linux (Fedora/RHEL)
+# command -v tmux >/dev/null || sudo dnf install tmux
 ```
 
 > **⚠️ After installation, OAuth login is required for both Codex and Gemini CLI.**
@@ -305,82 +316,24 @@ chmod +x ~/.claude/hooks/*.sh
 chmod +x .claude/hooks/*.sh
 ```
 
-### 1.5b Terminal Integration for Agent Teams (Optional)
+### 1.5b Launch Claude Inside tmux
 
-Agent Teams support **split pane mode** — each teammate runs in its own terminal pane so you can watch all agents simultaneously. Two terminals are supported: **tmux** and **iTerm2**.
-
-> **Agent instruction:** Ask the user which terminal integration they want:
->
-> ```
-> AskUserQuestion:
->   "Which terminal integration would you like for Agent Teams split pane mode?"
->   Options:
->     - "tmux - each teammate in its own pane (recommended for macOS/Linux)"
->     - "iTerm2 - native macOS split panes"
->     - "None (in-process) - all teammates run in the main terminal"
-> ```
->
-> Then follow the corresponding section below.
-
-**Option A: tmux**
-
-```bash
-# Check if tmux is already installed
-tmux -V 2>/dev/null && echo "tmux: OK" || echo "tmux: NOT INSTALLED"
-
-# Install if not present
-# macOS
-command -v tmux >/dev/null || brew install tmux
-# Linux (Debian/Ubuntu)
-# command -v tmux >/dev/null || sudo apt install tmux
-# Linux (Fedora/RHEL)
-# command -v tmux >/dev/null || sudo dnf install tmux
-```
-
-No settings change needed — the default `"auto"` already enables split pane when Claude is launched
-inside a tmux session. Just run `claude` from within tmux:
+The project `settings.json` sets `"teammateMode": "tmux"` — Agent Teams will create split panes for each teammate. **You must launch Claude from within a tmux session** for panes to appear:
 
 ```bash
 tmux new -s work
 claude
 ```
 
----
+> tmux is already installed in step 1.2. If you skip tmux, teammates will still run but without visible split panes.
 
-**Option B: iTerm2**
+**Alternative: iTerm2**
 
-1. Install the `it2` CLI:
+If you prefer iTerm2 native panes instead of tmux:
 
-```bash
-npm install -g it2
-```
-
-2. Enable Python API in iTerm2: **iTerm2 → Settings → General → Magic → Enable Python API**
-
-3. Update `settings.json` to `"tmux"` (Claude Code auto-detects iTerm2 vs tmux):
-
-**If Global:**
-```bash
-tmp=$(mktemp)
-jq '.teammateMode = "tmux"' ~/.claude/settings.json > "$tmp" && mv "$tmp" ~/.claude/settings.json
-```
-
-**If Local:**
-```bash
-tmp=$(mktemp)
-jq '.teammateMode = "tmux"' .claude/settings.json > "$tmp" && mv "$tmp" .claude/settings.json
-```
-
-> **Note:** `tmux -CC` mode inside iTerm2 is the recommended entry point per Claude Code docs.
-
----
-
-**Option C: None (in-process)**
-
-No action needed. The default `"auto"` uses in-process mode when Claude is not running inside a
-tmux session.
-
----
+1. `npm install -g it2`
+2. Enable Python API: **iTerm2 → Settings → General → Magic → Enable Python API**
+3. Launch with `tmux -CC` inside iTerm2
 
 ### 1.6 Configure .gitignore
 
@@ -457,6 +410,7 @@ echo "Python: $(python3 --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "tmux: $(tmux -V 2>/dev/null || echo 'NOT INSTALLED')"
 
 # Check directory structure
 echo "=== Directory Structure ==="
@@ -493,6 +447,7 @@ echo "Python: $(python3 --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "Gemini: $(gemini --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "jq: $(jq --version 2>/dev/null || echo 'NOT INSTALLED')"
 echo "uv: $(uv --version 2>/dev/null || echo 'NOT INSTALLED')"
+echo "tmux: $(tmux -V 2>/dev/null || echo 'NOT INSTALLED')"
 
 # Check directory structure
 echo "=== Directory Structure ==="
